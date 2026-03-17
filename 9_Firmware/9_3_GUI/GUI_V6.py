@@ -100,223 +100,163 @@ class GPSData:
     timestamp: float
 
 class MapGenerator:
-    def __init__(self):
-        self.map_html_template = """
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Radar Map</title>
-            <meta charset="utf-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <style>
-                #map {{
-                    height: 100vh;
-                    width: 100%;
-                }}
-                .radar-marker {{
-                    background-color: red;
-                    border: 2px solid white;
-                    border-radius: 50%;
-                    width: 12px;
-                    height: 12px;
-                }}
-                .target-marker {{
-                    background-color: blue;
-                    border: 2px solid white;
-                    border-radius: 50%;
-                    width: 8px;
-                    height: 8px;
-                }}
-                .info-window {{
-                    font-family: Arial, sans-serif;
-                    font-size: 12px;
-                }}
-            </style>
-        </head>
-        <body>
-            <div id="map"></div>
-            
-            <script>
-                var map;
-                var radarMarker;
-                var coverageCircle;
-                var targetMarkers = [];
+        def __init__(self):
+            self.map_html_template = """
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Radar Map</title>
+                <meta charset="utf-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <style>
+                    #map {{
+                        height: 100vh;
+                        width: 100%;
+                    }}
+                    .radar-marker {{
+                        background-color: red;
+                        border: 2px solid white;
+                        border-radius: 50%;
+                        width: 12px;
+                        height: 12px;
+                    }}
+                    .target-marker {{
+                        background-color: blue;
+                        border: 2px solid white;
+                        border-radius: 50%;
+                        width: 8px;
+                        height: 8px;
+                    }}
+                    .info-window {{
+                        font-family: Arial, sans-serif;
+                        font-size: 12px;
+                    }}
+                </style>
+            </head>
+            <body>
+                <div id="map"></div>
                 
-                function initMap() {{
-                    var radarPosition = {{lat: {lat}, lng: {lon}}};
+                <script>
+                    var map;
+                    var radarMarker;
+                    var coverageCircle;
+                    var targetMarkers = [];
                     
-                    map = new google.maps.Map(document.getElementById('map'), {{
-                        center: radarPosition,
-                        zoom: 12,
-                        mapTypeId: google.maps.MapTypeId.ROADMAP
-                    }});
-                    
-                    // Radar position marker
-                    radarMarker = new google.maps.Marker({{
-                        position: radarPosition,
-                        map: map,
-                        title: 'Radar System',
-                        icon: {{
-                            path: google.maps.SymbolPath.CIRCLE,
-                            scale: 8,
-                            fillColor: '#FF0000',
-                            fillOpacity: 1,
-                            strokeColor: '#FFFFFF',
-                            strokeWeight: 2
-                        }}
-                    }});
-                    
-                    // Radar coverage area
-                    coverageCircle = new google.maps.Circle({{
-                        strokeColor: '#FF0000',
-                        strokeOpacity: 0.8,
-                        strokeWeight: 2,
-                        fillColor: '#FF0000',
-                        fillOpacity: 0.1,
-                        map: map,
-                        center: radarPosition,
-                        radius: {coverage_radius}
-                    }});
-                    
-                    // Info window for radar
-                    var radarInfo = new google.maps.InfoWindow({{
-                        content: `
-                            <div class="info-window">
-                                <h3>Radar System</h3>
-                                <p>Lat: {lat:.6f}</p>
-                                <p>Lon: {lon:.6f}</p>
-                                <p>Alt: {alt:.1f}m</p>
-                                <p>Pitch: {pitch:+.1f}°</p>
-                                <p>Coverage: {coverage_radius/1000:.1f}km</p>
-                            </div>
-                        `
-                    }});
-                    
-                    radarMarker.addListener('click', function() {{
-                        radarInfo.open(map, radarMarker);
-                    }});
-                    
-                    // Add existing targets
-                    {targets_script}
-                }}
-                
-                function updateTargets(targets) {{
-                    // Clear existing targets
-                    targetMarkers.forEach(marker => marker.setMap(null));
-                    targetMarkers = [];
-                    
-                    // Add new targets
-                    targets.forEach(target => {{
-                        var targetMarker = new google.maps.Marker({{
-                            position: {{lat: target.lat, lng: target.lng}},
+                    function initMap() {{
+                        var radarPosition = {{lat: {lat}, lng: {lon}}};
+                        
+                        map = new google.maps.Map(document.getElementById('map'), {{
+                            center: radarPosition,
+                            zoom: 12,
+                            mapTypeId: google.maps.MapTypeId.ROADMAP
+                        }});
+                        
+                        // Radar position marker
+                        radarMarker = new google.maps.Marker({{
+                            position: radarPosition,
                             map: map,
-                            title: `Target: ${{target.range:.1f}}m, ${{target.velocity:.1f}}m/s`,
+                            title: 'Radar System',
                             icon: {{
                                 path: google.maps.SymbolPath.CIRCLE,
-                                scale: 6,
-                                fillColor: '#0000FF',
-                                fillOpacity: 0.8,
+                                scale: 8,
+                                fillColor: '#FF0000',
+                                fillOpacity: 1,
                                 strokeColor: '#FFFFFF',
-                                strokeWeight: 1
+                                strokeWeight: 2
                             }}
                         }});
                         
-                        var targetInfo = new google.maps.InfoWindow({{
+                        // Radar coverage area
+                        coverageCircle = new google.maps.Circle({{
+                            strokeColor: '#FF0000',
+                            strokeOpacity: 0.8,
+                            strokeWeight: 2,
+                            fillColor: '#FF0000',
+                            fillOpacity: 0.1,
+                            map: map,
+                            center: radarPosition,
+                            radius: {coverage_radius}
+                        }});
+                        
+                        // Info window for radar
+                        var radarInfo = new google.maps.InfoWindow({{
                             content: `
                                 <div class="info-window">
-                                    <h3>Target #{target.id}</h3>
-                                    <p>Range: ${{target.range:.1f}}m</p>
-                                    <p>Velocity: ${{target.velocity:.1f}}m/s</p>
-                                    <p>Azimuth: ${{target.azimuth}}°</p>
-                                    <p>Elevation: ${{target.elevation:.1f}}°</p>
-                                    <p>SNR: ${{target.snr:.1f}}dB</p>
+                                    <h3>Radar System</h3>
+                                    <p>Lat: {lat:.6f}</p>
+                                    <p>Lon: {lon:.6f}</p>
+                                    <p>Alt: {alt:.1f}m</p>
+                                    <p>Pitch: {pitch:+.1f}°</p>
+                                    <p>Coverage: {coverage_radius/1000:.1f}km</p>
                                 </div>
                             `
                         }});
                         
-                        targetMarker.addListener('click', function() {{
-                            targetInfo.open(map, targetMarker);
+                        radarMarker.addListener('click', function() {{
+                            radarInfo.open(map, radarMarker);
                         }});
                         
-                        targetMarkers.push(targetMarker);
-                    }});
-                }}
+                        // Add existing targets
+                        {targets_script}
+                    }}
+                    
+                    function updateTargets(targets) {{
+                        // Clear existing targets
+                        targetMarkers.forEach(marker => marker.setMap(null));
+                        targetMarkers = [];
+                        
+                        // Add new targets
+                        targets.forEach(target => {{
+                            var targetMarker = new google.maps.Marker({{
+                                position: {{lat: target.lat, lng: target.lng}},
+                                map: map,
+                                title: `Target: ${{target.range:.1f}}m, ${{target.velocity:.1f}}m/s`,
+                                icon: {{
+                                    path: google.maps.SymbolPath.CIRCLE,
+                                    scale: 6,
+                                    fillColor: '#0000FF',
+                                    fillOpacity: 0.8,
+                                    strokeColor: '#FFFFFF',
+                                    strokeWeight: 1
+                                }}
+                            }});
+                            
+                            var targetInfo = new google.maps.InfoWindow({{
+                                content: `
+                                    <div class="info-window">
+                                        <h3>Target #{target.id}</h3>
+                                        <p>Range: ${{target.range:.1f}}m</p>
+                                        <p>Velocity: ${{target.velocity:.1f}}m/s</p>
+                                        <p>Azimuth: ${{target.azimuth}}°</p>
+                                        <p>Elevation: ${{target.elevation:.1f}}°</p>
+                                        <p>SNR: ${{target.snr:.1f}}dB</p>
+                                    </div>
+                                `
+                            }});
+                            
+                            targetMarker.addListener('click', function() {{
+                                targetInfo.open(map, targetMarker);
+                            }});
+                            
+                            targetMarkers.push(targetMarker);
+                        }});
+                    }}
+                    
+                    function updateRadarPosition(lat, lon, alt, pitch) {{
+                        var newPosition = new google.maps.LatLng(lat, lon);
+                        radarMarker.setPosition(newPosition);
+                        coverageCircle.setCenter(newPosition);
+                        map.setCenter(newPosition);
+                    }}
+                </script>
                 
-                function updateRadarPosition(lat, lon, alt, pitch) {{
-                    var newPosition = new google.maps.LatLng(lat, lon);
-                    radarMarker.setPosition(newPosition);
-                    coverageCircle.setCenter(newPosition);
-                    map.setCenter(newPosition);
-                }}
-            </script>
-            
-            <script async defer
-                src="https://maps.googleapis.com/maps/api/js?key={api_key}&callback=initMap">
-            </script>
-        </body>
-        </html>
-        """
-    
-    def generate_map(self, gps_data, targets, coverage_radius, api_key="YOUR_GOOGLE_MAPS_API_KEY"):
-        """Generate HTML map with radar and targets"""
-        # Convert targets to map coordinates
-        map_targets = []
-        for target in targets:
-            # Convert polar coordinates (range, azimuth) to geographic coordinates
-            target_lat, target_lon = self.polar_to_geographic(
-                gps_data.latitude, gps_data.longitude, 
-                target.range, target.azimuth
-            )
-            map_targets.append({
-                'id': target.track_id,
-                'lat': target_lat,
-                'lng': target_lon,
-                'range': target.range,
-                'velocity': target.velocity,
-                'azimuth': target.azimuth,
-                'elevation': target.elevation,
-                'snr': target.snr
-            })
-        
-        # Generate targets script
-        targets_script = ""
-        if map_targets:
-            targets_json = str(map_targets).replace("'", '"')
-            targets_script = f"updateTargets({targets_json});"
-        
-        # Fill template
-        map_html = self.map_html_template.format(
-            lat=gps_data.latitude,
-            lon=gps_data.longitude,
-            alt=gps_data.altitude,
-            pitch=gps_data.pitch,
-            coverage_radius=coverage_radius,
-            targets_script=targets_script,
-            api_key=api_key
-        )
-        
-        return map_html
-    
-    def polar_to_geographic(self, radar_lat, radar_lon, range_m, azimuth_deg):
-        """
-        Convert polar coordinates (range, azimuth) to geographic coordinates
-        using simple flat-earth approximation (good for small distances)
-        """
-        # Earth radius in meters
-        earth_radius = 6371000
-        
-        # Convert azimuth to radians (0° = North, 90° = East)
-        azimuth_rad = math.radians(90 - azimuth_deg)  # Convert to math convention
-        
-        # Convert range to angular distance
-        angular_distance = range_m / earth_radius
-        
-        # Convert to geographic coordinates
-        target_lat = radar_lat + math.cos(azimuth_rad) * angular_distance * (180 / math.pi)
-        target_lon = radar_lon + math.sin(azimuth_rad) * angular_distance * (180 / math.pi) / math.cos(math.radians(radar_lat))
-        
-        return target_lat, target_lon
-
+                <script async defer
+                    src="https://maps.googleapis.com/maps/api/js?key={api_key}&callback=initMap">
+                </script>
+            </body>
+            </html>
+            """
+        pass
 
 class FT601Interface:
     """
@@ -588,7 +528,180 @@ class FT601Interface:
             except Exception as e:
                 logging.error(f"Error closing FT601 device: {e}")
 
+class STM32USBInterface:
+    def __init__(self):
+        self.device = None
+        self.is_open = False
+        self.ep_in = None
+        self.ep_out = None
+        
+    def list_devices(self):
+        """List available STM32 USB CDC devices"""
+        if not USB_AVAILABLE:
+            logging.warning("USB not available - please install pyusb")
+            return []
+            
+        try:
+            devices = []
+            # STM32 USB CDC devices typically use these vendor/product IDs
+            stm32_vid_pids = [
+                (0x0483, 0x5740),  # STM32 Virtual COM Port
+                (0x0483, 0x3748),  # STM32 Discovery
+                (0x0483, 0x374B),  # STM32 CDC
+                (0x0483, 0x374D),  # STM32 CDC
+                (0x0483, 0x374E),  # STM32 CDC
+                (0x0483, 0x3752),  # STM32 CDC
+            ]
+            
+            for vid, pid in stm32_vid_pids:
+                found_devices = usb.core.find(find_all=True, idVendor=vid, idProduct=pid)
+                for dev in found_devices:
+                    try:
+                        product = usb.util.get_string(dev, dev.iProduct) if dev.iProduct else "STM32 CDC"
+                        serial = usb.util.get_string(dev, dev.iSerialNumber) if dev.iSerialNumber else "Unknown"
+                        devices.append({
+                            'description': f"{product} ({serial})",
+                            'vendor_id': vid,
+                            'product_id': pid,
+                            'device': dev
+                        })
+                    except:
+                        devices.append({
+                            'description': f"STM32 CDC (VID:{vid:04X}, PID:{pid:04X})",
+                            'vendor_id': vid,
+                            'product_id': pid,
+                            'device': dev
+                        })
+            
+            return devices
+        except Exception as e:
+            logging.error(f"Error listing USB devices: {e}")
+            # Return mock devices for testing
+            return [{'description': 'STM32 Virtual COM Port', 'vendor_id': 0x0483, 'product_id': 0x5740}]
+    
+    def open_device(self, device_info):
+        """Open STM32 USB CDC device"""
+        if not USB_AVAILABLE:
+            logging.error("USB not available - cannot open device")
+            return False
+            
+        try:
+            self.device = device_info['device']
+            
+            # Detach kernel driver if active
+            if self.device.is_kernel_driver_active(0):
+                self.device.detach_kernel_driver(0)
+            
+            # Set configuration
+            self.device.set_configuration()
+            
+            # Get CDC endpoints
+            cfg = self.device.get_active_configuration()
+            intf = cfg[(0,0)]
+            
+            # Find bulk endpoints (CDC data interface)
+            self.ep_out = usb.util.find_descriptor(
+                intf,
+                custom_match=lambda e: usb.util.endpoint_direction(e.bEndpointAddress) == usb.util.ENDPOINT_OUT
+            )
+            
+            self.ep_in = usb.util.find_descriptor(
+                intf,
+                custom_match=lambda e: usb.util.endpoint_direction(e.bEndpointAddress) == usb.util.ENDPOINT_IN
+            )
+            
+            if self.ep_out is None or self.ep_in is None:
+                logging.error("Could not find CDC endpoints")
+                return False
+            
+            self.is_open = True
+            logging.info(f"STM32 USB device opened: {device_info['description']}")
+            return True
+            
+        except Exception as e:
+            logging.error(f"Error opening USB device: {e}")
+            return False
+    
+    def send_start_flag(self):
+        """Step 12: Send start flag to STM32 via USB"""
+        start_packet = bytes([23, 46, 158, 237])
+        logging.info("Sending start flag to STM32 via USB...")
+        return self._send_data(start_packet)
+    
+    def send_settings(self, settings):
+        """Step 13: Send radar settings to STM32 via USB"""
+        try:
+            packet = self._create_settings_packet(settings)
+            logging.info("Sending radar settings to STM32 via USB...")
+            return self._send_data(packet)
+        except Exception as e:
+            logging.error(f"Error sending settings via USB: {e}")
+            return False
+    
+    def read_data(self, size=64, timeout=1000):
+        """Read data from STM32 via USB"""
+        if not self.is_open or self.ep_in is None:
+            return None
+            
+        try:
+            data = self.ep_in.read(size, timeout=timeout)
+            return bytes(data)
+        except usb.core.USBError as e:
+            if e.errno == 110:  # Timeout
+                return None
+            logging.error(f"USB read error: {e}")
+            return None
+        except Exception as e:
+            logging.error(f"Error reading from USB: {e}")
+            return None
+    
+    def _send_data(self, data):
+        """Send data to STM32 via USB"""
+        if not self.is_open or self.ep_out is None:
+            return False
+            
+        try:
+            # USB CDC typically uses 64-byte packets
+            packet_size = 64
+            for i in range(0, len(data), packet_size):
+                chunk = data[i:i + packet_size]
+                # Pad to packet size if needed
+                if len(chunk) < packet_size:
+                    chunk += b'\x00' * (packet_size - len(chunk))
+                self.ep_out.write(chunk)
+            
+            return True
+        except Exception as e:
+            logging.error(f"Error sending data via USB: {e}")
+            return False
+    
+    def _create_settings_packet(self, settings):
+        """Create binary settings packet for USB transmission"""
+        packet = b'SET'
+        packet += struct.pack('>d', settings.system_frequency)
+        packet += struct.pack('>d', settings.chirp_duration_1)
+        packet += struct.pack('>d', settings.chirp_duration_2)
+        packet += struct.pack('>I', settings.chirps_per_position)
+        packet += struct.pack('>d', settings.freq_min)
+        packet += struct.pack('>d', settings.freq_max)
+        packet += struct.pack('>d', settings.prf1)
+        packet += struct.pack('>d', settings.prf2)
+        packet += struct.pack('>d', settings.max_distance)
+        packet += struct.pack('>d', settings.map_size)
+        packet += b'END'
+        return packet
+    
+    def close(self):
+        """Close USB device"""
+        if self.device and self.is_open:
+            try:
+                usb.util.dispose_resources(self.device)
+                self.is_open = False
+            except Exception as e:
+                logging.error(f"Error closing USB device: {e}")
 
+
+# [RadarProcessor class remains the same]
 class RadarProcessor:
     def __init__(self):
         self.range_doppler_map = np.zeros((1024, 32))
@@ -709,7 +822,6 @@ class RadarProcessor:
                        if current_time - track['last_update'] > 5.0]
         for tid in stale_tracks:
             del self.tracks[tid]
-
 
 class USBPacketParser:
     def __init__(self):
@@ -907,179 +1019,6 @@ class RadarPacketParser:
             return None
 
 
-class STM32USBInterface:
-    def __init__(self):
-        self.device = None
-        self.is_open = False
-        self.ep_in = None
-        self.ep_out = None
-        
-    def list_devices(self):
-        """List available STM32 USB CDC devices"""
-        if not USB_AVAILABLE:
-            logging.warning("USB not available - please install pyusb")
-            return []
-            
-        try:
-            devices = []
-            # STM32 USB CDC devices typically use these vendor/product IDs
-            stm32_vid_pids = [
-                (0x0483, 0x5740),  # STM32 Virtual COM Port
-                (0x0483, 0x3748),  # STM32 Discovery
-                (0x0483, 0x374B),  # STM32 CDC
-                (0x0483, 0x374D),  # STM32 CDC
-                (0x0483, 0x374E),  # STM32 CDC
-                (0x0483, 0x3752),  # STM32 CDC
-            ]
-            
-            for vid, pid in stm32_vid_pids:
-                found_devices = usb.core.find(find_all=True, idVendor=vid, idProduct=pid)
-                for dev in found_devices:
-                    try:
-                        product = usb.util.get_string(dev, dev.iProduct) if dev.iProduct else "STM32 CDC"
-                        serial = usb.util.get_string(dev, dev.iSerialNumber) if dev.iSerialNumber else "Unknown"
-                        devices.append({
-                            'description': f"{product} ({serial})",
-                            'vendor_id': vid,
-                            'product_id': pid,
-                            'device': dev
-                        })
-                    except:
-                        devices.append({
-                            'description': f"STM32 CDC (VID:{vid:04X}, PID:{pid:04X})",
-                            'vendor_id': vid,
-                            'product_id': pid,
-                            'device': dev
-                        })
-            
-            return devices
-        except Exception as e:
-            logging.error(f"Error listing USB devices: {e}")
-            # Return mock devices for testing
-            return [{'description': 'STM32 Virtual COM Port', 'vendor_id': 0x0483, 'product_id': 0x5740}]
-    
-    def open_device(self, device_info):
-        """Open STM32 USB CDC device"""
-        if not USB_AVAILABLE:
-            logging.error("USB not available - cannot open device")
-            return False
-            
-        try:
-            self.device = device_info['device']
-            
-            # Detach kernel driver if active
-            if self.device.is_kernel_driver_active(0):
-                self.device.detach_kernel_driver(0)
-            
-            # Set configuration
-            self.device.set_configuration()
-            
-            # Get CDC endpoints
-            cfg = self.device.get_active_configuration()
-            intf = cfg[(0,0)]
-            
-            # Find bulk endpoints (CDC data interface)
-            self.ep_out = usb.util.find_descriptor(
-                intf,
-                custom_match=lambda e: usb.util.endpoint_direction(e.bEndpointAddress) == usb.util.ENDPOINT_OUT
-            )
-            
-            self.ep_in = usb.util.find_descriptor(
-                intf,
-                custom_match=lambda e: usb.util.endpoint_direction(e.bEndpointAddress) == usb.util.ENDPOINT_IN
-            )
-            
-            if self.ep_out is None or self.ep_in is None:
-                logging.error("Could not find CDC endpoints")
-                return False
-            
-            self.is_open = True
-            logging.info(f"STM32 USB device opened: {device_info['description']}")
-            return True
-            
-        except Exception as e:
-            logging.error(f"Error opening USB device: {e}")
-            return False
-    
-    def send_start_flag(self):
-        """Step 12: Send start flag to STM32 via USB"""
-        start_packet = bytes([23, 46, 158, 237])
-        logging.info("Sending start flag to STM32 via USB...")
-        return self._send_data(start_packet)
-    
-    def send_settings(self, settings):
-        """Step 13: Send radar settings to STM32 via USB"""
-        try:
-            packet = self._create_settings_packet(settings)
-            logging.info("Sending radar settings to STM32 via USB...")
-            return self._send_data(packet)
-        except Exception as e:
-            logging.error(f"Error sending settings via USB: {e}")
-            return False
-    
-    def read_data(self, size=64, timeout=1000):
-        """Read data from STM32 via USB"""
-        if not self.is_open or self.ep_in is None:
-            return None
-            
-        try:
-            data = self.ep_in.read(size, timeout=timeout)
-            return bytes(data)
-        except usb.core.USBError as e:
-            if e.errno == 110:  # Timeout
-                return None
-            logging.error(f"USB read error: {e}")
-            return None
-        except Exception as e:
-            logging.error(f"Error reading from USB: {e}")
-            return None
-    
-    def _send_data(self, data):
-        """Send data to STM32 via USB"""
-        if not self.is_open or self.ep_out is None:
-            return False
-            
-        try:
-            # USB CDC typically uses 64-byte packets
-            packet_size = 64
-            for i in range(0, len(data), packet_size):
-                chunk = data[i:i + packet_size]
-                # Pad to packet size if needed
-                if len(chunk) < packet_size:
-                    chunk += b'\x00' * (packet_size - len(chunk))
-                self.ep_out.write(chunk)
-            
-            return True
-        except Exception as e:
-            logging.error(f"Error sending data via USB: {e}")
-            return False
-    
-    def _create_settings_packet(self, settings):
-        """Create binary settings packet for USB transmission"""
-        packet = b'SET'
-        packet += struct.pack('>d', settings.system_frequency)
-        packet += struct.pack('>d', settings.chirp_duration_1)
-        packet += struct.pack('>d', settings.chirp_duration_2)
-        packet += struct.pack('>I', settings.chirps_per_position)
-        packet += struct.pack('>d', settings.freq_min)
-        packet += struct.pack('>d', settings.freq_max)
-        packet += struct.pack('>d', settings.prf1)
-        packet += struct.pack('>d', settings.prf2)
-        packet += struct.pack('>d', settings.max_distance)
-        packet += struct.pack('>d', settings.map_size)
-        packet += b'END'
-        return packet
-    
-    def close(self):
-        """Close USB device"""
-        if self.device and self.is_open:
-            try:
-                usb.util.dispose_resources(self.device)
-                self.is_open = False
-            except Exception as e:
-                logging.error(f"Error closing USB device: {e}")
-
-
 class RadarGUI:
     def __init__(self, root):
         self.root = root
@@ -1268,8 +1207,58 @@ class RadarGUI:
                                       text="Status: Ready - FT601 USB 3.0")
         self.status_label.grid(row=1, column=6, columnspan=2, sticky='e', padx=5, pady=2)
         
-        # [Rest of setup_main_tab remains the same]
-        # ...
+        # Main display area
+        display_frame = ttk.Frame(self.tab_main)
+        display_frame.pack(fill='both', expand=True, padx=10, pady=5)
+        
+        # Range-Doppler Map with dark theme
+        plt.style.use('dark_background')
+        fig = Figure(figsize=(10, 6), facecolor=DARK_BG)
+        self.range_doppler_ax = fig.add_subplot(111, facecolor=DARK_ACCENT)
+        self.range_doppler_plot = self.range_doppler_ax.imshow(
+            np.random.rand(1024, 32), aspect='auto', cmap='hot', 
+            extent=[0, 32, 0, 1024])
+        self.range_doppler_ax.set_title('Range-Doppler Map (Pitch Corrected)', color=DARK_FG)
+        self.range_doppler_ax.set_xlabel('Doppler Bin', color=DARK_FG)
+        self.range_doppler_ax.set_ylabel('Range Bin', color=DARK_FG)
+        self.range_doppler_ax.tick_params(colors=DARK_FG)
+        self.range_doppler_ax.spines['bottom'].set_color(DARK_FG)
+        self.range_doppler_ax.spines['top'].set_color(DARK_FG)
+        self.range_doppler_ax.spines['left'].set_color(DARK_FG)
+        self.range_doppler_ax.spines['right'].set_color(DARK_FG)
+        
+        self.canvas = FigureCanvasTkAgg(fig, display_frame)
+        self.canvas.draw()
+        self.canvas.get_tk_widget().pack(side='left', fill='both', expand=True)
+        
+        # Targets list with corrected elevation
+        targets_frame = ttk.LabelFrame(display_frame, text="Detected Targets (Pitch Corrected)")
+        targets_frame.pack(side='right', fill='y', padx=5)
+        
+        self.targets_tree = ttk.Treeview(targets_frame, 
+                                       columns=('ID', 'Range', 'Velocity', 'Azimuth', 'Elevation', 'Corrected Elev', 'SNR'), 
+                                       show='headings', height=20)
+        self.targets_tree.heading('ID', text='Track ID')
+        self.targets_tree.heading('Range', text='Range (m)')
+        self.targets_tree.heading('Velocity', text='Velocity (m/s)')
+        self.targets_tree.heading('Azimuth', text='Azimuth')
+        self.targets_tree.heading('Elevation', text='Raw Elev')
+        self.targets_tree.heading('Corrected Elev', text='Corr Elev')
+        self.targets_tree.heading('SNR', text='SNR (dB)')
+        
+        self.targets_tree.column('ID', width=70)
+        self.targets_tree.column('Range', width=90)
+        self.targets_tree.column('Velocity', width=90)
+        self.targets_tree.column('Azimuth', width=70)
+        self.targets_tree.column('Elevation', width=70)
+        self.targets_tree.column('Corrected Elev', width=70)
+        self.targets_tree.column('SNR', width=70)
+        
+        # Add scrollbar to targets tree
+        tree_scroll = ttk.Scrollbar(targets_frame, orient="vertical", command=self.targets_tree.yview)
+        self.targets_tree.configure(yscrollcommand=tree_scroll.set)
+        self.targets_tree.pack(side='left', fill='both', expand=True, padx=5, pady=5)
+        tree_scroll.pack(side='right', fill='y', padx=(0, 5), pady=5)
     
     def setup_map_tab(self):
         """Setup the map display tab with Google Maps"""
@@ -1561,7 +1550,22 @@ class RadarGUI:
         # This should match your packet structure
         return 64  # Example: 64-byte packets
     
-
+    def process_gps_data(self):
+        """Step 16/17: Process GPS data from STM32 via USB CDC"""
+        while True:
+            if self.running and self.stm32_usb_interface.is_open:
+                try:
+                    # Read data from STM32 USB
+                    data = self.stm32_usb_interface.read_data(64, timeout=100)
+                    if data:
+                        gps_data = self.usb_packet_parser.parse_gps_data(data)
+                        if gps_data:
+                            self.gps_data_queue.put(gps_data)
+                            logging.info(f"GPS Data received via USB: Lat {gps_data.latitude:.6f}, Lon {gps_data.longitude:.6f}, Alt {gps_data.altitude:.1f}m, Pitch {gps_data.pitch:.1f}°")
+                except Exception as e:
+                    logging.error(f"Error processing GPS data via USB: {e}")
+            time.sleep(0.1)
+    
     def process_radar_packet(self, packet):
         """Step 40: Process radar data and apply pitch correction"""
         try:
@@ -1632,7 +1636,32 @@ class RadarGUI:
                 target.id == packet['chirp']):
                 target.velocity = velocity
                 break
-    
+
+    def setup_map_tab(self):
+        """Setup the map display tab with Google Maps"""
+        map_frame = ttk.Frame(self.tab_map)
+        map_frame.pack(fill='both', expand=True, padx=10, pady=10)
+        
+        # Map controls
+        controls_frame = ttk.Frame(map_frame)
+        controls_frame.pack(fill='x', pady=5)
+        
+        ttk.Button(controls_frame, text="Open Map in Browser", 
+                  command=self.open_map_in_browser).pack(side='left', padx=5)
+        
+        ttk.Button(controls_frame, text="Refresh Map", 
+                  command=self.refresh_map).pack(side='left', padx=5)
+        
+        self.map_status_label = ttk.Label(controls_frame, text="Map: Ready to generate")
+        self.map_status_label.pack(side='left', padx=20)
+        
+        # Map info display
+        info_frame = ttk.Frame(map_frame)
+        info_frame.pack(fill='x', pady=5)
+        
+        self.map_info_label = ttk.Label(info_frame, text="No GPS data received yet", font=('Arial', 10))
+        self.map_info_label.pack()
+        
     def open_map_in_browser(self):
         """Open the generated map in the default web browser"""
         if self.map_file_path and os.path.exists(self.map_file_path):
@@ -1702,7 +1731,62 @@ class RadarGUI:
                 
         except queue.Empty:
             pass
+
+    def setup_settings_tab(self):
+        """Setup the settings tab with additional chirp durations and map size"""
+        settings_frame = ttk.Frame(self.tab_settings)
+        settings_frame.pack(fill='both', expand=True, padx=10, pady=10)
+        
+        entries = [
+            ('System Frequency (Hz):', 'system_frequency', 10e9),
+            ('Chirp Duration 1 - Long (s):', 'chirp_duration_1', 30e-6),
+            ('Chirp Duration 2 - Short (s):', 'chirp_duration_2', 0.5e-6),
+            ('Chirps per Position:', 'chirps_per_position', 32),
+            ('Frequency Min (Hz):', 'freq_min', 10e6),
+            ('Frequency Max (Hz):', 'freq_max', 30e6),
+            ('PRF1 (Hz):', 'prf1', 1000),
+            ('PRF2 (Hz):', 'prf2', 2000),
+            ('Max Distance (m):', 'max_distance', 50000),
+            ('Map Size (m):', 'map_size', 50000),
+            ('Google Maps API Key:', 'google_maps_api_key', 'YOUR_GOOGLE_MAPS_API_KEY')
+        ]
+        
+        self.settings_vars = {}
+        
+        for i, (label, attr, default) in enumerate(entries):
+            ttk.Label(settings_frame, text=label).grid(row=i, column=0, sticky='w', padx=5, pady=5)
+            var = tk.StringVar(value=str(default))
+            entry = ttk.Entry(settings_frame, textvariable=var, width=25)
+            entry.grid(row=i, column=1, padx=5, pady=5)
+            self.settings_vars[attr] = var
+        
+        ttk.Button(settings_frame, text="Apply Settings", 
+                  command=self.apply_settings).grid(row=len(entries), column=0, columnspan=2, pady=10)
     
+    def apply_settings(self):
+        """Step 13: Apply and send radar settings via USB"""
+        try:
+            self.settings.system_frequency = float(self.settings_vars['system_frequency'].get())
+            self.settings.chirp_duration_1 = float(self.settings_vars['chirp_duration_1'].get())
+            self.settings.chirp_duration_2 = float(self.settings_vars['chirp_duration_2'].get())
+            self.settings.chirps_per_position = int(self.settings_vars['chirps_per_position'].get())
+            self.settings.freq_min = float(self.settings_vars['freq_min'].get())
+            self.settings.freq_max = float(self.settings_vars['freq_max'].get())
+            self.settings.prf1 = float(self.settings_vars['prf1'].get())
+            self.settings.prf2 = float(self.settings_vars['prf2'].get())
+            self.settings.max_distance = float(self.settings_vars['max_distance'].get())
+            self.settings.map_size = float(self.settings_vars['map_size'].get())
+            self.google_maps_api_key = self.settings_vars['google_maps_api_key'].get()
+            
+            if self.stm32_usb_interface.is_open:
+                self.stm32_usb_interface.send_settings(self.settings)
+            
+            messagebox.showinfo("Success", "Settings applied and sent to STM32 via USB")
+            logging.info("Radar settings applied via USB")
+            
+        except ValueError as e:
+            messagebox.showerror("Error", f"Invalid setting value: {e}")
+            
     def update_targets_list(self):
         """Update the targets list display with corrected elevations"""
         for item in self.targets_tree.get_children():
@@ -1726,6 +1810,57 @@ class RadarGUI:
                 f"{target.snr:.1f}"
             ))
 
+    def start_background_threads(self):
+        """Start background data processing threads"""
+        self.radar_thread = threading.Thread(target=self.process_radar_data, daemon=True)
+        self.radar_thread.start()
+        
+        self.gps_thread = threading.Thread(target=self.process_gps_data, daemon=True)
+        self.gps_thread.start()
+        
+        self.root.after(100, self.update_gui)
+    
+    def process_radar_data(self):
+        """Step 39: Process incoming radar data from FTDI"""
+        buffer = b''
+        while True:
+            if self.running and self.ftdi_interface.is_open:
+                try:
+                    data = self.ftdi_interface.read_data(4096)
+                    if data:
+                        buffer += data
+                        
+                        while len(buffer) >= 6:
+                            packet = self.radar_packet_parser.parse_packet(buffer)
+                            if packet:
+                                self.process_radar_packet(packet)
+                                packet_length = 4 + len(packet.get('payload', b'')) + 2
+                                buffer = buffer[packet_length:]
+                                self.received_packets += 1
+                            else:
+                                break
+                                
+                except Exception as e:
+                    logging.error(f"Error processing radar data: {e}")
+                    time.sleep(0.1)
+            else:
+                time.sleep(0.1)
+    
+    def process_gps_data(self):
+        """Step 16/17: Process GPS data from STM32 via USB CDC"""
+        while True:
+            if self.running and self.stm32_usb_interface.is_open:
+                try:
+                    # Read data from STM32 USB
+                    data = self.stm32_usb_interface.read_data(64, timeout=100)
+                    if data:
+                        gps_data = self.usb_packet_parser.parse_gps_data(data)
+                        if gps_data:
+                            self.gps_data_queue.put(gps_data)
+                            logging.info(f"GPS Data received via USB: Lat {gps_data.latitude:.6f}, Lon {gps_data.longitude:.6f}, Alt {gps_data.altitude:.1f}m, Pitch {gps_data.pitch:.1f}°")
+                except Exception as e:
+                    logging.error(f"Error processing GPS data via USB: {e}")
+            time.sleep(0.1)
     
     def update_gui(self):
         """Step 40: Update all GUI displays"""
@@ -1763,5 +1898,4 @@ def main():
         messagebox.showerror("Fatal Error", f"Application failed to start: {e}")
 
 if __name__ == "__main__":
-
     main()
