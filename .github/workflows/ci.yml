@@ -9,12 +9,12 @@ on:
 
 jobs:
   python-checks:
-    name: Python lint + tests (${{ matrix.os }}, py${{ matrix.python-version }})
-    runs-on: ${{ matrix.os }}
+    name: Python lint + tests (${{ matrix.runner }}, py${{ matrix.python-version }})
+    runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        runner: [ubuntu-22.04, ubuntu-24.04, windows-latest, macos-latest]
         python-version: ["3.10", "3.11"]
     steps:
       - name: Checkout
