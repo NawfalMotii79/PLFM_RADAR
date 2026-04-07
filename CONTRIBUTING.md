@@ -40,7 +40,8 @@ broken. All commands assume you are at the repository root.
 | Tool | Used by | Install |
 |------|---------|---------|
 | [Icarus Verilog](http://iverilog.icarus.com/) (`iverilog`) | FPGA regression | `brew install icarus-verilog` / `apt install iverilog` |
-| Python 3.8+ | GUI tests, co-sim | Usually pre-installed |
+| Python 3.10+ | GUI tests, co-sim | Usually pre-installed |
+| [uv](https://docs.astral.sh/uv/) | Python dependency sync, lint/test runner | `curl -LsSf https://astral.sh/uv/install.sh \| sh` |
 | GNU Make | MCU tests | Usually pre-installed |
 | [SymbiYosys](https://symbiyosys.readthedocs.io/) (`sby`) | Formal verification | Optional — see SymbiYosys docs |
 
@@ -77,9 +78,10 @@ Every test binary must exit 0.
 ### GUI / dashboard tests
 
 ```bash
+uv sync --group dev
+uv run pytest 9_Firmware/9_3_GUI/test_radar_dashboard.py -v
+
 cd 9_Firmware/9_3_GUI
-python3 -m pytest test_radar_dashboard.py -v
-# or without pytest:
 python3 -m unittest test_radar_dashboard -v
 ```
 
@@ -134,6 +136,15 @@ Before pushing, confirm:
 4. `python3 validate_mem_files.py` — all checks pass
 5. `python3 compare.py dc && python3 compare_doppler.py stationary && python3 compare_mf.py all`
 6. `git diff --check` — no whitespace issues
+
+## CI checks
+
+GitHub Actions runs automatically on pull requests and pushes to `main` / `develop`:
+
+- Python lint (`ruff`) + Python compile check
+- Dashboard tests (`pytest`)
+- FPGA regression (`bash run_regression.sh`)
+- MCU unit tests (`make clean && make all`)
 
 ## Areas where help is especially welcome
 

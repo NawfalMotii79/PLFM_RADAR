@@ -145,7 +145,7 @@ To keep the repository root clean and make artifacts easy to find, place generat
 
 - Basic understanding of radar principles
 - Experience with PCB assembly (for hardware build)
-- Python 3.8+ for the GUI software
+- Python 3.10+ and [uv](https://docs.astral.sh/uv/) for GUI software tooling
 - FPGA development tools (Vivado) for signal processing modifications
 
 ### Hardware Assembly
