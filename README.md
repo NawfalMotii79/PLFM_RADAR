@@ -74,7 +74,7 @@ The AERIS-10 main sub-systems are:
       - BMP180 Barometer
       - Stepper Motor
       - 8x ADS7830 Temperature Sensors for cooling fan control
-      - RF switches
+      - RF T/R switching (ADAR1000 internal TX/RX enable registers via SPI; ADTR1107 front-end mode select; no external switch ICs)
 
 - **16x Power Amplifier Boards** - Used only for AERIS-10E version, featuring 10Watt QPA2962 GaN amplifier for extended range
 
