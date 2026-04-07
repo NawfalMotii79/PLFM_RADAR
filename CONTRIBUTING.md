@@ -85,6 +85,11 @@ cd 9_Firmware/9_3_GUI
 python3 -m unittest test_radar_dashboard -v
 ```
 
+If you do not use `uv`, install dependencies with
+`python3 -m pip install -r 9_Firmware/9_3_GUI/requirements_dashboard.txt`
+and run `python3 -m pytest 9_Firmware/9_3_GUI/test_radar_dashboard.py -v`
+instead of `uv run pytest`.
+
 57+ protocol and rendering tests. The `test_record_and_stop` test
 requires `h5py` and will be skipped if it is not installed.
 
