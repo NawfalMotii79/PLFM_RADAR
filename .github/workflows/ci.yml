@@ -9,8 +9,13 @@ on:
 
 jobs:
   python-checks:
-    name: Python lint + tests
-    runs-on: ubuntu-latest
+    name: Python lint + tests (${{ matrix.os }}, py${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ["3.10", "3.11"]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -18,7 +23,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: ${{ matrix.python-version }}
 
       - name: Set up uv
         uses: astral-sh/setup-uv@v5
@@ -30,16 +35,7 @@ jobs:
         run: uv run ruff check .
 
       - name: Compile Python
-        run: |
-          uv run python -m py_compile \
-            8_Utils/Python/*.py \
-            9_Firmware/9_2_FPGA/tb/cosim/*.py \
-            9_Firmware/9_2_FPGA/tb/cosim/real_data/golden_reference.py \
-            9_Firmware/9_3_GUI/radar_dashboard.py \
-            9_Firmware/9_3_GUI/radar_protocol.py \
-            9_Firmware/9_3_GUI/smoke_test.py \
-            9_Firmware/9_3_GUI/test_radar_dashboard.py \
-            9_Firmware/tools/uart_capture.py
+        run: uv run python -m py_compile 8_Utils/Python/*.py 9_Firmware/9_2_FPGA/tb/cosim/*.py 9_Firmware/9_2_FPGA/tb/cosim/real_data/golden_reference.py 9_Firmware/9_3_GUI/radar_dashboard.py 9_Firmware/9_3_GUI/radar_protocol.py 9_Firmware/9_3_GUI/smoke_test.py 9_Firmware/9_3_GUI/test_radar_dashboard.py 9_Firmware/tools/uart_capture.py
 
       - name: Run dashboard tests
         run: uv run pytest 9_Firmware/9_3_GUI/test_radar_dashboard.py -v
