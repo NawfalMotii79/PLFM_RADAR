@@ -7,101 +7,51 @@ on:
     branches: [main, develop]
 
 jobs:
-  # ===========================================================================
-  # Job 0: Ruff Lint (all maintained Python files)
-  # Covers: active GUI files, v6+ GUIs, v7/ module, FPGA cosim scripts
-  # Excludes: legacy GUI_V1-V5, schematics, simulation, 8_Utils
-  # ===========================================================================
-  lint:
-    name: Ruff Lint
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Install ruff
-        run: pip install ruff
-
-      - name: Run ruff on maintained files
-        run: |
-          ruff check \
-            9_Firmware/9_3_GUI/radar_protocol.py \
-            9_Firmware/9_3_GUI/radar_dashboard.py \
-            9_Firmware/9_3_GUI/smoke_test.py \
-            9_Firmware/9_3_GUI/test_radar_dashboard.py \
-            9_Firmware/9_3_GUI/GUI_V6.py \
-            9_Firmware/9_3_GUI/GUI_V6_Demo.py \
-            9_Firmware/9_3_GUI/GUI_PyQt_Map.py \
-            9_Firmware/9_3_GUI/GUI_V7_PyQt.py \
-            9_Firmware/9_3_GUI/v7/ \
-            9_Firmware/9_2_FPGA/tb/cosim/ \
-            9_Firmware/9_2_FPGA/tb/gen_mf_golden_ref.py
-
-  # ===========================================================================
-  # Job 1: Python Host Software Tests (58 tests)
-  # radar_protocol, radar_dashboard, FT2232H connection, replay, opcodes, e2e
-  # ===========================================================================
   python-tests:
-    name: Python Dashboard Tests (58)
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync --group dev
+      - run: uv run ruff check .
+      - run: |
+          uv run python - <<'PY'
+          import py_compile
+          from pathlib import Path
+          for p in Path(".").rglob("*.py"):
+              parts = p.parts
+              if "docs" in parts or ".git" in parts or "__pycache__" in parts:
+                  continue
+              if ".venv" in parts or (parts and parts[0] == "venv"):
+                  continue
+              if len(parts) >= 2 and parts[0] == "8_Utils" and parts[1] == "Python":
+                  continue
+              if (
+                  len(parts) >= 3
+                  and parts[0] == "9_Firmware"
+                  and parts[1] == "9_3_GUI"
+                  and p.name.startswith("GUI_")
+              ):
+                  continue
+              py_compile.compile(str(p), doraise=True)
+          PY
+      - run: uv run pytest 9_Firmware/9_3_GUI/test_radar_dashboard.py -v --tb=short
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install pytest numpy h5py
-
-      - name: Run test suite
-        run: python -m pytest 9_Firmware/9_3_GUI/test_radar_dashboard.py -v --tb=short
-
-  # ===========================================================================
-  # Job 2: MCU Firmware Unit Tests (20 tests)
-  # Bug regression (15) + Gap-3 safety tests (5)
-  # ===========================================================================
   mcu-tests:
-    name: MCU Firmware Tests (20)
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Install build tools
-        run: sudo apt-get update && sudo apt-get install -y build-essential
-
-      - name: Build and run MCU tests
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y build-essential
+      - run: make test
         working-directory: 9_Firmware/9_1_Microcontroller/tests
-        run: make test
 
-  # ===========================================================================
-  # Job 3: FPGA RTL Regression (23 testbenches + lint)
-  # Phase 0: Vivado-style lint, Phase 1-4: unit + integration + e2e
-  # ===========================================================================
   fpga-regression:
-    name: FPGA Regression (23 TBs + lint)
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Install Icarus Verilog
-        run: sudo apt-get update && sudo apt-get install -y iverilog
-
-      - name: Run full FPGA regression
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y iverilog
+      - run: bash run_regression.sh
         working-directory: 9_Firmware/9_2_FPGA
-        run: bash run_regression.sh
