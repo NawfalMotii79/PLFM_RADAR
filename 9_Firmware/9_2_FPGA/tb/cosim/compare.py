@@ -31,57 +31,56 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from fpga_model import SignalChain
 
-
 # =============================================================================
 # Configuration
 # =============================================================================
 
 # Thresholds for pass/fail
 # These are generous because of LFSR dithering and CDC latency jitter
-MAX_RMS_ERROR_LSB = 50.0     # Max RMS error in 18-bit LSBs
-MIN_CORRELATION = 0.90        # Min Pearson correlation coefficient
-MAX_LATENCY_DRIFT = 15        # Max latency offset between RTL and model (samples)
-MAX_COUNT_DIFF = 20           # Max output count difference (LFSR dithering affects CIC timing)
+MAX_RMS_ERROR_LSB = 50.0  # Max RMS error in 18-bit LSBs
+MIN_CORRELATION = 0.90  # Min Pearson correlation coefficient
+MAX_LATENCY_DRIFT = 15  # Max latency offset between RTL and model (samples)
+MAX_COUNT_DIFF = 20  # Max output count difference (LFSR dithering affects CIC timing)
 
 # Scenarios
 SCENARIOS = {
-    'dc': {
-        'adc_hex': 'adc_dc.hex',
-        'rtl_csv': 'rtl_bb_dc.csv',
-        'description': 'DC input (ADC=128)',
+    "dc": {
+        "adc_hex": "adc_dc.hex",
+        "rtl_csv": "rtl_bb_dc.csv",
+        "description": "DC input (ADC=128)",
         # DC input: expect small outputs, but LFSR dithering adds ~+128 LSB
         # average bias to NCO FTW which accumulates through CIC integrators
         # as a small DC offset (~15-20 LSB in baseband). This is expected.
-        'max_rms': 25.0,        # Relaxed to account for LFSR dithering bias
-        'min_corr': -1.0,       # Correlation not meaningful for near-zero
+        "max_rms": 25.0,  # Relaxed to account for LFSR dithering bias
+        "min_corr": -1.0,  # Correlation not meaningful for near-zero
     },
-    'single_target': {
-        'adc_hex': 'adc_single_target.hex',
-        'rtl_csv': 'rtl_bb_single_target.csv',
-        'description': 'Single target at 500m',
-        'max_rms': MAX_RMS_ERROR_LSB,
-        'min_corr': -1.0,       # Correlation not meaningful with LFSR dithering
+    "single_target": {
+        "adc_hex": "adc_single_target.hex",
+        "rtl_csv": "rtl_bb_single_target.csv",
+        "description": "Single target at 500m",
+        "max_rms": MAX_RMS_ERROR_LSB,
+        "min_corr": -1.0,  # Correlation not meaningful with LFSR dithering
     },
-    'multi_target': {
-        'adc_hex': 'adc_multi_target.hex',
-        'rtl_csv': 'rtl_bb_multi_target.csv',
-        'description': 'Multi-target (5 targets)',
-        'max_rms': MAX_RMS_ERROR_LSB,
-        'min_corr': -1.0,       # Correlation not meaningful with LFSR dithering
+    "multi_target": {
+        "adc_hex": "adc_multi_target.hex",
+        "rtl_csv": "rtl_bb_multi_target.csv",
+        "description": "Multi-target (5 targets)",
+        "max_rms": MAX_RMS_ERROR_LSB,
+        "min_corr": -1.0,  # Correlation not meaningful with LFSR dithering
     },
-    'noise_only': {
-        'adc_hex': 'adc_noise_only.hex',
-        'rtl_csv': 'rtl_bb_noise_only.csv',
-        'description': 'Noise only',
-        'max_rms': MAX_RMS_ERROR_LSB,
-        'min_corr': -1.0,       # Correlation not meaningful with LFSR dithering
+    "noise_only": {
+        "adc_hex": "adc_noise_only.hex",
+        "rtl_csv": "rtl_bb_noise_only.csv",
+        "description": "Noise only",
+        "max_rms": MAX_RMS_ERROR_LSB,
+        "min_corr": -1.0,  # Correlation not meaningful with LFSR dithering
     },
-    'sine_1mhz': {
-        'adc_hex': 'adc_sine_1mhz.hex',
-        'rtl_csv': 'rtl_bb_sine_1mhz.csv',
-        'description': '1 MHz sine wave',
-        'max_rms': MAX_RMS_ERROR_LSB,
-        'min_corr': -1.0,       # Correlation not meaningful with LFSR dithering
+    "sine_1mhz": {
+        "adc_hex": "adc_sine_1mhz.hex",
+        "rtl_csv": "rtl_bb_sine_1mhz.csv",
+        "description": "1 MHz sine wave",
+        "max_rms": MAX_RMS_ERROR_LSB,
+        "min_corr": -1.0,  # Correlation not meaningful with LFSR dithering
     },
 }
 
@@ -90,13 +89,14 @@ SCENARIOS = {
 # Helper functions
 # =============================================================================
 
+
 def load_adc_hex(filepath):
     """Load 8-bit unsigned ADC samples from hex file."""
     samples = []
-    with open(filepath, 'r') as f:
+    with open(filepath, "r") as f:
         for line in f:
             line = line.strip()
-            if not line or line.startswith('//'):
+            if not line or line.startswith("//"):
                 continue
             samples.append(int(line, 16))
     return samples
@@ -106,13 +106,13 @@ def load_rtl_csv(filepath):
     """Load RTL baseband output CSV (sample_idx, baseband_i, baseband_q)."""
     bb_i = []
     bb_q = []
-    with open(filepath, 'r') as f:
+    with open(filepath, "r") as f:
         f.readline()  # Skip header
         for line in f:
             line = line.strip()
             if not line:
                 continue
-            parts = line.split(',')
+            parts = line.split(",")
             bb_i.append(int(parts[1]))
             bb_q.append(int(parts[2]))
     return bb_i, bb_q
@@ -132,8 +132,8 @@ def run_python_model(adc_samples):
 
     # Use fir_i_raw / fir_q_raw (18-bit) to match RTL's baseband output
     # which is the FIR output before DDC interface 18->16 rounding
-    bb_i = result['fir_i_raw']
-    bb_q = result['fir_q_raw']
+    bb_i = result["fir_i_raw"]
+    bb_q = result["fir_q_raw"]
 
     print(f"  Python model: {len(bb_i)} baseband I, {len(bb_q)} baseband Q outputs")
     return bb_i, bb_q
@@ -201,8 +201,8 @@ def cross_correlate_lag(a, b, max_lag=20):
         if end < 10:
             continue
 
-        seg_a = a[start_a:start_a + end]
-        seg_b = b[start_b:start_b + end]
+        seg_a = a[start_a : start_a + end]
+        seg_b = b[start_b : start_b + end]
 
         corr = compute_correlation(seg_a, seg_b)
         if corr > best_corr:
@@ -215,22 +215,23 @@ def cross_correlate_lag(a, b, max_lag=20):
 def compute_signal_stats(samples):
     """Compute basic statistics of a signal."""
     if not samples:
-        return {'mean': 0, 'rms': 0, 'min': 0, 'max': 0, 'count': 0}
+        return {"mean": 0, "rms": 0, "min": 0, "max": 0, "count": 0}
     n = len(samples)
     mean = sum(samples) / n
     rms = math.sqrt(sum(x * x for x in samples) / n)
     return {
-        'mean': mean,
-        'rms': rms,
-        'min': min(samples),
-        'max': max(samples),
-        'count': n,
+        "mean": mean,
+        "rms": rms,
+        "min": min(samples),
+        "max": max(samples),
+        "count": n,
     }
 
 
 # =============================================================================
 # Main comparison
 # =============================================================================
+
 
 def compare_scenario(scenario_name):
     """Run comparison for one scenario. Returns True if passed."""
@@ -248,7 +249,7 @@ def compare_scenario(scenario_name):
     print("=" * 60)
 
     # ---- Load ADC data ----
-    adc_path = os.path.join(base_dir, cfg['adc_hex'])
+    adc_path = os.path.join(base_dir, cfg["adc_hex"])
     if not os.path.exists(adc_path):
         print(f"ERROR: ADC hex file not found: {adc_path}")
         print("Run radar_scene.py first to generate test vectors.")
@@ -257,7 +258,7 @@ def compare_scenario(scenario_name):
     print(f"\nADC samples loaded: {len(adc_samples)}")
 
     # ---- Load RTL output ----
-    rtl_path = os.path.join(base_dir, cfg['rtl_csv'])
+    rtl_path = os.path.join(base_dir, cfg["rtl_csv"])
     if not os.path.exists(rtl_path):
         print(f"ERROR: RTL CSV not found: {rtl_path}")
         print("Run the RTL simulation first:")
@@ -281,14 +282,22 @@ def compare_scenario(scenario_name):
     py_q_stats = compute_signal_stats(py_q)
 
     print("\nSignal Statistics:")
-    print(f"  RTL I: mean={rtl_i_stats['mean']:.1f}, rms={rtl_i_stats['rms']:.1f}, "
-          f"range=[{rtl_i_stats['min']}, {rtl_i_stats['max']}]")
-    print(f"  RTL Q: mean={rtl_q_stats['mean']:.1f}, rms={rtl_q_stats['rms']:.1f}, "
-          f"range=[{rtl_q_stats['min']}, {rtl_q_stats['max']}]")
-    print(f"  Py  I: mean={py_i_stats['mean']:.1f}, rms={py_i_stats['rms']:.1f}, "
-          f"range=[{py_i_stats['min']}, {py_i_stats['max']}]")
-    print(f"  Py  Q: mean={py_q_stats['mean']:.1f}, rms={py_q_stats['rms']:.1f}, "
-          f"range=[{py_q_stats['min']}, {py_q_stats['max']}]")
+    print(
+        f"  RTL I: mean={rtl_i_stats['mean']:.1f}, rms={rtl_i_stats['rms']:.1f}, "
+        f"range=[{rtl_i_stats['min']}, {rtl_i_stats['max']}]"
+    )
+    print(
+        f"  RTL Q: mean={rtl_q_stats['mean']:.1f}, rms={rtl_q_stats['rms']:.1f}, "
+        f"range=[{rtl_q_stats['min']}, {rtl_q_stats['max']}]"
+    )
+    print(
+        f"  Py  I: mean={py_i_stats['mean']:.1f}, rms={py_i_stats['rms']:.1f}, "
+        f"range=[{py_i_stats['min']}, {py_i_stats['max']}]"
+    )
+    print(
+        f"  Py  Q: mean={py_q_stats['mean']:.1f}, rms={py_q_stats['rms']:.1f}, "
+        f"range=[{py_q_stats['min']}, {py_q_stats['max']}]"
+    )
 
     # ---- Trim to common length ----
     common_len = min(len(rtl_i), len(py_i))
@@ -303,10 +312,8 @@ def compare_scenario(scenario_name):
 
     # ---- Cross-correlation to find latency offset ----
     print(f"\nLatency alignment (cross-correlation, max lag=±{MAX_LATENCY_DRIFT}):")
-    lag_i, corr_i = cross_correlate_lag(rtl_i_trim, py_i_trim,
-                                        max_lag=MAX_LATENCY_DRIFT)
-    lag_q, corr_q = cross_correlate_lag(rtl_q_trim, py_q_trim,
-                                        max_lag=MAX_LATENCY_DRIFT)
+    lag_i, corr_i = cross_correlate_lag(rtl_i_trim, py_i_trim, max_lag=MAX_LATENCY_DRIFT)
+    lag_q, corr_q = cross_correlate_lag(rtl_q_trim, py_q_trim, max_lag=MAX_LATENCY_DRIFT)
     print(f"  I-channel: best lag={lag_i}, correlation={corr_i:.6f}")
     print(f"  Q-channel: best lag={lag_q}, correlation={corr_q:.6f}")
 
@@ -321,14 +328,14 @@ def compare_scenario(scenario_name):
         # RTL is delayed relative to Python
         aligned_rtl_i = rtl_i_trim[best_lag:]
         aligned_rtl_q = rtl_q_trim[best_lag:]
-        aligned_py_i = py_i_trim[:len(aligned_rtl_i)]
-        aligned_py_q = py_q_trim[:len(aligned_rtl_q)]
+        aligned_py_i = py_i_trim[: len(aligned_rtl_i)]
+        aligned_py_q = py_q_trim[: len(aligned_rtl_q)]
     elif best_lag < 0:
         # Python is delayed relative to RTL
         aligned_py_i = py_i_trim[-best_lag:]
         aligned_py_q = py_q_trim[-best_lag:]
-        aligned_rtl_i = rtl_i_trim[:len(aligned_py_i)]
-        aligned_rtl_q = rtl_q_trim[:len(aligned_py_q)]
+        aligned_rtl_i = rtl_i_trim[: len(aligned_py_i)]
+        aligned_rtl_q = rtl_q_trim[: len(aligned_py_q)]
     else:
         aligned_rtl_i = rtl_i_trim
         aligned_rtl_q = rtl_q_trim
@@ -358,86 +365,107 @@ def compare_scenario(scenario_name):
 
     # ---- First/last sample comparison ----
     print("\nFirst 10 samples (after alignment):")
-    print(f"  {'idx':>4s}  {'RTL_I':>8s}  {'Py_I':>8s}  {'Err_I':>6s}  {'RTL_Q':>8s}  {'Py_Q':>8s}  {'Err_Q':>6s}")
+    print(
+        f"  {'idx':>4s}  {'RTL_I':>8s}  {'Py_I':>8s}  {'Err_I':>6s}  {'RTL_Q':>8s}  {'Py_Q':>8s}  {'Err_Q':>6s}"
+    )
     for k in range(min(10, aligned_len)):
         ei = aligned_rtl_i[k] - aligned_py_i[k]
         eq = aligned_rtl_q[k] - aligned_py_q[k]
-        print(f"  {k:4d}  {aligned_rtl_i[k]:8d}  {aligned_py_i[k]:8d}  {ei:6d}  "
-              f"{aligned_rtl_q[k]:8d}  {aligned_py_q[k]:8d}  {eq:6d}")
+        print(
+            f"  {k:4d}  {aligned_rtl_i[k]:8d}  {aligned_py_i[k]:8d}  {ei:6d}  "
+            f"{aligned_rtl_q[k]:8d}  {aligned_py_q[k]:8d}  {eq:6d}"
+        )
 
     # ---- Write detailed comparison CSV ----
     compare_csv_path = os.path.join(base_dir, f"compare_{scenario_name}.csv")
-    with open(compare_csv_path, 'w') as f:
+    with open(compare_csv_path, "w") as f:
         f.write("idx,rtl_i,py_i,err_i,rtl_q,py_q,err_q\n")
         for k in range(aligned_len):
             ei = aligned_rtl_i[k] - aligned_py_i[k]
             eq = aligned_rtl_q[k] - aligned_py_q[k]
-            f.write(f"{k},{aligned_rtl_i[k]},{aligned_py_i[k]},{ei},"
-                    f"{aligned_rtl_q[k]},{aligned_py_q[k]},{eq}\n")
+            f.write(
+                f"{k},{aligned_rtl_i[k]},{aligned_py_i[k]},{ei},"
+                f"{aligned_rtl_q[k]},{aligned_py_q[k]},{eq}\n"
+            )
     print(f"\nDetailed comparison written to: {compare_csv_path}")
 
     # ---- Pass/Fail ----
-    max_rms = cfg.get('max_rms', MAX_RMS_ERROR_LSB)
-    min_corr = cfg.get('min_corr', MIN_CORRELATION)
+    max_rms = cfg.get("max_rms", MAX_RMS_ERROR_LSB)
+    min_corr = cfg.get("min_corr", MIN_CORRELATION)
 
     results = []
 
     # Check 1: Output count sanity
     count_ok = len_diff <= MAX_COUNT_DIFF
-    results.append(('Output count match', count_ok,
-                     f"diff={len_diff} <= {MAX_COUNT_DIFF}"))
+    results.append(("Output count match", count_ok, f"diff={len_diff} <= {MAX_COUNT_DIFF}"))
 
     # Check 2: RMS amplitude ratio (RTL vs Python should have same power)
     # The LFSR dithering randomizes sample phases but preserves overall
     # signal power, so RMS amplitudes should match within ~10%.
-    rtl_rms = max(rtl_i_stats['rms'], rtl_q_stats['rms'])
-    py_rms = max(py_i_stats['rms'], py_q_stats['rms'])
+    rtl_rms = max(rtl_i_stats["rms"], rtl_q_stats["rms"])
+    py_rms = max(py_i_stats["rms"], py_q_stats["rms"])
     if py_rms > 1.0 and rtl_rms > 1.0:
         rms_ratio = max(rtl_rms, py_rms) / min(rtl_rms, py_rms)
         rms_ratio_ok = rms_ratio <= 1.20  # Within 20%
-        results.append(('RMS amplitude ratio', rms_ratio_ok,
-                         f"ratio={rms_ratio:.3f} <= 1.20"))
+        results.append(("RMS amplitude ratio", rms_ratio_ok, f"ratio={rms_ratio:.3f} <= 1.20"))
     else:
         # Near-zero signals (DC input): check absolute RMS error
         rms_ok = max(rms_i, rms_q) <= max_rms
-        results.append(('RMS error (low signal)', rms_ok,
-                         f"max(I={rms_i:.2f}, Q={rms_q:.2f}) <= {max_rms:.1f}"))
+        results.append(
+            (
+                "RMS error (low signal)",
+                rms_ok,
+                f"max(I={rms_i:.2f}, Q={rms_q:.2f}) <= {max_rms:.1f}",
+            )
+        )
 
     # Check 3: Mean DC offset match
     # Both should have similar DC bias. For large signals (where LFSR dithering
     # causes the NCO to walk in phase), allow the mean to differ proportionally
     # to the signal RMS. Use max(30 LSB, 3% of signal RMS).
-    mean_err_i = abs(rtl_i_stats['mean'] - py_i_stats['mean'])
-    mean_err_q = abs(rtl_q_stats['mean'] - py_q_stats['mean'])
+    mean_err_i = abs(rtl_i_stats["mean"] - py_i_stats["mean"])
+    mean_err_q = abs(rtl_q_stats["mean"] - py_q_stats["mean"])
     max_mean_err = max(mean_err_i, mean_err_q)
     signal_rms = max(rtl_rms, py_rms)
     mean_threshold = max(30.0, signal_rms * 0.03)  # 3% of signal RMS or 30 LSB
     mean_ok = max_mean_err <= mean_threshold
-    results.append(('Mean DC offset match', mean_ok,
-                     f"max_diff={max_mean_err:.1f} <= {mean_threshold:.1f}"))
+    results.append(
+        ("Mean DC offset match", mean_ok, f"max_diff={max_mean_err:.1f} <= {mean_threshold:.1f}")
+    )
 
     # Check 4: Correlation (skip for near-zero signals or dithered scenarios)
     if min_corr > -0.5:
         corr_ok = min(corr_i_aligned, corr_q_aligned) >= min_corr
-        results.append(('Correlation', corr_ok,
-                         f"min(I={corr_i_aligned:.4f}, Q={corr_q_aligned:.4f}) >= {min_corr:.2f}"))
+        results.append(
+            (
+                "Correlation",
+                corr_ok,
+                f"min(I={corr_i_aligned:.4f}, Q={corr_q_aligned:.4f}) >= {min_corr:.2f}",
+            )
+        )
 
     # Check 5: Dynamic range match
     # Peak amplitudes should be in the same ballpark
-    rtl_peak = max(abs(rtl_i_stats['min']), abs(rtl_i_stats['max']),
-                   abs(rtl_q_stats['min']), abs(rtl_q_stats['max']))
-    py_peak = max(abs(py_i_stats['min']), abs(py_i_stats['max']),
-                  abs(py_q_stats['min']), abs(py_q_stats['max']))
+    rtl_peak = max(
+        abs(rtl_i_stats["min"]),
+        abs(rtl_i_stats["max"]),
+        abs(rtl_q_stats["min"]),
+        abs(rtl_q_stats["max"]),
+    )
+    py_peak = max(
+        abs(py_i_stats["min"]),
+        abs(py_i_stats["max"]),
+        abs(py_q_stats["min"]),
+        abs(py_q_stats["max"]),
+    )
     if py_peak > 10 and rtl_peak > 10:
         peak_ratio = max(rtl_peak, py_peak) / min(rtl_peak, py_peak)
         peak_ok = peak_ratio <= 1.50  # Within 50%
-        results.append(('Peak amplitude ratio', peak_ok,
-                         f"ratio={peak_ratio:.3f} <= 1.50"))
+        results.append(("Peak amplitude ratio", peak_ok, f"ratio={peak_ratio:.3f} <= 1.50"))
 
     # Check 6: Latency offset
     lag_ok = abs(best_lag) <= MAX_LATENCY_DRIFT
-    results.append(('Latency offset', lag_ok,
-                     f"|{best_lag}| <= {MAX_LATENCY_DRIFT}"))
+    results.append(("Latency offset", lag_ok, f"|{best_lag}| <= {MAX_LATENCY_DRIFT}"))
 
     # ---- Report ----
     print(f"\n{'─' * 60}")
@@ -463,14 +491,14 @@ def main():
     """Run comparison for specified scenario(s)."""
     if len(sys.argv) > 1:
         scenario = sys.argv[1]
-        if scenario == 'all':
+        if scenario == "all":
             # Run all scenarios that have RTL CSV files
             base_dir = os.path.dirname(os.path.abspath(__file__))
             overall_pass = True
             run_count = 0
             pass_count = 0
             for name, cfg in SCENARIOS.items():
-                rtl_path = os.path.join(base_dir, cfg['rtl_csv'])
+                rtl_path = os.path.join(base_dir, cfg["rtl_csv"])
                 if os.path.exists(rtl_path):
                     ok = compare_scenario(name)
                     run_count += 1
@@ -495,9 +523,9 @@ def main():
             return 0 if ok else 1
     else:
         # Default: DC
-        ok = compare_scenario('dc')
+        ok = compare_scenario("dc")
         return 0 if ok else 1
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main())

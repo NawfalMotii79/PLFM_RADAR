@@ -22,41 +22,40 @@ Author: Phase 0.5 co-simulation suite for PLFM_RADAR
 import math
 import os
 
-
 # =============================================================================
 # AERIS-10 System Parameters
 # =============================================================================
 
 # RF parameters
-F_CARRIER = 10.5e9        # 10.5 GHz carrier
-C_LIGHT = 3.0e8           # Speed of light (m/s)
+F_CARRIER = 10.5e9  # 10.5 GHz carrier
+C_LIGHT = 3.0e8  # Speed of light (m/s)
 WAVELENGTH = C_LIGHT / F_CARRIER  # ~0.02857 m
 
 # Chirp parameters
-F_IF = 120e6              # IF frequency (120 MHz)
-CHIRP_BW = 20e6           # Chirp bandwidth (30 MHz -> 10 MHz = 20 MHz sweep)
-F_CHIRP_START = 30e6      # Chirp start frequency (relative to IF)
-F_CHIRP_END = 10e6        # Chirp end frequency (relative to IF)
+F_IF = 120e6  # IF frequency (120 MHz)
+CHIRP_BW = 20e6  # Chirp bandwidth (30 MHz -> 10 MHz = 20 MHz sweep)
+F_CHIRP_START = 30e6  # Chirp start frequency (relative to IF)
+F_CHIRP_END = 10e6  # Chirp end frequency (relative to IF)
 
 # Sampling
-FS_ADC = 400e6            # ADC sample rate (400 MSPS)
-FS_SYS = 100e6            # System clock (100 MHz)
-ADC_BITS = 8              # ADC resolution
+FS_ADC = 400e6  # ADC sample rate (400 MSPS)
+FS_SYS = 100e6  # System clock (100 MHz)
+ADC_BITS = 8  # ADC resolution
 
 # Chirp timing
-T_LONG_CHIRP = 30e-6      # 30 us long chirp duration
-T_SHORT_CHIRP = 0.5e-6    # 0.5 us short chirp
-T_LISTEN_LONG = 137e-6    # 137 us listening window
-T_PRI_LONG = 167e-6       # 30 us chirp + 137 us listen
-T_PRI_SHORT = 175e-6      # staggered short-PRI sub-frame
+T_LONG_CHIRP = 30e-6  # 30 us long chirp duration
+T_SHORT_CHIRP = 0.5e-6  # 0.5 us short chirp
+T_LISTEN_LONG = 137e-6  # 137 us listening window
+T_PRI_LONG = 167e-6  # 30 us chirp + 137 us listen
+T_PRI_SHORT = 175e-6  # staggered short-PRI sub-frame
 N_SAMPLES_LISTEN = int(T_LISTEN_LONG * FS_ADC)  # 54800 samples
 
 # Processing chain
 CIC_DECIMATION = 4
 FFT_SIZE = 1024
 RANGE_BINS = 64
-DOPPLER_FFT_SIZE = 16      # Per sub-frame
-DOPPLER_TOTAL_BINS = 32    # Total output bins (2 sub-frames x 16)
+DOPPLER_FFT_SIZE = 16  # Per sub-frame
+DOPPLER_TOTAL_BINS = 32  # Total output bins (2 sub-frames x 16)
 CHIRPS_PER_SUBFRAME = 16
 CHIRPS_PER_FRAME = 32
 
@@ -68,16 +67,73 @@ VELOCITY_RESOLUTION_SHORT = WAVELENGTH / (2 * CHIRPS_PER_SUBFRAME * T_PRI_SHORT)
 
 # Short chirp LUT (60 entries, 8-bit unsigned)
 SHORT_CHIRP_LUT = [
-    255, 237, 187, 118, 49, 6, 7, 54, 132, 210, 253, 237, 167, 75, 10, 10,
-    80, 180, 248, 237, 150, 45, 1, 54, 167, 249, 228, 118, 15, 18, 127, 238,
-    235, 118, 10, 34, 167, 254, 187, 45, 8, 129, 248, 201, 49, 10, 145, 254,
-    167, 17, 46, 210, 235, 75, 7, 155, 253, 118, 1, 129,
+    255,
+    237,
+    187,
+    118,
+    49,
+    6,
+    7,
+    54,
+    132,
+    210,
+    253,
+    237,
+    167,
+    75,
+    10,
+    10,
+    80,
+    180,
+    248,
+    237,
+    150,
+    45,
+    1,
+    54,
+    167,
+    249,
+    228,
+    118,
+    15,
+    18,
+    127,
+    238,
+    235,
+    118,
+    10,
+    34,
+    167,
+    254,
+    187,
+    45,
+    8,
+    129,
+    248,
+    201,
+    49,
+    10,
+    145,
+    254,
+    167,
+    17,
+    46,
+    210,
+    235,
+    75,
+    7,
+    155,
+    253,
+    118,
+    1,
+    129,
 ]
 
 
 # =============================================================================
 # Target definition
 # =============================================================================
+
 
 class Target:
     """Represents a radar target."""
@@ -118,18 +174,21 @@ class Target:
         rcs_linear = 10 ** (self.rcs_dbsm / 10.0)
         if self.range_m <= 0:
             return 0.0
-        amp = math.sqrt(rcs_linear) / (self.range_m ** 2)
+        amp = math.sqrt(rcs_linear) / (self.range_m**2)
         # Scale to ADC range: 100m/0dBsm -> ~64 counts (half of 128 peak-to-peak)
-        return amp * (100.0 ** 2) * 64.0
+        return amp * (100.0**2) * 64.0
 
     def __repr__(self):
-        return (f"Target(range={self.range_m:.1f}m, vel={self.velocity_mps:.1f}m/s, "
-                f"RCS={self.rcs_dbsm:.1f}dBsm, delay={self.delay_samples:.1f}samp)")
+        return (
+            f"Target(range={self.range_m:.1f}m, vel={self.velocity_mps:.1f}m/s, "
+            f"RCS={self.rcs_dbsm:.1f}dBsm, delay={self.delay_samples:.1f}samp)"
+        )
 
 
 # =============================================================================
 # IF chirp signal generation
 # =============================================================================
+
 
 def generate_if_chirp(n_samples, chirp_bw=CHIRP_BW, f_if=F_IF, fs=FS_ADC):
     """
@@ -202,8 +261,8 @@ def generate_reference_chirp_q15(n_fft=FFT_SIZE, chirp_bw=CHIRP_BW, f_if=F_IF, f
 # ADC sample generation with targets
 # =============================================================================
 
-def generate_adc_samples(targets, n_samples, noise_stddev=3.0,
-                         clutter_amplitude=0.0, seed=42):
+
+def generate_adc_samples(targets, n_samples, noise_stddev=3.0, clutter_amplitude=0.0, seed=42):
     """
     Generate synthetic ADC samples for a radar scene.
 
@@ -226,6 +285,7 @@ def generate_adc_samples(targets, n_samples, noise_stddev=3.0,
     """
     # Simple LCG random number generator (no numpy dependency)
     rng_state = seed
+
     def next_rand():
         nonlocal rng_state
         rng_state = (rng_state * 1103515245 + 12345) & 0x7FFFFFFF
@@ -234,8 +294,8 @@ def generate_adc_samples(targets, n_samples, noise_stddev=3.0,
     def rand_gaussian():
         """Box-Muller transform using LCG."""
         while True:
-            u1 = (next_rand() / 0x7FFFFFFF)
-            u2 = (next_rand() / 0x7FFFFFFF)
+            u1 = next_rand() / 0x7FFFFFFF
+            u2 = next_rand() / 0x7FFFFFFF
             if u1 > 1e-10:
                 break
         return math.sqrt(-2.0 * math.log(u1)) * math.cos(2.0 * math.pi * u2)
@@ -262,10 +322,12 @@ def generate_adc_samples(targets, n_samples, noise_stddev=3.0,
             t_delayed = n_delayed / FS_ADC
 
             # Signal at IF: cos(2*pi*f_if*t + pi*chirp_rate*t_delayed^2 + doppler + phase)
-            phase = (2 * math.pi * F_IF * t
-                     + math.pi * chirp_rate * t_delayed * t_delayed
-                     + 2 * math.pi * doppler_hz * t
-                     + phase0)
+            phase = (
+                2 * math.pi * F_IF * t
+                + math.pi * chirp_rate * t_delayed * t_delayed
+                + 2 * math.pi * doppler_hz * t
+                + phase0
+            )
 
             adc_float[n] += amp * math.cos(phase)
 
@@ -291,8 +353,7 @@ def generate_adc_samples(targets, n_samples, noise_stddev=3.0,
     return adc_samples
 
 
-def generate_baseband_samples(targets, n_samples_baseband, noise_stddev=0.5,
-                              seed=42):
+def generate_baseband_samples(targets, n_samples_baseband, noise_stddev=0.5, seed=42):
     """
     Generate synthetic baseband I/Q samples AFTER DDC.
 
@@ -313,6 +374,7 @@ def generate_baseband_samples(targets, n_samples_baseband, noise_stddev=0.5,
         (bb_i, bb_q): lists of signed 16-bit integers (Q15)
     """
     rng_state = seed
+
     def next_rand():
         nonlocal rng_state
         rng_state = (rng_state * 1103515245 + 12345) & 0x7FFFFFFF
@@ -320,8 +382,8 @@ def generate_baseband_samples(targets, n_samples_baseband, noise_stddev=0.5,
 
     def rand_gaussian():
         while True:
-            u1 = (next_rand() / 0x7FFFFFFF)
-            u2 = (next_rand() / 0x7FFFFFFF)
+            u1 = next_rand() / 0x7FFFFFFF
+            u2 = next_rand() / 0x7FFFFFFF
             if u1 > 1e-10:
                 break
         return math.sqrt(-2.0 * math.log(u1)) * math.cos(2.0 * math.pi * u2)
@@ -358,8 +420,10 @@ def generate_baseband_samples(targets, n_samples_baseband, noise_stddev=0.5,
 # Multi-chirp frame generation (for Doppler processing)
 # =============================================================================
 
-def generate_doppler_frame(targets, n_chirps=CHIRPS_PER_FRAME,
-                           n_range_bins=RANGE_BINS, noise_stddev=0.5, seed=42):
+
+def generate_doppler_frame(
+    targets, n_chirps=CHIRPS_PER_FRAME, n_range_bins=RANGE_BINS, noise_stddev=0.5, seed=42
+):
     """
     Generate a complete Doppler frame (32 chirps x 64 range bins).
 
@@ -375,6 +439,7 @@ def generate_doppler_frame(targets, n_chirps=CHIRPS_PER_FRAME,
         (frame_i, frame_q): [n_chirps][n_range_bins] arrays of signed 16-bit
     """
     rng_state = seed
+
     def next_rand():
         nonlocal rng_state
         rng_state = (rng_state * 1103515245 + 12345) & 0x7FFFFFFF
@@ -382,8 +447,8 @@ def generate_doppler_frame(targets, n_chirps=CHIRPS_PER_FRAME,
 
     def rand_gaussian():
         while True:
-            u1 = (next_rand() / 0x7FFFFFFF)
-            u2 = (next_rand() / 0x7FFFFFFF)
+            u1 = next_rand() / 0x7FFFFFFF
+            u2 = next_rand() / 0x7FFFFFFF
             if u1 > 1e-10:
                 break
         return math.sqrt(-2.0 * math.log(u1)) * math.cos(2.0 * math.pi * u2)
@@ -415,8 +480,9 @@ def generate_doppler_frame(targets, n_chirps=CHIRPS_PER_FRAME,
             if chirp_idx < CHIRPS_PER_SUBFRAME:
                 slow_time_s = chirp_idx * T_PRI_LONG
             else:
-                slow_time_s = (CHIRPS_PER_SUBFRAME * T_PRI_LONG) + \
-                              ((chirp_idx - CHIRPS_PER_SUBFRAME) * T_PRI_SHORT)
+                slow_time_s = (CHIRPS_PER_SUBFRAME * T_PRI_LONG) + (
+                    (chirp_idx - CHIRPS_PER_SUBFRAME) * T_PRI_SHORT
+                )
 
             doppler_phase = 2 * math.pi * target.doppler_hz * slow_time_s
             total_phase = doppler_phase + target.phase_deg * math.pi / 180.0
@@ -452,6 +518,7 @@ def generate_doppler_frame(targets, n_chirps=CHIRPS_PER_FRAME,
 # Output file generators
 # =============================================================================
 
+
 def write_hex_file(filepath, samples, bits=8):
     """
     Write samples to hex file for Verilog $readmemh.
@@ -464,7 +531,7 @@ def write_hex_file(filepath, samples, bits=8):
     hex_digits = (bits + 3) // 4
     fmt = f"{{:0{hex_digits}X}}"
 
-    with open(filepath, 'w') as f:
+    with open(filepath, "w") as f:
         f.write(f"// {len(samples)} samples, {bits}-bit, hex format for $readmemh\n")
         for i, s in enumerate(samples):
             if bits <= 8:
@@ -490,7 +557,7 @@ def write_csv_file(filepath, columns, headers=None):
         headers: list of column header strings
     """
     n_rows = len(columns[0])
-    with open(filepath, 'w') as f:
+    with open(filepath, "w") as f:
         if headers:
             f.write(",".join(headers) + "\n")
         for i in range(n_rows):
@@ -503,6 +570,7 @@ def write_csv_file(filepath, columns, headers=None):
 # =============================================================================
 # Pre-built test scenarios
 # =============================================================================
+
 
 def scenario_single_target(range_m=500, velocity=0, rcs=0, n_adc_samples=16384):
     """
@@ -576,7 +644,7 @@ def scenario_sine_wave(n_adc_samples=16384, freq_hz=1e6, amplitude=50):
     """
     Pure sine wave at ADC input — validates NCO/mixer frequency response.
     """
-    print(f"Scenario: Sine wave at {freq_hz/1e6:.1f} MHz, amplitude={amplitude}")
+    print(f"Scenario: Sine wave at {freq_hz / 1e6:.1f} MHz, amplitude={amplitude}")
     adc = []
     for n in range(n_adc_samples):
         t = n / FS_ADC
@@ -588,6 +656,7 @@ def scenario_sine_wave(n_adc_samples=16384, freq_hz=1e6, amplitude=50):
 # =============================================================================
 # Main: Generate all test vectors
 # =============================================================================
+
 
 def generate_all_test_vectors(output_dir=None):
     """
@@ -656,17 +725,17 @@ def generate_all_test_vectors(output_dir=None):
 
     # --- Scenario info CSV ---
     print("\n--- Scenario Info ---")
-    with open(os.path.join(output_dir, "scenario_info.txt"), 'w') as f:
+    with open(os.path.join(output_dir, "scenario_info.txt"), "w") as f:
         f.write("AERIS-10 Test Vector Scenarios\n")
         f.write("=" * 60 + "\n\n")
 
         f.write("System Parameters:\n")
-        f.write(f"  Carrier: {F_CARRIER/1e9:.1f} GHz\n")
-        f.write(f"  IF: {F_IF/1e6:.0f} MHz\n")
-        f.write(f"  Chirp BW: {CHIRP_BW/1e6:.0f} MHz\n")
-        f.write(f"  ADC: {FS_ADC/1e6:.0f} MSPS, {ADC_BITS}-bit\n")
+        f.write(f"  Carrier: {F_CARRIER / 1e9:.1f} GHz\n")
+        f.write(f"  IF: {F_IF / 1e6:.0f} MHz\n")
+        f.write(f"  Chirp BW: {CHIRP_BW / 1e6:.0f} MHz\n")
+        f.write(f"  ADC: {FS_ADC / 1e6:.0f} MSPS, {ADC_BITS}-bit\n")
         f.write(f"  Range resolution: {RANGE_RESOLUTION:.1f} m\n")
-        f.write(f"  Wavelength: {WAVELENGTH*1000:.2f} mm\n")
+        f.write(f"  Wavelength: {WAVELENGTH * 1000:.2f} mm\n")
         f.write("\n")
 
         f.write("Scenario 1: Single target\n")
@@ -692,17 +761,17 @@ def generate_all_test_vectors(output_dir=None):
     print("=" * 60)
 
     return {
-        'adc_single': adc1,
-        'adc_multi': adc2,
-        'adc_noise': adc3,
-        'adc_dc': adc4,
-        'adc_sine': adc5,
-        'ref_chirp_re': ref_re,
-        'ref_chirp_im': ref_im,
-        'bb_i': bb_i,
-        'bb_q': bb_q,
+        "adc_single": adc1,
+        "adc_multi": adc2,
+        "adc_noise": adc3,
+        "adc_dc": adc4,
+        "adc_sine": adc5,
+        "ref_chirp_re": ref_re,
+        "ref_chirp_im": ref_im,
+        "bb_i": bb_i,
+        "bb_q": bb_q,
     }
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     generate_all_test_vectors()

@@ -15,16 +15,15 @@ USB Packet Protocol (11-byte):
     Command: 4 bytes received sequentially {opcode, addr, value_hi, value_lo}
 """
 
-import os
-import struct
-import time
-import threading
-import queue
 import logging
+import os
+import queue
+import struct
+import threading
+import time
 from dataclasses import dataclass, field
-from typing import Optional, List, Tuple, Dict, Any
 from enum import IntEnum
-
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 
@@ -39,8 +38,8 @@ FOOTER_BYTE = 0x55
 STATUS_HEADER_BYTE = 0xBB
 
 # Packet sizes
-DATA_PACKET_SIZE = 11               # 1 + 4 + 2 + 2 + 1 + 1
-STATUS_PACKET_SIZE = 26              # 1 + 24 + 1
+DATA_PACKET_SIZE = 11  # 1 + 4 + 2 + 2 + 1 + 1
+STATUS_PACKET_SIZE = 26  # 1 + 24 + 1
 
 NUM_RANGE_BINS = 64
 NUM_DOPPLER_BINS = 32
@@ -51,50 +50,58 @@ WATERFALL_DEPTH = 64
 
 class Opcode(IntEnum):
     """Host register opcodes (matches radar_system_top.v command decode)."""
-    TRIGGER             = 0x01
-    PRF_DIV             = 0x02
-    NUM_CHIRPS          = 0x03
-    CHIRP_TIMER         = 0x04
-    STREAM_ENABLE       = 0x05
-    GAIN_SHIFT          = 0x06
-    THRESHOLD           = 0x10
-    LONG_CHIRP          = 0x10
-    LONG_LISTEN         = 0x11
-    GUARD               = 0x12
-    SHORT_CHIRP         = 0x13
-    SHORT_LISTEN        = 0x14
-    CHIRPS_PER_ELEV     = 0x15
-    RANGE_MODE          = 0x20
-    CFAR_GUARD          = 0x21
-    CFAR_TRAIN          = 0x22
-    CFAR_ALPHA          = 0x23
-    CFAR_MODE           = 0x24
-    CFAR_ENABLE         = 0x25
-    MTI_ENABLE          = 0x26
-    DC_NOTCH_WIDTH      = 0x27
-    SELF_TEST_TRIGGER   = 0x30
-    SELF_TEST_STATUS    = 0x31
-    STATUS_REQUEST      = 0xFF
+
+    TRIGGER = 0x01
+    PRF_DIV = 0x02
+    NUM_CHIRPS = 0x03
+    CHIRP_TIMER = 0x04
+    STREAM_ENABLE = 0x05
+    GAIN_SHIFT = 0x06
+    THRESHOLD = 0x10
+    LONG_CHIRP = 0x10
+    LONG_LISTEN = 0x11
+    GUARD = 0x12
+    SHORT_CHIRP = 0x13
+    SHORT_LISTEN = 0x14
+    CHIRPS_PER_ELEV = 0x15
+    RANGE_MODE = 0x20
+    CFAR_GUARD = 0x21
+    CFAR_TRAIN = 0x22
+    CFAR_ALPHA = 0x23
+    CFAR_MODE = 0x24
+    CFAR_ENABLE = 0x25
+    MTI_ENABLE = 0x26
+    DC_NOTCH_WIDTH = 0x27
+    SELF_TEST_TRIGGER = 0x30
+    SELF_TEST_STATUS = 0x31
+    STATUS_REQUEST = 0xFF
 
 
 # ============================================================================
 # Data Structures
 # ============================================================================
 
+
 @dataclass
 class RadarFrame:
     """One complete radar frame (64 range × 32 Doppler)."""
+
     timestamp: float = 0.0
     range_doppler_i: np.ndarray = field(
-        default_factory=lambda: np.zeros((NUM_RANGE_BINS, NUM_DOPPLER_BINS), dtype=np.int16))
+        default_factory=lambda: np.zeros((NUM_RANGE_BINS, NUM_DOPPLER_BINS), dtype=np.int16)
+    )
     range_doppler_q: np.ndarray = field(
-        default_factory=lambda: np.zeros((NUM_RANGE_BINS, NUM_DOPPLER_BINS), dtype=np.int16))
+        default_factory=lambda: np.zeros((NUM_RANGE_BINS, NUM_DOPPLER_BINS), dtype=np.int16)
+    )
     magnitude: np.ndarray = field(
-        default_factory=lambda: np.zeros((NUM_RANGE_BINS, NUM_DOPPLER_BINS), dtype=np.float64))
+        default_factory=lambda: np.zeros((NUM_RANGE_BINS, NUM_DOPPLER_BINS), dtype=np.float64)
+    )
     detections: np.ndarray = field(
-        default_factory=lambda: np.zeros((NUM_RANGE_BINS, NUM_DOPPLER_BINS), dtype=np.uint8))
+        default_factory=lambda: np.zeros((NUM_RANGE_BINS, NUM_DOPPLER_BINS), dtype=np.uint8)
+    )
     range_profile: np.ndarray = field(
-        default_factory=lambda: np.zeros(NUM_RANGE_BINS, dtype=np.float64))
+        default_factory=lambda: np.zeros(NUM_RANGE_BINS, dtype=np.float64)
+    )
     detection_count: int = 0
     frame_number: int = 0
 
@@ -102,6 +109,7 @@ class RadarFrame:
 @dataclass
 class StatusResponse:
     """Parsed status response from FPGA (8-word packet as of Build 26)."""
+
     radar_mode: int = 0
     stream_ctrl: int = 0
     cfar_threshold: int = 0
@@ -113,14 +121,15 @@ class StatusResponse:
     chirps_per_elev: int = 0
     range_mode: int = 0
     # Self-test results (word 5, added in Build 26)
-    self_test_flags: int = 0     # 5-bit result flags [4:0]
-    self_test_detail: int = 0    # 8-bit detail code [7:0]
-    self_test_busy: int = 0      # 1-bit busy flag
+    self_test_flags: int = 0  # 5-bit result flags [4:0]
+    self_test_detail: int = 0  # 8-bit detail code [7:0]
+    self_test_busy: int = 0  # 1-bit busy flag
 
 
 # ============================================================================
 # Protocol: Packet Parsing & Building
 # ============================================================================
+
 
 def _to_signed16(val: int) -> int:
     """Convert unsigned 16-bit integer to signed (two's complement)."""
@@ -258,6 +267,7 @@ class RadarProtocol:
 # Optional pyftdi import
 try:
     from pyftdi.ftdi import Ftdi as PyFtdi
+
     PYFTDI_AVAILABLE = True
 except ImportError:
     PYFTDI_AVAILABLE = False
@@ -439,8 +449,9 @@ def _saturate(val: int, bits: int) -> int:
     return max(max_neg, min(max_pos, int(val)))
 
 
-def _replay_mti(decim_i: np.ndarray, decim_q: np.ndarray,
-                enable: bool) -> Tuple[np.ndarray, np.ndarray]:
+def _replay_mti(
+    decim_i: np.ndarray, decim_q: np.ndarray, enable: bool
+) -> Tuple[np.ndarray, np.ndarray]:
     """Bit-accurate 2-pulse MTI canceller (matches mti_canceller.v)."""
     n_chirps, n_bins = decim_i.shape
     mti_i = np.zeros_like(decim_i)
@@ -457,8 +468,9 @@ def _replay_mti(decim_i: np.ndarray, decim_q: np.ndarray,
     return mti_i, mti_q
 
 
-def _replay_dc_notch(doppler_i: np.ndarray, doppler_q: np.ndarray,
-                     width: int) -> Tuple[np.ndarray, np.ndarray]:
+def _replay_dc_notch(
+    doppler_i: np.ndarray, doppler_q: np.ndarray, width: int
+) -> Tuple[np.ndarray, np.ndarray]:
     """Bit-accurate DC notch filter (matches radar_system_top.v inline)."""
     out_i = doppler_i.copy()
     out_q = doppler_q.copy()
@@ -472,9 +484,9 @@ def _replay_dc_notch(doppler_i: np.ndarray, doppler_q: np.ndarray,
     return out_i, out_q
 
 
-def _replay_cfar(doppler_i: np.ndarray, doppler_q: np.ndarray,
-                 guard: int, train: int, alpha_q44: int,
-                 mode: int) -> Tuple[np.ndarray, np.ndarray]:
+def _replay_cfar(
+    doppler_i: np.ndarray, doppler_q: np.ndarray, guard: int, train: int, alpha_q44: int, mode: int
+) -> Tuple[np.ndarray, np.ndarray]:
     """
     Bit-accurate CA-CFAR detector (matches cfar_ca.v).
     Returns (detect_flags, magnitudes) both (64, 32).
@@ -497,8 +509,8 @@ def _replay_cfar(doppler_i: np.ndarray, doppler_q: np.ndarray,
     detect_flags = np.zeros((n_range, n_doppler), dtype=np.bool_)
     MAX_MAG = (1 << 17) - 1
 
-    mode_names = {0: 'CA', 1: 'GO', 2: 'SO'}
-    mode_str = mode_names.get(mode, 'CA')
+    mode_names = {0: "CA", 1: "GO", 2: "SO"}
+    mode_str = mode_names.get(mode, "CA")
 
     for dbin in range(n_doppler):
         col = magnitudes[:, dbin]
@@ -516,14 +528,14 @@ def _replay_cfar(doppler_i: np.ndarray, doppler_q: np.ndarray,
                     lag_sum += int(col[idx])
                     lag_cnt += 1
 
-            if mode_str == 'CA':
+            if mode_str == "CA":
                 noise = lead_sum + lag_sum
-            elif mode_str == 'GO':
+            elif mode_str == "GO":
                 if lead_cnt > 0 and lag_cnt > 0:
                     noise = lead_sum if lead_sum * lag_cnt > lag_sum * lead_cnt else lag_sum
                 else:
                     noise = lead_sum if lead_cnt > 0 else lag_sum
-            elif mode_str == 'SO':
+            elif mode_str == "SO":
                 if lead_cnt > 0 and lag_cnt > 0:
                     noise = lead_sum if lead_sum * lag_cnt < lag_sum * lead_cnt else lag_sum
                 else:
@@ -559,8 +571,7 @@ class ReplayConnection:
       fullchain_cfar_mag.npy      (64, 32) int   — CFAR |I|+|Q| magnitude
     """
 
-    def __init__(self, npy_dir: str, use_mti: bool = True,
-                 replay_fps: float = 5.0):
+    def __init__(self, npy_dir: str, use_mti: bool = True, replay_fps: float = 5.0):
         self._npy_dir = npy_dir
         self._use_mti = use_mti
         self._replay_fps = max(replay_fps, 0.1)
@@ -594,9 +605,11 @@ class ReplayConnection:
             self._frame_len = len(self._packets)
             self._read_offset = 0
             self.is_open = True
-            log.info(f"Replay connection opened: {self._npy_dir} "
-                     f"(MTI={'ON' if self._mti_enable else 'OFF'}, "
-                     f"{self._frame_len} bytes/frame)")
+            log.info(
+                f"Replay connection opened: {self._npy_dir} "
+                f"(MTI={'ON' if self._mti_enable else 'OFF'}, "
+                f"{self._frame_len} bytes/frame)"
+            )
             return True
         except Exception as e:
             log.error(f"Replay open failed: {e}")
@@ -619,10 +632,10 @@ class ReplayConnection:
                 self._needs_rebuild = False
             end = self._read_offset + size
             if end <= self._frame_len:
-                chunk = self._packets[self._read_offset:end]
+                chunk = self._packets[self._read_offset : end]
                 self._read_offset = end
             else:
-                chunk = self._packets[self._read_offset:]
+                chunk = self._packets[self._read_offset :]
                 self._read_offset = 0
             return chunk
 
@@ -674,14 +687,13 @@ class ReplayConnection:
                 if changed:
                     self._needs_rebuild = True
             if changed:
-                log.info(f"Replay param updated: opcode=0x{opcode:02X} "
-                         f"value={value} — will re-process")
+                log.info(
+                    f"Replay param updated: opcode=0x{opcode:02X} value={value} — will re-process"
+                )
             else:
-                log.debug(f"Replay param unchanged: opcode=0x{opcode:02X} "
-                          f"value={value}")
+                log.debug(f"Replay param unchanged: opcode=0x{opcode:02X} value={value}")
         elif opcode in _HARDWARE_ONLY_OPCODES:
-            log.debug(f"Replay: hardware-only opcode 0x{opcode:02X} "
-                      f"(ignored in replay mode)")
+            log.debug(f"Replay: hardware-only opcode 0x{opcode:02X} (ignored in replay mode)")
         else:
             log.debug(f"Replay: unknown opcode 0x{opcode:02X} (ignored)")
         return True
@@ -690,21 +702,15 @@ class ReplayConnection:
         """Load source npy arrays once."""
         npy = self._npy_dir
         # MTI Doppler
-        self._dop_mti_i = np.load(
-            os.path.join(npy, "fullchain_mti_doppler_i.npy")).astype(np.int64)
-        self._dop_mti_q = np.load(
-            os.path.join(npy, "fullchain_mti_doppler_q.npy")).astype(np.int64)
+        self._dop_mti_i = np.load(os.path.join(npy, "fullchain_mti_doppler_i.npy")).astype(np.int64)
+        self._dop_mti_q = np.load(os.path.join(npy, "fullchain_mti_doppler_q.npy")).astype(np.int64)
         # Non-MTI Doppler
-        self._dop_nomti_i = np.load(
-            os.path.join(npy, "doppler_map_i.npy")).astype(np.int64)
-        self._dop_nomti_q = np.load(
-            os.path.join(npy, "doppler_map_q.npy")).astype(np.int64)
+        self._dop_nomti_i = np.load(os.path.join(npy, "doppler_map_i.npy")).astype(np.int64)
+        self._dop_nomti_q = np.load(os.path.join(npy, "doppler_map_q.npy")).astype(np.int64)
         # Range data
         try:
-            range_i_all = np.load(
-                os.path.join(npy, "decimated_range_i.npy")).astype(np.int64)
-            range_q_all = np.load(
-                os.path.join(npy, "decimated_range_q.npy")).astype(np.int64)
+            range_i_all = np.load(os.path.join(npy, "decimated_range_i.npy")).astype(np.int64)
+            range_q_all = np.load(os.path.join(npy, "decimated_range_q.npy")).astype(np.int64)
             self._range_i_vec = range_i_all[-1, :]  # last chirp
             self._range_q_vec = range_q_all[-1, :]
         except FileNotFoundError:
@@ -727,7 +733,8 @@ class ReplayConnection:
         # Run CFAR
         if self._cfar_enable:
             det, _mag = _replay_cfar(
-                dop_i, dop_q,
+                dop_i,
+                dop_q,
                 guard=self._cfar_guard,
                 train=self._cfar_train,
                 alpha_q44=self._cfar_alpha,
@@ -737,13 +744,15 @@ class ReplayConnection:
             det = np.zeros((NUM_RANGE_BINS, NUM_DOPPLER_BINS), dtype=bool)
 
         det_count = int(det.sum())
-        log.info(f"Replay: rebuilt {NUM_CELLS} packets ("
-                 f"MTI={'ON' if self._mti_enable else 'OFF'}, "
-                 f"DC_notch={self._dc_notch_width}, "
-                 f"CFAR={'ON' if self._cfar_enable else 'OFF'} "
-                 f"G={self._cfar_guard} T={self._cfar_train} "
-                 f"a=0x{self._cfar_alpha:02X} m={self._cfar_mode}, "
-                 f"{det_count} detections)")
+        log.info(
+            f"Replay: rebuilt {NUM_CELLS} packets ("
+            f"MTI={'ON' if self._mti_enable else 'OFF'}, "
+            f"DC_notch={self._dc_notch_width}, "
+            f"CFAR={'ON' if self._cfar_enable else 'OFF'} "
+            f"G={self._cfar_guard} T={self._cfar_train} "
+            f"a=0x{self._cfar_alpha:02X} m={self._cfar_mode}, "
+            f"{det_count} detections)"
+        )
 
         range_i = self._range_i_vec
         range_q = self._range_q_vec
@@ -766,13 +775,13 @@ class ReplayConnection:
 
                 buf[pos] = HEADER_BYTE
                 pos += 1
-                buf[pos:pos+2] = rq_bytes
+                buf[pos : pos + 2] = rq_bytes
                 pos += 2
-                buf[pos:pos+2] = ri_bytes
+                buf[pos : pos + 2] = ri_bytes
                 pos += 2
-                buf[pos:pos+2] = struct.pack(">h", di)
+                buf[pos : pos + 2] = struct.pack(">h", di)
                 pos += 2
-                buf[pos:pos+2] = struct.pack(">h", dq)
+                buf[pos : pos + 2] = struct.pack(">h", dq)
                 pos += 2
                 buf[pos] = d
                 pos += 1
@@ -788,6 +797,7 @@ class ReplayConnection:
 
 try:
     import h5py
+
     HDF5_AVAILABLE = True
 except ImportError:
     HDF5_AVAILABLE = False
@@ -858,15 +868,20 @@ class DataRecorder:
 # Radar Data Acquisition Thread
 # ============================================================================
 
+
 class RadarAcquisition(threading.Thread):
     """
     Background thread: reads from USB (FT2232H), parses 11-byte packets,
     assembles frames, and pushes complete frames to the display queue.
     """
 
-    def __init__(self, connection, frame_queue: queue.Queue,
-                 recorder: Optional[DataRecorder] = None,
-                 status_callback=None):
+    def __init__(
+        self,
+        connection,
+        frame_queue: queue.Queue,
+        recorder: Optional[DataRecorder] = None,
+        status_callback=None,
+    ):
         super().__init__(daemon=True)
         self.conn = connection
         self.frame_queue = frame_queue
@@ -891,19 +906,19 @@ class RadarAcquisition(threading.Thread):
             packets = RadarProtocol.find_packet_boundaries(raw)
             for start, end, ptype in packets:
                 if ptype == "data":
-                    parsed = RadarProtocol.parse_data_packet(
-                        raw[start:end])
+                    parsed = RadarProtocol.parse_data_packet(raw[start:end])
                     if parsed is not None:
                         self._ingest_sample(parsed)
                 elif ptype == "status":
                     status = RadarProtocol.parse_status_packet(raw[start:end])
                     if status is not None:
-                        log.info(f"Status: mode={status.radar_mode} "
-                                 f"stream={status.stream_ctrl}")
+                        log.info(f"Status: mode={status.radar_mode} stream={status.stream_ctrl}")
                         if status.self_test_busy or status.self_test_flags:
-                            log.info(f"Self-test: busy={status.self_test_busy} "
-                                     f"flags=0b{status.self_test_flags:05b} "
-                                     f"detail=0x{status.self_test_detail:02X}")
+                            log.info(
+                                f"Self-test: busy={status.self_test_busy} "
+                                f"flags=0b{status.self_test_flags:05b} "
+                                f"detail=0x{status.self_test_detail:02X}"
+                            )
                         if self._status_callback is not None:
                             try:
                                 self._status_callback(status)

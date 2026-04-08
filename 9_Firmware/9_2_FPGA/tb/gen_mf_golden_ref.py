@@ -20,6 +20,7 @@ Usage:
 """
 
 import os
+
 import numpy as np
 
 N = 1024  # FFT length
@@ -138,11 +139,17 @@ def main():
     sig_q = np.zeros(N, dtype=np.float64)
     ref_i = np.full(N, 0x1000, dtype=np.float64)
     ref_q = np.zeros(N, dtype=np.float64)
-    s = generate_case(1, sig_i, sig_q, ref_i, ref_q,
-                      "DC autocorrelation: signal=ref=DC(I=0x1000,Q=0). "
-                      "Expected: large peak at bin 0, zero elsewhere. "
-                      "Peak will saturate to 32767 due to 16-bit clamp.",
-                      outdir)
+    s = generate_case(
+        1,
+        sig_i,
+        sig_q,
+        ref_i,
+        ref_q,
+        "DC autocorrelation: signal=ref=DC(I=0x1000,Q=0). "
+        "Expected: large peak at bin 0, zero elsewhere. "
+        "Peak will saturate to 32767 due to 16-bit clamp.",
+        outdir,
+    )
     summaries.append(s)
     all_files.extend(s["files"])
 
@@ -160,10 +167,16 @@ def main():
     sig_q = np.round(np.imag(tone)).astype(np.float64)
     ref_i = sig_i.copy()
     ref_q = sig_q.copy()
-    s = generate_case(2, sig_i, sig_q, ref_i, ref_q,
-                      "Tone autocorrelation: signal=ref=tone(bin 5, amp 8000). "
-                      "Expected: peak at bin 0 (autocorrelation peak at zero lag).",
-                      outdir)
+    s = generate_case(
+        2,
+        sig_i,
+        sig_q,
+        ref_i,
+        ref_q,
+        "Tone autocorrelation: signal=ref=tone(bin 5, amp 8000). "
+        "Expected: peak at bin 0 (autocorrelation peak at zero lag).",
+        outdir,
+    )
     summaries.append(s)
     all_files.extend(s["files"])
 
@@ -180,11 +193,17 @@ def main():
     sig_q = np.round(np.imag(tone_sig)).astype(np.float64)
     ref_i = np.round(np.real(tone_ref)).astype(np.float64)
     ref_q = np.round(np.imag(tone_ref)).astype(np.float64)
-    s = generate_case(3, sig_i, sig_q, ref_i, ref_q,
-                      f"Shifted tone: signal=tone(bin 5), ref=tone(bin 5) delayed "
-                      f"by {delay} samples. Cross-correlation peak should shift to "
-                      f"indicate the delay.",
-                      outdir)
+    s = generate_case(
+        3,
+        sig_i,
+        sig_q,
+        ref_i,
+        ref_q,
+        f"Shifted tone: signal=tone(bin 5), ref=tone(bin 5) delayed "
+        f"by {delay} samples. Cross-correlation peak should shift to "
+        f"indicate the delay.",
+        outdir,
+    )
     summaries.append(s)
     all_files.extend(s["files"])
 
@@ -204,11 +223,17 @@ def main():
     ref_q = np.zeros(N, dtype=np.float64)
     sig_i[0] = 32767.0  # 0x7FFF
     ref_i[0] = 32767.0
-    s = generate_case(4, sig_i, sig_q, ref_i, ref_q,
-                      "Impulse autocorrelation: signal=ref=delta(n=0, I=0x7FFF). "
-                      "Expected: scaled delta at bin 0 (will saturate to 32767). "
-                      "All other bins should be zero.",
-                      outdir)
+    s = generate_case(
+        4,
+        sig_i,
+        sig_q,
+        ref_i,
+        ref_q,
+        "Impulse autocorrelation: signal=ref=delta(n=0, I=0x7FFF). "
+        "Expected: scaled delta at bin 0 (will saturate to 32767). "
+        "All other bins should be zero.",
+        outdir,
+    )
     summaries.append(s)
     all_files.extend(s["files"])
 

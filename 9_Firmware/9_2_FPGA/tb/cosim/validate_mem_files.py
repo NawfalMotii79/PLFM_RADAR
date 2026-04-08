@@ -20,14 +20,14 @@ import sys
 # ============================================================================
 # AERIS-10 System Parameters (from radar_scene.py)
 # ============================================================================
-F_CARRIER = 10.5e9        # 10.5 GHz carrier
+F_CARRIER = 10.5e9  # 10.5 GHz carrier
 C_LIGHT = 3.0e8
-F_IF = 120e6              # IF frequency
-CHIRP_BW = 20e6           # 20 MHz sweep
-FS_ADC = 400e6            # ADC sample rate
-FS_SYS = 100e6            # System clock (100 MHz, after CIC 4x)
-T_LONG_CHIRP = 30e-6      # 30 us long chirp
-T_SHORT_CHIRP = 0.5e-6    # 0.5 us short chirp
+F_IF = 120e6  # IF frequency
+CHIRP_BW = 20e6  # 20 MHz sweep
+FS_ADC = 400e6  # ADC sample rate
+FS_SYS = 100e6  # System clock (100 MHz, after CIC 4x)
+T_LONG_CHIRP = 30e-6  # 30 us long chirp
+T_SHORT_CHIRP = 0.5e-6  # 0.5 us short chirp
 CIC_DECIMATION = 4
 FFT_SIZE = 1024
 DOPPLER_FFT_SIZE = 16
@@ -38,11 +38,12 @@ OVERLAP_SAMPLES = 128
 SEGMENT_ADVANCE = FFT_SIZE - OVERLAP_SAMPLES  # 896
 LONG_SEGMENTS = 4
 
-MEM_DIR = os.path.join(os.path.dirname(__file__), '..', '..')
+MEM_DIR = os.path.join(os.path.dirname(__file__), "..", "..")
 
 pass_count = 0
 fail_count = 0
 warn_count = 0
+
 
 def check(condition, label):
     global pass_count, fail_count
@@ -53,19 +54,21 @@ def check(condition, label):
         print(f"  [FAIL] {label}")
         fail_count += 1
 
+
 def warn(label):
     global warn_count
     print(f"  [WARN] {label}")
     warn_count += 1
 
+
 def read_mem_hex(filename):
     """Read a .mem file, return list of integer values (16-bit signed)."""
     path = os.path.join(MEM_DIR, filename)
     values = []
-    with open(path, 'r') as f:
+    with open(path, "r") as f:
         for line in f:
             line = line.strip()
-            if not line or line.startswith('//'):
+            if not line or line.startswith("//"):
                 continue
             val = int(line, 16)
             # Interpret as 16-bit signed
@@ -83,20 +86,20 @@ def test_structural():
 
     expected = {
         # FFT twiddle files (quarter-wave cosine ROMs)
-        'fft_twiddle_1024.mem': {'lines': 256, 'desc': '1024-pt FFT quarter-wave cos ROM'},
-        'fft_twiddle_16.mem':   {'lines': 4,   'desc': '16-pt FFT quarter-wave cos ROM'},
+        "fft_twiddle_1024.mem": {"lines": 256, "desc": "1024-pt FFT quarter-wave cos ROM"},
+        "fft_twiddle_16.mem": {"lines": 4, "desc": "16-pt FFT quarter-wave cos ROM"},
         # Long chirp segments (4 segments x 1024 samples each)
-        'long_chirp_seg0_i.mem': {'lines': 1024, 'desc': 'Long chirp seg 0 I'},
-        'long_chirp_seg0_q.mem': {'lines': 1024, 'desc': 'Long chirp seg 0 Q'},
-        'long_chirp_seg1_i.mem': {'lines': 1024, 'desc': 'Long chirp seg 1 I'},
-        'long_chirp_seg1_q.mem': {'lines': 1024, 'desc': 'Long chirp seg 1 Q'},
-        'long_chirp_seg2_i.mem': {'lines': 1024, 'desc': 'Long chirp seg 2 I'},
-        'long_chirp_seg2_q.mem': {'lines': 1024, 'desc': 'Long chirp seg 2 Q'},
-        'long_chirp_seg3_i.mem': {'lines': 1024, 'desc': 'Long chirp seg 3 I'},
-        'long_chirp_seg3_q.mem': {'lines': 1024, 'desc': 'Long chirp seg 3 Q'},
+        "long_chirp_seg0_i.mem": {"lines": 1024, "desc": "Long chirp seg 0 I"},
+        "long_chirp_seg0_q.mem": {"lines": 1024, "desc": "Long chirp seg 0 Q"},
+        "long_chirp_seg1_i.mem": {"lines": 1024, "desc": "Long chirp seg 1 I"},
+        "long_chirp_seg1_q.mem": {"lines": 1024, "desc": "Long chirp seg 1 Q"},
+        "long_chirp_seg2_i.mem": {"lines": 1024, "desc": "Long chirp seg 2 I"},
+        "long_chirp_seg2_q.mem": {"lines": 1024, "desc": "Long chirp seg 2 Q"},
+        "long_chirp_seg3_i.mem": {"lines": 1024, "desc": "Long chirp seg 3 I"},
+        "long_chirp_seg3_q.mem": {"lines": 1024, "desc": "Long chirp seg 3 Q"},
         # Short chirp (50 samples)
-        'short_chirp_i.mem': {'lines': 50, 'desc': 'Short chirp I'},
-        'short_chirp_q.mem': {'lines': 50, 'desc': 'Short chirp Q'},
+        "short_chirp_i.mem": {"lines": 50, "desc": "Short chirp I"},
+        "short_chirp_q.mem": {"lines": 50, "desc": "Short chirp Q"},
     }
 
     for fname, info in expected.items():
@@ -107,8 +110,10 @@ def test_structural():
             continue
 
         vals = read_mem_hex(fname)
-        check(len(vals) == info['lines'],
-              f"{fname}: {len(vals)} data lines (expected {info['lines']})")
+        check(
+            len(vals) == info["lines"],
+            f"{fname}: {len(vals)} data lines (expected {info['lines']})",
+        )
 
         # Check all values are in 16-bit signed range
         in_range = all(-32768 <= v <= 32767 for v in vals)
@@ -120,7 +125,7 @@ def test_structural():
 # ============================================================================
 def test_twiddle_1024():
     print("\n=== TEST 2a: FFT Twiddle 1024 Validation ===")
-    vals = read_mem_hex('fft_twiddle_1024.mem')
+    vals = read_mem_hex("fft_twiddle_1024.mem")
 
     # Expected: cos(2*pi*k/1024) for k=0..255, in Q15 format
     # Q15: value = round(cos(angle) * 32767)
@@ -137,8 +142,7 @@ def test_twiddle_1024():
         if err > 1:
             err_details.append((k, actual, expected, err))
 
-    check(max_err <= 1,
-          f"fft_twiddle_1024.mem: max twiddle error = {max_err} LSB (tolerance: 1)")
+    check(max_err <= 1, f"fft_twiddle_1024.mem: max twiddle error = {max_err} LSB (tolerance: 1)")
     if err_details:
         for k, act, exp, e in err_details[:5]:
             print(f"    k={k}: got {act} (0x{act & 0xFFFF:04x}), expected {exp}, err={e}")
@@ -147,7 +151,7 @@ def test_twiddle_1024():
 
 def test_twiddle_16():
     print("\n=== TEST 2b: FFT Twiddle 16 Validation ===")
-    vals = read_mem_hex('fft_twiddle_16.mem')
+    vals = read_mem_hex("fft_twiddle_16.mem")
 
     max_err = 0
     for k in range(min(4, len(vals))):
@@ -159,8 +163,7 @@ def test_twiddle_16():
         if err > max_err:
             max_err = err
 
-    check(max_err <= 1,
-          f"fft_twiddle_16.mem: max twiddle error = {max_err} LSB (tolerance: 1)")
+    check(max_err <= 1, f"fft_twiddle_16.mem: max twiddle error = {max_err} LSB (tolerance: 1)")
     print(f"  Max twiddle error: {max_err} LSB across {len(vals)} entries")
 
     # Print all 4 entries for reference
@@ -168,9 +171,11 @@ def test_twiddle_16():
     for k in range(min(4, len(vals))):
         angle = 2.0 * math.pi * k / 16.0
         expected = int(round(math.cos(angle) * 32767.0))
-        print(f"    k={k}: file=0x{vals[k] & 0xFFFF:04x} ({vals[k]:6d}), "
-              f"expected=0x{expected & 0xFFFF:04x} ({expected:6d}), "
-              f"err={abs(vals[k] - expected)}")
+        print(
+            f"    k={k}: file=0x{vals[k] & 0xFFFF:04x} ({vals[k]:6d}), "
+            f"expected=0x{expected & 0xFFFF:04x} ({expected:6d}), "
+            f"err={abs(vals[k] - expected)}"
+        )
 
 
 # ============================================================================
@@ -183,23 +188,27 @@ def test_long_chirp():
     all_i = []
     all_q = []
     for seg in range(4):
-        seg_i = read_mem_hex(f'long_chirp_seg{seg}_i.mem')
-        seg_q = read_mem_hex(f'long_chirp_seg{seg}_q.mem')
+        seg_i = read_mem_hex(f"long_chirp_seg{seg}_i.mem")
+        seg_q = read_mem_hex(f"long_chirp_seg{seg}_q.mem")
         all_i.extend(seg_i)
         all_q.extend(seg_q)
 
     total_samples = len(all_i)
-    check(total_samples == 4096,
-          f"Total long chirp samples: {total_samples} (expected 4096 = 4 segs x 1024)")
+    check(
+        total_samples == 4096,
+        f"Total long chirp samples: {total_samples} (expected 4096 = 4 segs x 1024)",
+    )
 
     # Compute magnitude envelope
-    magnitudes = [math.sqrt(i*i + q*q) for i, q in zip(all_i, all_q)]
+    magnitudes = [math.sqrt(i * i + q * q) for i, q in zip(all_i, all_q)]
     max_mag = max(magnitudes)
     min_mag = min(magnitudes)
     avg_mag = sum(magnitudes) / len(magnitudes)
 
     print(f"  Magnitude: min={min_mag:.1f}, max={max_mag:.1f}, avg={avg_mag:.1f}")
-    print(f"  Max magnitude as fraction of Q15 range: {max_mag/32767:.4f} ({max_mag/32767*100:.2f}%)")
+    print(
+        f"  Max magnitude as fraction of Q15 range: {max_mag / 32767:.4f} ({max_mag / 32767 * 100:.2f}%)"
+    )
 
     # Check if this looks like it came from generate_reference_chirp_q15
     # That function uses 32767 * 0.9 scaling => max magnitude ~29490
@@ -208,8 +217,10 @@ def test_long_chirp():
     if uses_model_scaling:
         print("  Scaling: CONSISTENT with radar_scene.py model (0.9 * Q15)")
     else:
-        warn(f"Magnitude ({max_mag:.0f}) is much lower than expected from Python model "
-             f"({expected_max_from_model:.0f}). .mem files may have unknown provenance.")
+        warn(
+            f"Magnitude ({max_mag:.0f}) is much lower than expected from Python model "
+            f"({expected_max_from_model:.0f}). .mem files may have unknown provenance."
+        )
 
     # Check non-zero content: how many samples are non-zero?
     nonzero_i = sum(1 for v in all_i if v != 0)
@@ -228,8 +239,8 @@ def test_long_chirp():
     # Compute phase differences (instantaneous frequency)
     freq_estimates = []
     for n in range(1, len(phases)):
-        if phases[n] is not None and phases[n-1] is not None:
-            dp = phases[n] - phases[n-1]
+        if phases[n] is not None and phases[n - 1] is not None:
+            dp = phases[n] - phases[n - 1]
             # Unwrap
             while dp > math.pi:
                 dp -= 2 * math.pi
@@ -247,33 +258,36 @@ def test_long_chirp():
         f_range = f_max - f_min
 
         print("\n  Instantaneous frequency analysis (post-DDC baseband):")
-        print(f"    Start freq:  {f_start/1e6:.3f} MHz")
-        print(f"    End freq:    {f_end/1e6:.3f} MHz")
-        print(f"    Min freq:    {f_min/1e6:.3f} MHz")
-        print(f"    Max freq:    {f_max/1e6:.3f} MHz")
-        print(f"    Freq range:  {f_range/1e6:.3f} MHz")
-        print(f"    Expected BW: {CHIRP_BW/1e6:.3f} MHz")
+        print(f"    Start freq:  {f_start / 1e6:.3f} MHz")
+        print(f"    End freq:    {f_end / 1e6:.3f} MHz")
+        print(f"    Min freq:    {f_min / 1e6:.3f} MHz")
+        print(f"    Max freq:    {f_max / 1e6:.3f} MHz")
+        print(f"    Freq range:  {f_range / 1e6:.3f} MHz")
+        print(f"    Expected BW: {CHIRP_BW / 1e6:.3f} MHz")
 
         # A chirp should show frequency sweep
         is_chirp = f_range > 0.5e6  # At least 0.5 MHz sweep
-        check(is_chirp,
-              f"Long chirp shows frequency sweep ({f_range/1e6:.2f} MHz > 0.5 MHz)")
+        check(is_chirp, f"Long chirp shows frequency sweep ({f_range / 1e6:.2f} MHz > 0.5 MHz)")
 
         # Check if bandwidth roughly matches expected
         bw_match = abs(f_range - CHIRP_BW) / CHIRP_BW < 0.5  # within 50%
         if bw_match:
-            print(f"  Bandwidth {f_range/1e6:.2f} MHz roughly matches expected {CHIRP_BW/1e6:.2f} MHz")
+            print(
+                f"  Bandwidth {f_range / 1e6:.2f} MHz roughly matches expected {CHIRP_BW / 1e6:.2f} MHz"
+            )
         else:
-            warn(f"Bandwidth {f_range/1e6:.2f} MHz does NOT match expected {CHIRP_BW/1e6:.2f} MHz")
+            warn(
+                f"Bandwidth {f_range / 1e6:.2f} MHz does NOT match expected {CHIRP_BW / 1e6:.2f} MHz"
+            )
 
     # Compare segment boundaries for overlap-save consistency
     # In proper overlap-save, the chirp data should be segmented at 896-sample boundaries
     # with segments being 1024-sample FFT blocks
     print("\n  Segment boundary analysis:")
     for seg in range(4):
-        seg_i = read_mem_hex(f'long_chirp_seg{seg}_i.mem')
-        seg_q = read_mem_hex(f'long_chirp_seg{seg}_q.mem')
-        seg_mags = [math.sqrt(i*i + q*q) for i, q in zip(seg_i, seg_q)]
+        seg_i = read_mem_hex(f"long_chirp_seg{seg}_i.mem")
+        seg_q = read_mem_hex(f"long_chirp_seg{seg}_q.mem")
+        seg_mags = [math.sqrt(i * i + q * q) for i, q in zip(seg_i, seg_q)]
         seg_avg = sum(seg_mags) / len(seg_mags)
         seg_max = max(seg_mags)
 
@@ -287,8 +301,10 @@ def test_long_chirp():
             # Wait, but the .mem files have 1024 lines with non-trivial data...
             # Let's check if seg3 has significant data
             zero_count = sum(1 for m in seg_mags if m < 2)
-            print(f"  Seg {seg}: avg_mag={seg_avg:.1f}, max_mag={seg_max:.1f}, "
-                  f"near-zero={zero_count}/{len(seg_mags)}")
+            print(
+                f"  Seg {seg}: avg_mag={seg_avg:.1f}, max_mag={seg_max:.1f}, "
+                f"near-zero={zero_count}/{len(seg_mags)}"
+            )
             if zero_count > 500:
                 print("    -> Seg 3 mostly zeros (chirp shorter than 4096 samples)")
             else:
@@ -303,23 +319,25 @@ def test_long_chirp():
 def test_short_chirp():
     print("\n=== TEST 4: Short Chirp .mem File Analysis ===")
 
-    short_i = read_mem_hex('short_chirp_i.mem')
-    short_q = read_mem_hex('short_chirp_q.mem')
+    short_i = read_mem_hex("short_chirp_i.mem")
+    short_q = read_mem_hex("short_chirp_q.mem")
 
     check(len(short_i) == 50, f"Short chirp I: {len(short_i)} samples (expected 50)")
     check(len(short_q) == 50, f"Short chirp Q: {len(short_q)} samples (expected 50)")
 
     # Expected: 0.5 us chirp at 100 MHz = 50 samples
     expected_samples = int(T_SHORT_CHIRP * FS_SYS)
-    check(len(short_i) == expected_samples,
-          f"Short chirp length matches T_SHORT_CHIRP * FS_SYS = {expected_samples}")
+    check(
+        len(short_i) == expected_samples,
+        f"Short chirp length matches T_SHORT_CHIRP * FS_SYS = {expected_samples}",
+    )
 
-    magnitudes = [math.sqrt(i*i + q*q) for i, q in zip(short_i, short_q)]
+    magnitudes = [math.sqrt(i * i + q * q) for i, q in zip(short_i, short_q)]
     max_mag = max(magnitudes)
     avg_mag = sum(magnitudes) / len(magnitudes)
 
     print(f"  Magnitude: max={max_mag:.1f}, avg={avg_mag:.1f}")
-    print(f"  Max as fraction of Q15: {max_mag/32767:.4f} ({max_mag/32767*100:.2f}%)")
+    print(f"  Max as fraction of Q15: {max_mag / 32767:.4f} ({max_mag / 32767 * 100:.2f}%)")
 
     # Check non-zero
     nonzero = sum(1 for m in magnitudes if m > 1)
@@ -329,7 +347,7 @@ def test_short_chirp():
     phases = [math.atan2(q, i) for i, q in zip(short_i, short_q)]
     freq_est = []
     for n in range(1, len(phases)):
-        dp = phases[n] - phases[n-1]
+        dp = phases[n] - phases[n - 1]
         while dp > math.pi:
             dp -= 2 * math.pi
         while dp < -math.pi:
@@ -339,8 +357,8 @@ def test_short_chirp():
     if freq_est:
         f_start = freq_est[0]
         f_end = freq_est[-1]
-        print(f"  Freq start: {f_start/1e6:.3f} MHz, end: {f_end/1e6:.3f} MHz")
-        print(f"  Freq range: {abs(f_end - f_start)/1e6:.3f} MHz")
+        print(f"  Freq start: {f_start / 1e6:.3f} MHz, end: {f_end / 1e6:.3f} MHz")
+        print(f"  Freq range: {abs(f_end - f_start) / 1e6:.3f} MHz")
 
 
 # ============================================================================
@@ -365,19 +383,19 @@ def test_chirp_vs_model():
         model_q.append(max(-32768, min(32767, im_val)))
 
     # Read seg0 from .mem
-    mem_i = read_mem_hex('long_chirp_seg0_i.mem')
-    mem_q = read_mem_hex('long_chirp_seg0_q.mem')
+    mem_i = read_mem_hex("long_chirp_seg0_i.mem")
+    mem_q = read_mem_hex("long_chirp_seg0_q.mem")
 
     # Compare magnitudes
-    model_mags = [math.sqrt(i*i + q*q) for i, q in zip(model_i, model_q)]
-    mem_mags = [math.sqrt(i*i + q*q) for i, q in zip(mem_i, mem_q)]
+    model_mags = [math.sqrt(i * i + q * q) for i, q in zip(model_i, model_q)]
+    mem_mags = [math.sqrt(i * i + q * q) for i, q in zip(mem_i, mem_q)]
 
     model_max = max(model_mags)
     mem_max = max(mem_mags)
 
     print(f"  Python model seg0: max_mag={model_max:.1f} (Q15 * 0.9)")
     print(f"  .mem file seg0:    max_mag={mem_max:.1f}")
-    print(f"  Ratio (mem/model): {mem_max/model_max:.4f}")
+    print(f"  Ratio (mem/model): {mem_max / model_max:.4f}")
 
     # Check if they match (they almost certainly won't based on magnitude analysis)
     matches = sum(1 for a, b in zip(model_i, mem_i) if a == b)
@@ -391,7 +409,7 @@ def test_chirp_vs_model():
         if mem_max > 0:
             ratio = model_max / mem_max
             print(f"  Scale factor (model/mem): {ratio:.2f}")
-            print(f"  This suggests the .mem files used ~{1.0/ratio:.4f} scaling instead of 0.9")
+            print(f"  This suggests the .mem files used ~{1.0 / ratio:.4f} scaling instead of 0.9")
 
     # Check phase correlation (shape match regardless of scaling)
     model_phases = [math.atan2(q, i) for i, q in zip(model_i, model_q)]
@@ -415,8 +433,10 @@ def test_chirp_vs_model():
     print(f"    Max phase diff:  {max_phase_diff:.4f} rad ({math.degrees(max_phase_diff):.2f} deg)")
 
     phase_match = max_phase_diff < 0.5  # within 0.5 rad
-    check(phase_match,
-          f"Phase shape match: max diff = {math.degrees(max_phase_diff):.1f} deg (tolerance: 28.6 deg)")
+    check(
+        phase_match,
+        f"Phase shape match: max diff = {math.degrees(max_phase_diff):.1f} deg (tolerance: 28.6 deg)",
+    )
 
 
 # ============================================================================
@@ -447,8 +467,7 @@ def test_latency_buffer():
     LATENCY = 3187
     BRAM_SIZE = 4096
 
-    check(LATENCY < BRAM_SIZE,
-          f"LATENCY ({LATENCY}) < BRAM size ({BRAM_SIZE})")
+    check(LATENCY < BRAM_SIZE, f"LATENCY ({LATENCY}) < BRAM size ({BRAM_SIZE})")
 
     # The fft_engine processes in stages:
     # - LOAD: 1024 clocks (accepts input)
@@ -478,8 +497,7 @@ def test_latency_buffer():
     #     which starts after the first FFT completes.
 
     # For now, validate that LATENCY is reasonable (between 1000 and 4095)
-    check(1000 < LATENCY < 4095,
-          f"LATENCY={LATENCY} in reasonable range [1000, 4095]")
+    check(1000 < LATENCY < 4095, f"LATENCY={LATENCY} in reasonable range [1000, 4095]")
 
     # Check that the module name vs parameter is consistent
     print(f"  LATENCY parameter: {LATENCY}")
@@ -493,8 +511,10 @@ def test_latency_buffer():
     # When write_ptr < LATENCY: read_ptr = 4096 + write_ptr - LATENCY
     # Minimum: 4096 + 0 - 3187 = 909 (valid)
     min_read_ptr = 4096 + 0 - LATENCY
-    check(min_read_ptr >= 0 and min_read_ptr < 4096,
-          f"Min read_ptr after wrap = {min_read_ptr} (valid: 0..4095)")
+    check(
+        min_read_ptr >= 0 and min_read_ptr < 4096,
+        f"Min read_ptr after wrap = {min_read_ptr} (valid: 0..4095)",
+    )
 
     # The latency buffer uses valid_in gated reads, so it only counts
     # valid samples. The number of valid_in pulses between first write
@@ -521,10 +541,14 @@ def test_memory_addressing():
         addr_from_concat = (seg << 10) | 0  # {seg[1:0], 10'b0}
         addr_end = (seg << 10) | 1023
 
-        check(addr_from_concat == base,
-              f"Seg {seg} base address: {{{seg}[1:0], 10'b0}} = {addr_from_concat} (expected {base})")
-        check(addr_end == end,
-              f"Seg {seg} end address: {{{seg}[1:0], 10'h3FF}} = {addr_end} (expected {end})")
+        check(
+            addr_from_concat == base,
+            f"Seg {seg} base address: {{{seg}[1:0], 10'b0}} = {addr_from_concat} (expected {base})",
+        )
+        check(
+            addr_end == end,
+            f"Seg {seg} end address: {{{seg}[1:0], 10'h3FF}} = {addr_end} (expected {end})",
+        )
 
     # Memory is declared as: reg [15:0] long_chirp_i [0:4095]
     # $readmemh loads seg0 to [0:1023], seg1 to [1024:2047], etc.
@@ -563,10 +587,10 @@ def test_seg3_padding():
     # the question is: do the .mem files contain 3000 samples of real chirp
     # data spread across 4096 slots, or something else?
 
-    seg3_i = read_mem_hex('long_chirp_seg3_i.mem')
-    seg3_q = read_mem_hex('long_chirp_seg3_q.mem')
+    seg3_i = read_mem_hex("long_chirp_seg3_i.mem")
+    seg3_q = read_mem_hex("long_chirp_seg3_q.mem")
 
-    mags = [math.sqrt(i*i + q*q) for i, q in zip(seg3_i, seg3_q)]
+    mags = [math.sqrt(i * i + q * q) for i, q in zip(seg3_i, seg3_q)]
 
     # Count trailing zeros (samples after chirp ends)
     trailing_zeros = 0
@@ -590,9 +614,11 @@ def test_seg3_padding():
         # The chirp duration used for .mem generation was different from T_LONG_CHIRP
         actual_chirp_samples = 4 * 1024  # = 4096
         actual_duration = actual_chirp_samples / FS_SYS
-        warn(f"Chirp in .mem files appears to be {actual_chirp_samples} samples "
-             f"({actual_duration*1e6:.1f} us), not {LONG_CHIRP_SAMPLES} samples "
-             f"({T_LONG_CHIRP*1e6:.1f} us)")
+        warn(
+            f"Chirp in .mem files appears to be {actual_chirp_samples} samples "
+            f"({actual_duration * 1e6:.1f} us), not {LONG_CHIRP_SAMPLES} samples "
+            f"({T_LONG_CHIRP * 1e6:.1f} us)"
+        )
     elif trailing_zeros > 100:
         # Some padding at end
         actual_valid = 3072 + (1024 - trailing_zeros)
@@ -628,5 +654,5 @@ def main():
     return 0 if fail_count == 0 else 1
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main())

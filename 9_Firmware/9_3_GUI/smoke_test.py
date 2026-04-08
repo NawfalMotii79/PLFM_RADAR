@@ -24,17 +24,17 @@ Exit codes:
   2 = communication error / timeout
 """
 
-import sys
-import os
-import time
 import argparse
 import logging
+import os
+import sys
+import time
 
 import numpy as np
 
 # Add parent directory for radar_protocol import
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from radar_protocol import RadarProtocol, FT2232HConnection
+from radar_protocol import FT2232HConnection, RadarProtocol
 
 logging.basicConfig(
     level=logging.INFO,
@@ -45,7 +45,7 @@ log = logging.getLogger("smoke_test")
 
 # Self-test opcodes (must match radar_system_top.v command decode)
 OPCODE_SELF_TEST_TRIGGER = 0x30
-OPCODE_SELF_TEST_RESULT  = 0x31
+OPCODE_SELF_TEST_RESULT = 0x31
 
 # Result packet format (sent by FPGA after self-test completes):
 # The self-test result is reported via the status readback mechanism.
@@ -203,12 +203,13 @@ class SmokeTest:
 
 def main():
     parser = argparse.ArgumentParser(description="AERIS-10 Board Smoke Test")
-    parser.add_argument("--live", action="store_true",
-                        help="Use real FT2232H hardware (default: mock)")
-    parser.add_argument("--device", type=int, default=0,
-                        help="FT2232H device index")
-    parser.add_argument("--adc-dump", type=str, default=None,
-                        help="Save raw ADC samples to .npy file")
+    parser.add_argument(
+        "--live", action="store_true", help="Use real FT2232H hardware (default: mock)"
+    )
+    parser.add_argument("--device", type=int, default=0, help="FT2232H device index")
+    parser.add_argument(
+        "--adc-dump", type=str, default=None, help="Save raw ADC samples to .npy file"
+    )
     args = parser.parse_args()
 
     mock_mode = not args.live

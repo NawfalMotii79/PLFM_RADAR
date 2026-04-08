@@ -8,18 +8,20 @@ Classes:
   - TargetSimulator  — QTimer-based demo target generator (from GUI_PyQt_Map.py).
 """
 
-import math
-import time
-import random
 import logging
+import math
+import random
+import time
 from typing import List
 
-from PyQt6.QtCore import QThread, QObject, QTimer, pyqtSignal
+from PyQt6.QtCore import QObject, QThread, QTimer, pyqtSignal
 
-from .models import RadarTarget, RadarSettings, GPSData
 from .hardware import FT2232HQInterface, STM32USBInterface
+from .models import GPSData, RadarSettings, RadarTarget
 from .processing import (
-    RadarProcessor, RadarPacketParser, USBPacketParser,
+    RadarPacketParser,
+    RadarProcessor,
+    USBPacketParser,
     apply_pitch_correction,
 )
 

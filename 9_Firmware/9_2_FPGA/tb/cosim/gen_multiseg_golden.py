@@ -24,19 +24,19 @@ Strategy:
 Author: Phase 0.5 verification gap closure
 """
 
+import math
 import os
 import sys
-import math
 
 # Add parent paths
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from fpga_model import MatchedFilterChain, sign_extend, saturate
+from fpga_model import MatchedFilterChain, saturate, sign_extend
 
 
 def write_hex_file(filepath, values, width=16):
     """Write values as hex to file, one per line."""
     mask = (1 << width) - 1
-    with open(filepath, 'w') as f:
+    with open(filepath, "w") as f:
         for v in values:
             f.write(f"{v & mask:04X}\n")
 
@@ -276,9 +276,11 @@ def generate_long_chirp_test():
         out_re, out_im = mf_chain.process(seg_data_i, seg_data_q, ref_i, ref_q)
         segment_results.append((out_re, out_im))
 
-        print(f"  Segment {seg}: collected {buffer_write_ptr} buffer samples, "
-              f"total chirp samples = {chirp_samples_collected}, "
-              f"input_idx = {input_idx}")
+        print(
+            f"  Segment {seg}: collected {buffer_write_ptr} buffer samples, "
+            f"total chirp samples = {chirp_samples_collected}, "
+            f"input_idx = {input_idx}"
+        )
 
     # Write hex files for the testbench
     out_dir = os.path.dirname(os.path.abspath(__file__))
@@ -293,28 +295,28 @@ def generate_long_chirp_test():
         all_input_i_18.append(val_i & 0x3FFFF)
         all_input_q_18.append(val_q & 0x3FFFF)
 
-    write_hex_file(os.path.join(out_dir, 'multiseg_input_i.hex'), all_input_i_18, width=18)
-    write_hex_file(os.path.join(out_dir, 'multiseg_input_q.hex'), all_input_q_18, width=18)
+    write_hex_file(os.path.join(out_dir, "multiseg_input_i.hex"), all_input_i_18, width=18)
+    write_hex_file(os.path.join(out_dir, "multiseg_input_q.hex"), all_input_q_18, width=18)
 
     # 2. Per-segment reference chirps
     for seg in range(LONG_SEGMENTS):
-        write_hex_file(os.path.join(out_dir, f'multiseg_ref_seg{seg}_i.hex'), ref_segs_i[seg])
-        write_hex_file(os.path.join(out_dir, f'multiseg_ref_seg{seg}_q.hex'), ref_segs_q[seg])
+        write_hex_file(os.path.join(out_dir, f"multiseg_ref_seg{seg}_i.hex"), ref_segs_i[seg])
+        write_hex_file(os.path.join(out_dir, f"multiseg_ref_seg{seg}_q.hex"), ref_segs_q[seg])
 
     # 3. Per-segment golden outputs
     for seg in range(LONG_SEGMENTS):
         out_re, out_im = segment_results[seg]
-        write_hex_file(os.path.join(out_dir, f'multiseg_golden_seg{seg}_i.hex'), out_re)
-        write_hex_file(os.path.join(out_dir, f'multiseg_golden_seg{seg}_q.hex'), out_im)
+        write_hex_file(os.path.join(out_dir, f"multiseg_golden_seg{seg}_i.hex"), out_re)
+        write_hex_file(os.path.join(out_dir, f"multiseg_golden_seg{seg}_q.hex"), out_im)
 
     # 4. Write CSV with all segment results for comparison
-    csv_path = os.path.join(out_dir, 'multiseg_golden.csv')
-    with open(csv_path, 'w') as f:
-        f.write('segment,bin,golden_i,golden_q\n')
+    csv_path = os.path.join(out_dir, "multiseg_golden.csv")
+    with open(csv_path, "w") as f:
+        f.write("segment,bin,golden_i,golden_q\n")
         for seg in range(LONG_SEGMENTS):
             out_re, out_im = segment_results[seg]
             for b in range(1024):
-                f.write(f'{seg},{b},{out_re[b]},{out_im[b]}\n')
+                f.write(f"{seg},{b},{out_re[b]},{out_im[b]}\n")
 
     print(f"\n  Written {LONG_SEGMENTS * 1024} golden samples to {csv_path}")
 
@@ -389,24 +391,24 @@ def generate_short_chirp_test():
         all_input_i_18.append(val_i)
         all_input_q_18.append(val_q)
 
-    write_hex_file(os.path.join(out_dir, 'multiseg_short_input_i.hex'), all_input_i_18, width=18)
-    write_hex_file(os.path.join(out_dir, 'multiseg_short_input_q.hex'), all_input_q_18, width=18)
-    write_hex_file(os.path.join(out_dir, 'multiseg_short_ref_i.hex'), ref_i)
-    write_hex_file(os.path.join(out_dir, 'multiseg_short_ref_q.hex'), ref_q)
-    write_hex_file(os.path.join(out_dir, 'multiseg_short_golden_i.hex'), out_re)
-    write_hex_file(os.path.join(out_dir, 'multiseg_short_golden_q.hex'), out_im)
+    write_hex_file(os.path.join(out_dir, "multiseg_short_input_i.hex"), all_input_i_18, width=18)
+    write_hex_file(os.path.join(out_dir, "multiseg_short_input_q.hex"), all_input_q_18, width=18)
+    write_hex_file(os.path.join(out_dir, "multiseg_short_ref_i.hex"), ref_i)
+    write_hex_file(os.path.join(out_dir, "multiseg_short_ref_q.hex"), ref_q)
+    write_hex_file(os.path.join(out_dir, "multiseg_short_golden_i.hex"), out_re)
+    write_hex_file(os.path.join(out_dir, "multiseg_short_golden_q.hex"), out_im)
 
-    csv_path = os.path.join(out_dir, 'multiseg_short_golden.csv')
-    with open(csv_path, 'w') as f:
-        f.write('bin,golden_i,golden_q\n')
+    csv_path = os.path.join(out_dir, "multiseg_short_golden.csv")
+    with open(csv_path, "w") as f:
+        f.write("bin,golden_i,golden_q\n")
         for b in range(1024):
-            f.write(f'{b},{out_re[b]},{out_im[b]}\n')
+            f.write(f"{b},{out_re[b]},{out_im[b]}\n")
 
     print(f"  Written 1024 short chirp golden samples to {csv_path}")
     return out_re, out_im
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     print("=" * 60)
     print("Multi-Segment Matched Filter Golden Reference Generator")
     print("=" * 60)

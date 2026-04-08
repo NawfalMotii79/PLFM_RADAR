@@ -7,22 +7,34 @@ Run: python -m pytest test_radar_dashboard.py -v
   or: python test_radar_dashboard.py
 """
 
-import struct
-import time
-import queue
+import importlib.util
 import os
+import queue
+import struct
 import tempfile
+import time
 import unittest
-import numpy as np
 
+import numpy as np
 from radar_protocol import (
-    RadarProtocol, FT2232HConnection, DataRecorder, RadarAcquisition,
-    RadarFrame, StatusResponse, Opcode,
-    HEADER_BYTE, FOOTER_BYTE, STATUS_HEADER_BYTE,
-    NUM_RANGE_BINS, NUM_DOPPLER_BINS, NUM_CELLS,
-    DATA_PACKET_SIZE,
     _HARDWARE_ONLY_OPCODES,
+    DATA_PACKET_SIZE,
+    FOOTER_BYTE,
+    HEADER_BYTE,
+    NUM_CELLS,
+    NUM_DOPPLER_BINS,
+    NUM_RANGE_BINS,
+    STATUS_HEADER_BYTE,
+    DataRecorder,
+    FT2232HConnection,
+    Opcode,
+    RadarAcquisition,
+    RadarFrame,
+    RadarProtocol,
+    StatusResponse,
 )
+
+_H5PY_AVAILABLE = importlib.util.find_spec("h5py") is not None
 
 
 class TestRadarProtocol(unittest.TestCase):
@@ -38,7 +50,7 @@ class TestRadarProtocol(unittest.TestCase):
         word = struct.unpack(">I", cmd)[0]
         self.assertEqual((word >> 24) & 0xFF, 0x01)  # opcode
         self.assertEqual((word >> 16) & 0xFF, 0x00)  # addr
-        self.assertEqual(word & 0xFFFF, 1)            # value
+        self.assertEqual(word & 0xFFFF, 1)  # value
 
     def test_build_command_cfar_alpha(self):
         """Opcode 0x23, value 0x30 (alpha=3.0 Q4.4)."""
@@ -71,8 +83,7 @@ class TestRadarProtocol(unittest.TestCase):
     # ----------------------------------------------------------------
     # Data packet parsing
     # ----------------------------------------------------------------
-    def _make_data_packet(self, range_i=100, range_q=200,
-                          dop_i=300, dop_q=400, detection=0):
+    def _make_data_packet(self, range_i=100, range_q=200, dop_i=300, dop_q=400, detection=0):
         """Build a synthetic 11-byte data packet matching FT2232H format."""
         pkt = bytearray()
         pkt.append(HEADER_BYTE)
@@ -111,7 +122,7 @@ class TestRadarProtocol(unittest.TestCase):
         self.assertEqual(result["doppler_q"], 32000)
 
     def test_parse_data_packet_too_short(self):
-        self.assertIsNone(RadarProtocol.parse_data_packet(b"\xAA\x00"))
+        self.assertIsNone(RadarProtocol.parse_data_packet(b"\xaa\x00"))
 
     def test_parse_data_packet_wrong_header(self):
         raw = self._make_data_packet()
@@ -121,11 +132,22 @@ class TestRadarProtocol(unittest.TestCase):
     # ----------------------------------------------------------------
     # Status packet parsing
     # ----------------------------------------------------------------
-    def _make_status_packet(self, mode=1, stream=7, threshold=10000,
-                            long_chirp=3000, long_listen=13700,
-                            guard=17540, short_chirp=50,
-                            short_listen=17450, chirps=32, range_mode=0,
-                            st_flags=0, st_detail=0, st_busy=0):
+    def _make_status_packet(
+        self,
+        mode=1,
+        stream=7,
+        threshold=10000,
+        long_chirp=3000,
+        long_listen=13700,
+        guard=17540,
+        short_chirp=50,
+        short_listen=17450,
+        chirps=32,
+        range_mode=0,
+        st_flags=0,
+        st_detail=0,
+        st_busy=0,
+    ):
         """Build a 26-byte status response matching FPGA format (Build 26)."""
         pkt = bytearray()
         pkt.append(STATUS_HEADER_BYTE)
@@ -179,11 +201,11 @@ class TestRadarProtocol(unittest.TestCase):
         self.assertEqual(sr.range_mode, 2)
 
     def test_parse_status_too_short(self):
-        self.assertIsNone(RadarProtocol.parse_status_packet(b"\xBB" + b"\x00" * 20))
+        self.assertIsNone(RadarProtocol.parse_status_packet(b"\xbb" + b"\x00" * 20))
 
     def test_parse_status_wrong_header(self):
         raw = self._make_status_packet()
-        bad = b"\xAA" + raw[1:]
+        bad = b"\xaa" + raw[1:]
         self.assertIsNone(RadarProtocol.parse_status_packet(bad))
 
     def test_parse_status_wrong_footer(self):
@@ -219,10 +241,10 @@ class TestRadarProtocol(unittest.TestCase):
         self.assertEqual(sr.self_test_busy, 0)
         # T0 (BRAM) failed, T1 (CIC) passed, T2 (FFT) passed, T3 (arith) failed, T4 (ADC) passed
         self.assertFalse(sr.self_test_flags & 0x01)  # T0 fail
-        self.assertTrue(sr.self_test_flags & 0x02)    # T1 pass
-        self.assertTrue(sr.self_test_flags & 0x04)    # T2 pass
-        self.assertFalse(sr.self_test_flags & 0x08)   # T3 fail
-        self.assertTrue(sr.self_test_flags & 0x10)     # T4 pass
+        self.assertTrue(sr.self_test_flags & 0x02)  # T1 pass
+        self.assertTrue(sr.self_test_flags & 0x04)  # T2 pass
+        self.assertFalse(sr.self_test_flags & 0x08)  # T3 fail
+        self.assertTrue(sr.self_test_flags & 0x10)  # T4 pass
 
     def test_parse_status_self_test_zero_word5(self):
         """Status with zero word 5 (self-test never run)."""
@@ -320,12 +342,10 @@ class TestDataRecorder(unittest.TestCase):
             os.remove(self.filepath)
         os.rmdir(self.tmpdir)
 
-    @unittest.skipUnless(
-        (lambda: (__import__("importlib.util") and __import__("importlib").util.find_spec("h5py") is not None))(),
-        "h5py not installed"
-    )
+    @unittest.skipUnless(_H5PY_AVAILABLE, "h5py not installed")
     def test_record_and_stop(self):
         import h5py
+
         rec = DataRecorder()
         rec.start(self.filepath)
         self.assertTrue(rec.recording)
@@ -378,8 +398,7 @@ class TestRadarAcquisition(unittest.TestCase):
         # a full frame (2048 samples) takes ~3.2s. Allow up to 10s.
         if frame is not None:
             self.assertIsInstance(frame, RadarFrame)
-            self.assertEqual(frame.magnitude.shape,
-                             (NUM_RANGE_BINS, NUM_DOPPLER_BINS))
+            self.assertEqual(frame.magnitude.shape, (NUM_RANGE_BINS, NUM_DOPPLER_BINS))
         # If no frame arrived in timeout, that's still OK for a fast CI run
 
     def test_acquisition_stop(self):
@@ -418,9 +437,31 @@ class TestEndToEnd(unittest.TestCase):
 
     def test_command_roundtrip_all_opcodes(self):
         """Verify all opcodes produce valid 4-byte commands."""
-        opcodes = [0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x10, 0x11, 0x12,
-                   0x13, 0x14, 0x15, 0x20, 0x21, 0x22, 0x23, 0x24, 0x25,
-                   0x26, 0x27, 0x30, 0x31, 0xFF]
+        opcodes = [
+            0x01,
+            0x02,
+            0x03,
+            0x04,
+            0x05,
+            0x06,
+            0x10,
+            0x11,
+            0x12,
+            0x13,
+            0x14,
+            0x15,
+            0x20,
+            0x21,
+            0x22,
+            0x23,
+            0x24,
+            0x25,
+            0x26,
+            0x27,
+            0x30,
+            0x31,
+            0xFF,
+        ]
         for op in opcodes:
             cmd = RadarProtocol.build_command(op, 42)
             self.assertEqual(len(cmd), 4, f"opcode 0x{op:02X}")
@@ -456,20 +497,19 @@ class TestReplayConnection(unittest.TestCase):
     """Test ReplayConnection with real .npy data files."""
 
     NPY_DIR = os.path.join(
-        os.path.dirname(__file__), "..", "9_2_FPGA", "tb", "cosim",
-        "real_data", "hex"
+        os.path.dirname(__file__), "..", "9_2_FPGA", "tb", "cosim", "real_data", "hex"
     )
 
     def _npy_available(self):
         """Check if the npy data files exist."""
-        return os.path.isfile(os.path.join(self.NPY_DIR,
-                                            "fullchain_mti_doppler_i.npy"))
+        return os.path.isfile(os.path.join(self.NPY_DIR, "fullchain_mti_doppler_i.npy"))
 
     def test_replay_open_close(self):
         """ReplayConnection opens and closes without error."""
         if not self._npy_available():
             self.skipTest("npy data files not found")
         from radar_protocol import ReplayConnection
+
         conn = ReplayConnection(self.NPY_DIR, use_mti=True)
         self.assertTrue(conn.open())
         self.assertTrue(conn.is_open)
@@ -481,6 +521,7 @@ class TestReplayConnection(unittest.TestCase):
         if not self._npy_available():
             self.skipTest("npy data files not found")
         from radar_protocol import ReplayConnection
+
         conn = ReplayConnection(self.NPY_DIR, use_mti=True)
         conn.open()
         # Each packet is 11 bytes, total = 2048 * 11
@@ -493,6 +534,7 @@ class TestReplayConnection(unittest.TestCase):
         if not self._npy_available():
             self.skipTest("npy data files not found")
         from radar_protocol import ReplayConnection
+
         conn = ReplayConnection(self.NPY_DIR, use_mti=True)
         conn.open()
         raw = conn._packets
@@ -517,6 +559,7 @@ class TestReplayConnection(unittest.TestCase):
         if not self._npy_available():
             self.skipTest("npy data files not found")
         from radar_protocol import ReplayConnection
+
         conn = ReplayConnection(self.NPY_DIR, use_mti=True, replay_fps=1000)
         conn.open()
         total_read = 0
@@ -532,14 +575,18 @@ class TestReplayConnection(unittest.TestCase):
         if not self._npy_available():
             self.skipTest("npy data files not found")
         from radar_protocol import ReplayConnection
+
         conn = ReplayConnection(self.NPY_DIR, use_mti=False)
         conn.open()
         self.assertEqual(conn._frame_len, NUM_CELLS * DATA_PACKET_SIZE)
         # No-MTI with DC notch=2 and default CFAR → 0 detections
         raw = conn._packets
         boundaries = RadarProtocol.find_packet_boundaries(raw)
-        det_count = sum(1 for s, e, t in boundaries
-                        if RadarProtocol.parse_data_packet(raw[s:e]).get("detection", 0))
+        det_count = sum(
+            1
+            for s, e, t in boundaries
+            if RadarProtocol.parse_data_packet(raw[s:e]).get("detection", 0)
+        )
         self.assertEqual(det_count, 0)
         conn.close()
 
@@ -548,6 +595,7 @@ class TestReplayConnection(unittest.TestCase):
         if not self._npy_available():
             self.skipTest("npy data files not found")
         from radar_protocol import ReplayConnection
+
         conn = ReplayConnection(self.NPY_DIR)
         conn.open()
         self.assertTrue(conn.write(b"\x01\x00\x00\x01"))
@@ -558,6 +606,7 @@ class TestReplayConnection(unittest.TestCase):
         if not self._npy_available():
             self.skipTest("npy data files not found")
         from radar_protocol import ReplayConnection
+
         conn = ReplayConnection(self.NPY_DIR, use_mti=True)
         conn.open()
         # Initial: guard=2 → 4 detections
@@ -577,6 +626,7 @@ class TestReplayConnection(unittest.TestCase):
         if not self._npy_available():
             self.skipTest("npy data files not found")
         from radar_protocol import ReplayConnection
+
         conn = ReplayConnection(self.NPY_DIR, use_mti=True)
         conn.open()
         # Disable MTI
@@ -589,8 +639,11 @@ class TestReplayConnection(unittest.TestCase):
         conn.read(1024)  # triggers rebuild
         raw = conn._packets
         boundaries = RadarProtocol.find_packet_boundaries(raw)
-        det_count = sum(1 for s, e, t in boundaries
-                        if RadarProtocol.parse_data_packet(raw[s:e]).get("detection", 0))
+        det_count = sum(
+            1
+            for s, e, t in boundaries
+            if RadarProtocol.parse_data_packet(raw[s:e]).get("detection", 0)
+        )
         # No-MTI with default CFAR → 0 detections
         self.assertEqual(det_count, 0)
         conn.close()
@@ -600,6 +653,7 @@ class TestReplayConnection(unittest.TestCase):
         if not self._npy_available():
             self.skipTest("npy data files not found")
         from radar_protocol import ReplayConnection
+
         conn = ReplayConnection(self.NPY_DIR, use_mti=True)
         conn.open()
         # Change DC notch to 0 (no notch)
@@ -610,8 +664,11 @@ class TestReplayConnection(unittest.TestCase):
         conn.read(1024)  # triggers rebuild
         raw = conn._packets
         boundaries = RadarProtocol.find_packet_boundaries(raw)
-        det_count = sum(1 for s, e, t in boundaries
-                        if RadarProtocol.parse_data_packet(raw[s:e]).get("detection", 0))
+        det_count = sum(
+            1
+            for s, e, t in boundaries
+            if RadarProtocol.parse_data_packet(raw[s:e]).get("detection", 0)
+        )
         # DC notch=0 with MTI → 6 detections (more noise passes through)
         self.assertEqual(det_count, 6)
         conn.close()
@@ -621,6 +678,7 @@ class TestReplayConnection(unittest.TestCase):
         if not self._npy_available():
             self.skipTest("npy data files not found")
         from radar_protocol import ReplayConnection
+
         conn = ReplayConnection(self.NPY_DIR, use_mti=True)
         conn.open()
         # Send TRIGGER (hardware-only)
@@ -638,6 +696,7 @@ class TestReplayConnection(unittest.TestCase):
         if not self._npy_available():
             self.skipTest("npy data files not found")
         from radar_protocol import ReplayConnection
+
         conn = ReplayConnection(self.NPY_DIR, use_mti=True)
         conn.open()
         # CFAR guard already 2
@@ -651,6 +710,7 @@ class TestReplayConnection(unittest.TestCase):
         if not self._npy_available():
             self.skipTest("npy data files not found")
         from radar_protocol import ReplayConnection
+
         conn = ReplayConnection(self.NPY_DIR, use_mti=True)
         conn.open()
         # Send self-test trigger
@@ -673,7 +733,7 @@ class TestOpcodeEnum(unittest.TestCase):
 
     def test_no_digital_gain_alias(self):
         """DIGITAL_GAIN should NOT exist (was bogus 0x16 alias)."""
-        self.assertFalse(hasattr(Opcode, 'DIGITAL_GAIN'))
+        self.assertFalse(hasattr(Opcode, "DIGITAL_GAIN"))
 
     def test_self_test_trigger(self):
         """SELF_TEST_TRIGGER opcode must be 0x30."""
@@ -698,10 +758,31 @@ class TestOpcodeEnum(unittest.TestCase):
 
     def test_all_rtl_opcodes_present(self):
         """Every RTL opcode has a matching Opcode enum member."""
-        expected = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06,
-                    0x10, 0x11, 0x12, 0x13, 0x14, 0x15,
-                    0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27,
-                    0x30, 0x31, 0xFF}
+        expected = {
+            0x01,
+            0x02,
+            0x03,
+            0x04,
+            0x05,
+            0x06,
+            0x10,
+            0x11,
+            0x12,
+            0x13,
+            0x14,
+            0x15,
+            0x20,
+            0x21,
+            0x22,
+            0x23,
+            0x24,
+            0x25,
+            0x26,
+            0x27,
+            0x30,
+            0x31,
+            0xFF,
+        }
         enum_values = set(int(m) for m in Opcode)
         for op in expected:
             self.assertIn(op, enum_values, f"0x{op:02X} missing from Opcode enum")
@@ -717,9 +798,7 @@ class TestStatusResponseDefaults(unittest.TestCase):
         self.assertEqual(sr.self_test_busy, 0)
 
     def test_self_test_fields_set(self):
-        sr = StatusResponse(self_test_flags=0x1F,
-                            self_test_detail=0xAB,
-                            self_test_busy=1)
+        sr = StatusResponse(self_test_flags=0x1F, self_test_detail=0xAB, self_test_busy=1)
         self.assertEqual(sr.self_test_flags, 0x1F)
         self.assertEqual(sr.self_test_detail, 0xAB)
         self.assertEqual(sr.self_test_busy, 1)

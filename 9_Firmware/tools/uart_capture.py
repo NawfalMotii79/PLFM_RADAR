@@ -51,44 +51,45 @@ LOG_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "
 
 # ANSI color codes for terminal
 COLORS = {
-    "RESET":   "\033[0m",
-    "RED":     "\033[91m",
-    "YELLOW":  "\033[93m",
-    "GREEN":   "\033[92m",
-    "CYAN":    "\033[96m",
-    "DIM":     "\033[2m",
-    "BOLD":    "\033[1m",
+    "RESET": "\033[0m",
+    "RED": "\033[91m",
+    "YELLOW": "\033[93m",
+    "GREEN": "\033[92m",
+    "CYAN": "\033[96m",
+    "DIM": "\033[2m",
+    "BOLD": "\033[1m",
     "MAGENTA": "\033[95m",
 }
 
 # Subsystem tag → color mapping
 SUBSYS_COLORS = {
-    "CLK":    "CYAN",
-    "LO":     "GREEN",
+    "CLK": "CYAN",
+    "LO": "GREEN",
     "LO_DRV": "GREEN",
-    "BF":     "MAGENTA",
-    "PA":     "YELLOW",
-    "FPGA":   "CYAN",
-    "USB":    "CYAN",
-    "PWR":    "RED",
-    "IMU":    "DIM",
-    "MOT":    "DIM",
-    "SYS":    "BOLD",
+    "BF": "MAGENTA",
+    "PA": "YELLOW",
+    "FPGA": "CYAN",
+    "USB": "CYAN",
+    "PWR": "RED",
+    "IMU": "DIM",
+    "MOT": "DIM",
+    "SYS": "BOLD",
 }
 
 # Regex patterns for DIAG output parsing
 RE_DIAG_LINE = re.compile(
-    r"^\[\s*(\d+)\s*ms\]\s+"     # timestamp
-    r"(?:={8}\s+(.+?)\s+={8}|"   # section separator
-    r"(\w+)"                      # subsystem tag
-    r"(?:\s+(WARN|\*\*ERR\*\*))?" # optional severity
-    r":\s+(.*))"                  # message
+    r"^\[\s*(\d+)\s*ms\]\s+"  # timestamp
+    r"(?:={8}\s+(.+?)\s+={8}|"  # section separator
+    r"(\w+)"  # subsystem tag
+    r"(?:\s+(WARN|\*\*ERR\*\*))?"  # optional severity
+    r":\s+(.*))"  # message
 )
 
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def list_ports():
     """Print available serial ports."""
@@ -106,10 +107,10 @@ def auto_detect_port():
     """Try to auto-detect the STM32 serial port on macOS."""
     # Priority order: ST-Link VCP, generic USB serial
     patterns = [
-        "/dev/cu.usbmodem*",     # ST-Link Virtual COM Port
-        "/dev/cu.usbserial*",    # FTDI/CH340/CP210x adapters
-        "/dev/cu.SLAB*",         # Silicon Labs CP210x
-        "/dev/cu.wchusbserial*", # CH340/CH341
+        "/dev/cu.usbmodem*",  # ST-Link Virtual COM Port
+        "/dev/cu.usbserial*",  # FTDI/CH340/CP210x adapters
+        "/dev/cu.SLAB*",  # Silicon Labs CP210x
+        "/dev/cu.wchusbserial*",  # CH340/CH341
     ]
     for pattern in patterns:
         matches = sorted(glob.glob(pattern))
@@ -182,6 +183,7 @@ def should_display(line, filter_subsys=None, errors_only=False):
 # Stats tracker
 # ---------------------------------------------------------------------------
 
+
 class CaptureStats:
     """Track line counts per subsystem and severity."""
 
@@ -227,6 +229,7 @@ class CaptureStats:
 # ---------------------------------------------------------------------------
 # Main capture loop
 # ---------------------------------------------------------------------------
+
 
 def capture(port, baud, log_file, filter_subsys, errors_only, use_color):
     """Open serial port and capture DIAG output."""
@@ -318,6 +321,7 @@ def capture(port, baud, log_file, filter_subsys, errors_only, use_color):
 # CLI
 # ---------------------------------------------------------------------------
 
+
 def main():
     parser = argparse.ArgumentParser(
         description="AERIS-10 UART Diagnostic Capture Tool",
@@ -325,11 +329,13 @@ def main():
         epilog=__doc__.split("Usage:")[0],
     )
     parser.add_argument(
-        "-p", "--port",
+        "-p",
+        "--port",
         help="Serial port (default: auto-detect)",
     )
     parser.add_argument(
-        "-b", "--baud",
+        "-b",
+        "--baud",
         type=int,
         default=DEFAULT_BAUD,
         help=f"Baud rate (default: {DEFAULT_BAUD})",
@@ -359,7 +365,8 @@ def main():
         help="List available serial ports and exit",
     )
     parser.add_argument(
-        "-o", "--output",
+        "-o",
+        "--output",
         help="Log file path (default: logs/uart_YYYYMMDD_HHMMSS.log)",
     )
 

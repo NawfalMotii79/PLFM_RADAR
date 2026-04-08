@@ -14,19 +14,33 @@ import json
 import logging
 from typing import List
 
-from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QFrame,
-    QComboBox, QCheckBox, QPushButton, QLabel,
-)
-from PyQt6.QtCore import Qt, pyqtSignal, pyqtSlot, QObject
-from PyQt6.QtWebEngineWidgets import QWebEngineView
+from PyQt6.QtCore import QObject, Qt, pyqtSignal, pyqtSlot
 from PyQt6.QtWebChannel import QWebChannel
+from PyQt6.QtWebEngineWidgets import QWebEngineView
+from PyQt6.QtWidgets import (
+    QCheckBox,
+    QComboBox,
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
+)
 
 from .models import (
-    GPSData, RadarTarget, TileServer,
-    DARK_BG, DARK_FG, DARK_ACCENT, DARK_BORDER,
-    DARK_TEXT, DARK_BUTTON, DARK_BUTTON_HOVER,
-    DARK_SUCCESS, DARK_INFO,
+    DARK_ACCENT,
+    DARK_BG,
+    DARK_BORDER,
+    DARK_BUTTON,
+    DARK_BUTTON_HOVER,
+    DARK_FG,
+    DARK_INFO,
+    DARK_SUCCESS,
+    DARK_TEXT,
+    GPSData,
+    RadarTarget,
+    TileServer,
 )
 
 logger = logging.getLogger(__name__)

@@ -1,11 +1,21 @@
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 
-def generate_multi_ramp_csv(Fs=125e6, Tb=1e-6, Tau=2e-6, fmax=30e6, fmin=10e6,
-                            Duration=6e-6, filename="multi_ramp_output.csv",
-                            show_plot=True, save_plot_png=None, plot_window=None,
-                            hold_per_sample=1):
+
+def generate_multi_ramp_csv(
+    Fs=125e6,
+    Tb=1e-6,
+    Tau=2e-6,
+    fmax=30e6,
+    fmin=10e6,
+    Duration=6e-6,
+    filename="multi_ramp_output.csv",
+    show_plot=True,
+    save_plot_png=None,
+    plot_window=None,
+    hold_per_sample=1,
+):
     """
     Generate CSV with repeated frequency ramp (chirp) bursts and DAC-style stairs.
 
@@ -28,8 +38,8 @@ def generate_multi_ramp_csv(Fs=125e6, Tb=1e-6, Tau=2e-6, fmax=30e6, fmin=10e6,
     """
     # --- Derived quantities
     Ts = 1.0 / Fs
-    n = int(np.floor(Tb / Ts))              # samples per ramp
-    prf_samples = int(np.floor(Tau / Ts))   # samples per repetition period
+    n = int(np.floor(Tb / Ts))  # samples per ramp
+    prf_samples = int(np.floor(Tau / Ts))  # samples per repetition period
     total_samples = int(np.floor(Duration / Ts))
 
     # Time vector for raw DAC samples
@@ -37,9 +47,7 @@ def generate_multi_ramp_csv(Fs=125e6, Tb=1e-6, Tau=2e-6, fmax=30e6, fmin=10e6,
 
     # --- Build one ramp (chirp)
     N = np.arange(n)
-    theta_n = 2.0 * np.pi * (
-        (N**2) * (Ts**2) * (fmax - fmin) / (2.0 * Tb) + fmin * N * Ts
-    )
+    theta_n = 2.0 * np.pi * ((N**2) * (Ts**2) * (fmax - fmin) / (2.0 * Tb) + fmin * N * Ts)
     ramp = 1.0 + np.sin(theta_n)
 
     # --- Assemble repeated ramps (zero elsewhere)
@@ -47,7 +55,7 @@ def generate_multi_ramp_csv(Fs=125e6, Tb=1e-6, Tau=2e-6, fmax=30e6, fmin=10e6,
     idx = 0
     ramps_inserted = 0
     while idx + n <= total_samples:
-        y[idx:idx + n] = ramp
+        y[idx : idx + n] = ramp
         ramps_inserted += 1
         idx += prf_samples
         if prf_samples <= 0:
@@ -69,7 +77,9 @@ def generate_multi_ramp_csv(Fs=125e6, Tb=1e-6, Tau=2e-6, fmax=30e6, fmin=10e6,
     df = pd.DataFrame({"time(s)": t_csv, "voltage(V)": y_csv})
     df.to_csv(filename, index=False, header=False)
     print(f"CSV saved: {filename}")
-    print(f"Total raw samples: {total_samples} | Ramps inserted: {ramps_inserted} | CSV points: {len(y_csv)}")
+    print(
+        f"Total raw samples: {total_samples} | Ramps inserted: {ramps_inserted} | CSV points: {len(y_csv)}"
+    )
 
     # --- Plot (staircase)
     if show_plot or save_plot_png:
@@ -98,7 +108,7 @@ def generate_multi_ramp_csv(Fs=125e6, Tb=1e-6, Tau=2e-6, fmax=30e6, fmin=10e6,
 
         plt.figure(figsize=(10, 4.5))
         # STEP PLOT => staircase appearance without fabricating extra samples
-        plt.step(t_plot[k]*1e6, y_plot[k], where="post", label="DAC ZOH (stairs)")
+        plt.step(t_plot[k] * 1e6, y_plot[k], where="post", label="DAC ZOH (stairs)")
         plt.xlabel("Time (µs)")
         plt.ylabel("Amplitude")
         plt.title("Repeated chirp ramps (DAC-like staircase)")
@@ -124,13 +134,10 @@ if __name__ == "__main__":
         Tau=2e-6,
         fmax=30e6,
         fmin=10e6,
-        Duration=6e-6,              # try longer duration
+        Duration=6e-6,  # try longer duration
         filename="multi_ramp_stairs.csv",
         show_plot=True,
         save_plot_png=None,
-        plot_window=None,             # None => full duration
-        hold_per_sample=1             # set >1 to make CSV itself staircase (ZOH-expanded)
+        plot_window=None,  # None => full duration
+        hold_per_sample=1,  # set >1 to make CSV itself staircase (ZOH-expanded)
     )
-
-
-

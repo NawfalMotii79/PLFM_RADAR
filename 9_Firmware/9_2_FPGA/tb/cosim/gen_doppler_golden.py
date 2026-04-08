@@ -23,18 +23,15 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from fpga_model import (
-    DopplerProcessor
-)
+from fpga_model import DopplerProcessor
 from radar_scene import Target, generate_doppler_frame
-
 
 # =============================================================================
 # Constants
 # =============================================================================
 
-DOPPLER_FFT_SIZE = 16     # Per sub-frame
-DOPPLER_TOTAL_BINS = 32   # Total output (2 sub-frames x 16)
+DOPPLER_FFT_SIZE = 16  # Per sub-frame
+DOPPLER_TOTAL_BINS = 32  # Total output (2 sub-frames x 16)
 RANGE_BINS = 64
 CHIRPS_PER_FRAME = 32
 TOTAL_SAMPLES = CHIRPS_PER_FRAME * RANGE_BINS  # 2048
@@ -44,11 +41,12 @@ TOTAL_SAMPLES = CHIRPS_PER_FRAME * RANGE_BINS  # 2048
 # I/O helpers
 # =============================================================================
 
+
 def write_hex_32bit(filepath, samples):
     """Write packed 32-bit hex file: {Q[31:16], I[15:0]} per line."""
-    with open(filepath, 'w') as f:
+    with open(filepath, "w") as f:
         f.write(f"// {len(samples)} packed 32-bit samples (Q:I) for $readmemh\n")
-        for (i_val, q_val) in samples:
+        for i_val, q_val in samples:
             packed = ((q_val & 0xFFFF) << 16) | (i_val & 0xFFFF)
             f.write(f"{packed:08X}\n")
     print(f"  Wrote {len(samples)} packed samples to {filepath}")
@@ -56,17 +54,17 @@ def write_hex_32bit(filepath, samples):
 
 def write_csv(filepath, headers, *columns):
     """Write CSV with header row."""
-    with open(filepath, 'w') as f:
-        f.write(','.join(headers) + '\n')
+    with open(filepath, "w") as f:
+        f.write(",".join(headers) + "\n")
         for i in range(len(columns[0])):
-            row = ','.join(str(col[i]) for col in columns)
-            f.write(row + '\n')
+            row = ",".join(str(col[i]) for col in columns)
+            f.write(row + "\n")
     print(f"  Wrote {len(columns[0])} rows to {filepath}")
 
 
 def write_hex_16bit(filepath, data):
     """Write list of signed 16-bit integers as 4-digit hex, one per line."""
-    with open(filepath, 'w') as f:
+    with open(filepath, "w") as f:
         for val in data:
             v = val & 0xFFFF
             f.write(f"{v:04X}\n")
@@ -80,6 +78,7 @@ def write_hex_16bit(filepath, data):
 # =============================================================================
 # Test scenario definitions
 # =============================================================================
+
 
 def make_scenario_stationary():
     """Single stationary target at range bin ~10.  Doppler peak at bin 0."""
@@ -106,9 +105,9 @@ def make_scenario_two_targets():
 
 
 SCENARIOS = {
-    'stationary': make_scenario_stationary,
-    'moving': make_scenario_moving,
-    'two_targets': make_scenario_two_targets,
+    "stationary": make_scenario_stationary,
+    "moving": make_scenario_moving,
+    "two_targets": make_scenario_two_targets,
 }
 
 
@@ -116,12 +115,13 @@ SCENARIOS = {
 # Main generator
 # =============================================================================
 
+
 def generate_scenario(name, targets, description, base_dir):
     """Generate input hex + golden output for one scenario."""
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"Scenario: {name} — {description}")
     print("Model: CLEAN (dual 16-pt FFT)")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
 
     # Generate Doppler frame (32 chirps x 64 range bins)
     frame_i, frame_q = generate_doppler_frame(targets, seed=42)
@@ -142,8 +142,10 @@ def generate_scenario(name, targets, description, base_dir):
     dp = DopplerProcessor()
     doppler_i, doppler_q = dp.process_frame(frame_i, frame_q)
 
-    print(f"  Doppler output: {len(doppler_i)} range bins x "
-          f"{len(doppler_i[0])} doppler bins (2 sub-frames x {DOPPLER_FFT_SIZE})")
+    print(
+        f"  Doppler output: {len(doppler_i)} range bins x "
+        f"{len(doppler_i[0])} doppler bins (2 sub-frames x {DOPPLER_FFT_SIZE})"
+    )
 
     # ---- Write golden output CSV ----
     # Format: range_bin, doppler_bin, out_i, out_q
@@ -162,9 +164,14 @@ def generate_scenario(name, targets, description, base_dir):
             flat_q.append(doppler_q[rbin][dbin])
 
     golden_csv = os.path.join(base_dir, f"doppler_golden_py_{name}.csv")
-    write_csv(golden_csv,
-              ['range_bin', 'doppler_bin', 'out_i', 'out_q'],
-              flat_rbin, flat_dbin, flat_i, flat_q)
+    write_csv(
+        golden_csv,
+        ["range_bin", "doppler_bin", "out_i", "out_q"],
+        flat_rbin,
+        flat_dbin,
+        flat_i,
+        flat_q,
+    )
 
     # ---- Write golden hex (for optional RTL $readmemh comparison) ----
     golden_hex = os.path.join(base_dir, f"doppler_golden_py_{name}.hex")
@@ -174,8 +181,9 @@ def generate_scenario(name, targets, description, base_dir):
     print("\n  Peak Doppler bins per range bin (top 5 by magnitude):")
     peak_info = []
     for rbin in range(RANGE_BINS):
-        mags = [abs(doppler_i[rbin][d]) + abs(doppler_q[rbin][d])
-                for d in range(DOPPLER_TOTAL_BINS)]
+        mags = [
+            abs(doppler_i[rbin][d]) + abs(doppler_q[rbin][d]) for d in range(DOPPLER_TOTAL_BINS)
+        ]
         peak_dbin = max(range(DOPPLER_TOTAL_BINS), key=lambda d: mags[d])
         peak_mag = mags[peak_dbin]
         peak_info.append((rbin, peak_dbin, peak_mag))
@@ -187,13 +195,15 @@ def generate_scenario(name, targets, description, base_dir):
         q_val = doppler_q[rbin][dbin]
         sf = dbin // DOPPLER_FFT_SIZE
         bin_in_sf = dbin % DOPPLER_FFT_SIZE
-        print(f"    rbin={rbin:2d}, dbin={dbin:2d} (sf{sf}:{bin_in_sf:2d}), mag={mag:6d}, "
-              f"I={i_val:6d}, Q={q_val:6d}")
+        print(
+            f"    rbin={rbin:2d}, dbin={dbin:2d} (sf{sf}:{bin_in_sf:2d}), mag={mag:6d}, "
+            f"I={i_val:6d}, Q={q_val:6d}"
+        )
 
     return {
-        'name': name,
-        'description': description,
-        'peak_info': peak_info[:5],
+        "name": name,
+        "description": description,
+        "peak_info": peak_info[:5],
     }
 
 
@@ -209,7 +219,7 @@ def main():
 
     # Check if a specific scenario was requested
     for arg in sys.argv[1:]:
-        if arg.startswith('--'):
+        if arg.startswith("--"):
             continue
         if arg in SCENARIOS:
             scenarios_to_run = [arg]
@@ -221,18 +231,20 @@ def main():
         r = generate_scenario(name, targets, description, base_dir)
         results.append(r)
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print("Summary:")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
     for r in results:
-        print(f"  {r['name']:<15s} top peak: "
-              f"rbin={r['peak_info'][0][0]}, dbin={r['peak_info'][0][1]}, "
-              f"mag={r['peak_info'][0][2]}")
+        print(
+            f"  {r['name']:<15s} top peak: "
+            f"rbin={r['peak_info'][0][0]}, dbin={r['peak_info'][0][1]}, "
+            f"mag={r['peak_info'][0][2]}"
+        )
 
     print(f"\nGenerated {len(results)} scenarios.")
     print(f"Files written to: {base_dir}")
     print("=" * 60)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

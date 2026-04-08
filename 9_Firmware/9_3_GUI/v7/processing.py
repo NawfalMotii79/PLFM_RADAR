@@ -14,17 +14,22 @@ Bug fixes vs V6:
   2. apply_pitch_correction() is a proper standalone function.
 """
 
-import struct
-import time
 import logging
 import math
-from typing import Optional, Tuple, List, Dict
+import struct
+import time
+from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 
 from .models import (
-    RadarTarget, GPSData, ProcessingConfig,
-    SCIPY_AVAILABLE, SKLEARN_AVAILABLE, FILTERPY_AVAILABLE, CRCMOD_AVAILABLE,
+    CRCMOD_AVAILABLE,
+    FILTERPY_AVAILABLE,
+    SCIPY_AVAILABLE,
+    SKLEARN_AVAILABLE,
+    GPSData,
+    ProcessingConfig,
+    RadarTarget,
 )
 
 if SKLEARN_AVAILABLE:

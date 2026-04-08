@@ -10,39 +10,69 @@ RadarDashboard is a QMainWindow with four tabs:
 Integrates: hardware interfaces, QThread workers, TargetSimulator, RadarMapWidget.
 """
 
-import time
 import logging
+import time
 from typing import List, Optional
 
 import numpy as np
-
-from PyQt6.QtWidgets import (
-    QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
-    QTabWidget, QSplitter, QGroupBox, QFrame,
-    QLabel, QPushButton, QComboBox, QCheckBox,
-    QDoubleSpinBox, QSpinBox,
-    QTableWidget, QTableWidgetItem, QHeaderView,
-    QPlainTextEdit, QStatusBar, QMessageBox,
-)
-from PyQt6.QtCore import Qt, QTimer, pyqtSlot
-from PyQt6.QtGui import QColor
-
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
-
-from .models import (
-    RadarTarget, RadarSettings, GPSData, ProcessingConfig,
-    DARK_BG, DARK_FG, DARK_ACCENT, DARK_HIGHLIGHT, DARK_BORDER,
-    DARK_TEXT, DARK_BUTTON, DARK_BUTTON_HOVER,
-    DARK_TREEVIEW, DARK_TREEVIEW_ALT,
-    DARK_SUCCESS, DARK_WARNING, DARK_ERROR, DARK_INFO,
-    USB_AVAILABLE, FTDI_AVAILABLE, SCIPY_AVAILABLE,
-    SKLEARN_AVAILABLE, FILTERPY_AVAILABLE, CRCMOD_AVAILABLE,
+from PyQt6.QtCore import Qt, QTimer, pyqtSlot
+from PyQt6.QtGui import QColor
+from PyQt6.QtWidgets import (
+    QCheckBox,
+    QComboBox,
+    QDoubleSpinBox,
+    QFrame,
+    QGridLayout,
+    QGroupBox,
+    QHBoxLayout,
+    QHeaderView,
+    QLabel,
+    QMainWindow,
+    QMessageBox,
+    QPlainTextEdit,
+    QPushButton,
+    QSpinBox,
+    QSplitter,
+    QStatusBar,
+    QTableWidget,
+    QTableWidgetItem,
+    QTabWidget,
+    QVBoxLayout,
+    QWidget,
 )
+
 from .hardware import FT2232HQInterface, STM32USBInterface
-from .processing import RadarProcessor, RadarPacketParser, USBPacketParser
-from .workers import RadarDataWorker, GPSDataWorker, TargetSimulator
 from .map_widget import RadarMapWidget
+from .models import (
+    CRCMOD_AVAILABLE,
+    DARK_ACCENT,
+    DARK_BG,
+    DARK_BORDER,
+    DARK_BUTTON,
+    DARK_BUTTON_HOVER,
+    DARK_ERROR,
+    DARK_FG,
+    DARK_HIGHLIGHT,
+    DARK_INFO,
+    DARK_SUCCESS,
+    DARK_TEXT,
+    DARK_TREEVIEW,
+    DARK_TREEVIEW_ALT,
+    DARK_WARNING,
+    FILTERPY_AVAILABLE,
+    FTDI_AVAILABLE,
+    SCIPY_AVAILABLE,
+    SKLEARN_AVAILABLE,
+    USB_AVAILABLE,
+    GPSData,
+    ProcessingConfig,
+    RadarSettings,
+    RadarTarget,
+)
+from .processing import RadarPacketParser, RadarProcessor, USBPacketParser
+from .workers import GPSDataWorker, RadarDataWorker, TargetSimulator
 
 logger = logging.getLogger(__name__)
 

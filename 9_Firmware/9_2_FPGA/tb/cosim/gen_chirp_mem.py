@@ -52,19 +52,19 @@ import sys
 # ============================================================================
 # AERIS-10 Parameters (matching radar_scene.py)
 # ============================================================================
-CHIRP_BW = 20e6           # 20 MHz sweep bandwidth
-FS_SYS = 100e6            # System clock (100 MHz, post-CIC)
-T_LONG_CHIRP = 30e-6      # 30 us long chirp duration
-T_SHORT_CHIRP = 0.5e-6    # 0.5 us short chirp duration
+CHIRP_BW = 20e6  # 20 MHz sweep bandwidth
+FS_SYS = 100e6  # System clock (100 MHz, post-CIC)
+T_LONG_CHIRP = 30e-6  # 30 us long chirp duration
+T_SHORT_CHIRP = 0.5e-6  # 0.5 us short chirp duration
 FFT_SIZE = 1024
-LONG_CHIRP_SAMPLES = int(T_LONG_CHIRP * FS_SYS)   # 3000
+LONG_CHIRP_SAMPLES = int(T_LONG_CHIRP * FS_SYS)  # 3000
 SHORT_CHIRP_SAMPLES = int(T_SHORT_CHIRP * FS_SYS)  # 50
 LONG_SEGMENTS = 4
-SCALE = 0.9               # Q15 scaling factor (matches radar_scene.py)
+SCALE = 0.9  # Q15 scaling factor (matches radar_scene.py)
 Q15_MAX = 32767
 
 # Output directory (FPGA RTL root, where .mem files live)
-MEM_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..')
+MEM_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
 
 
 def generate_full_long_chirp():
@@ -123,9 +123,9 @@ def to_hex16(value):
 def write_mem_file(filename, values):
     """Write a list of 16-bit signed integers to a .mem file (hex format)."""
     path = os.path.join(MEM_DIR, filename)
-    with open(path, 'w') as f:
+    with open(path, "w") as f:
         for v in values:
-            f.write(to_hex16(v) + '\n')
+            f.write(to_hex16(v) + "\n")
     print(f"  Wrote {filename}: {len(values)} entries")
 
 
@@ -135,15 +135,15 @@ def main():
     print("=" * 60)
     print()
     print("Parameters:")
-    print(f"  CHIRP_BW         = {CHIRP_BW/1e6:.1f} MHz")
-    print(f"  FS_SYS           = {FS_SYS/1e6:.1f} MHz")
-    print(f"  T_LONG_CHIRP     = {T_LONG_CHIRP*1e6:.1f} us")
-    print(f"  T_SHORT_CHIRP    = {T_SHORT_CHIRP*1e6:.1f} us")
+    print(f"  CHIRP_BW         = {CHIRP_BW / 1e6:.1f} MHz")
+    print(f"  FS_SYS           = {FS_SYS / 1e6:.1f} MHz")
+    print(f"  T_LONG_CHIRP     = {T_LONG_CHIRP * 1e6:.1f} us")
+    print(f"  T_SHORT_CHIRP    = {T_SHORT_CHIRP * 1e6:.1f} us")
     print(f"  LONG_CHIRP_SAMPLES = {LONG_CHIRP_SAMPLES}")
     print(f"  SHORT_CHIRP_SAMPLES = {SHORT_CHIRP_SAMPLES}")
     print(f"  FFT_SIZE         = {FFT_SIZE}")
-    print(f"  Chirp rate (long)  = {CHIRP_BW/T_LONG_CHIRP:.3e} Hz/s")
-    print(f"  Chirp rate (short) = {CHIRP_BW/T_SHORT_CHIRP:.3e} Hz/s")
+    print(f"  Chirp rate (long)  = {CHIRP_BW / T_LONG_CHIRP:.3e} Hz/s")
+    print(f"  Chirp rate (short) = {CHIRP_BW / T_SHORT_CHIRP:.3e} Hz/s")
     print(f"  Q15 scale        = {SCALE}")
     print()
 
@@ -178,8 +178,7 @@ def main():
                 seg_q.append(0)
 
         zero_count = FFT_SIZE - valid_count
-        print(f"  Seg {seg}: indices [{start}:{end-1}], "
-              f"valid={valid_count}, zeros={zero_count}")
+        print(f"  Seg {seg}: indices [{start}:{end - 1}], valid={valid_count}, zeros={zero_count}")
 
         write_mem_file(f"long_chirp_seg{seg}_i.mem", seg_i)
         write_mem_file(f"long_chirp_seg{seg}_q.mem", seg_q)
@@ -218,17 +217,19 @@ def main():
         return 1
 
     # Check magnitude envelope
-    max_mag = max(math.sqrt(i*i + q*q) for i, q in zip(long_i, long_q))
+    max_mag = max(math.sqrt(i * i + q * q) for i, q in zip(long_i, long_q))
     print(f"  Max magnitude: {max_mag:.1f} (expected ~{Q15_MAX * SCALE:.1f})")
     print(f"  Magnitude ratio: {max_mag / (Q15_MAX * SCALE):.6f}")
 
     # Check seg3 zero padding
-    seg3_i_path = os.path.join(MEM_DIR, 'long_chirp_seg3_i.mem')
-    with open(seg3_i_path, 'r') as f:
-        seg3_lines = [line.strip() for line in f if line.strip()]
-    nonzero_seg3 = sum(1 for line in seg3_lines if line != '0000')
-    print(f"  Seg3 non-zero entries: {nonzero_seg3}/{len(seg3_lines)} "
-          f"(expected 0 since chirp ends at sample 2999)")
+    seg3_i_path = os.path.join(MEM_DIR, "long_chirp_seg3_i.mem")
+    with open(seg3_i_path, "r") as f:
+        seg3_lines = [l.strip() for l in f if l.strip()]
+    nonzero_seg3 = sum(1 for l in seg3_lines if l != "0000")
+    print(
+        f"  Seg3 non-zero entries: {nonzero_seg3}/{len(seg3_lines)} "
+        f"(expected 0 since chirp ends at sample 2999)"
+    )
 
     if nonzero_seg3 == 0:
         print("  [PASS] Seg3 is all zeros (chirp 3000 samples < seg3 start 3072)")
@@ -243,5 +244,5 @@ def main():
     return 0
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main())

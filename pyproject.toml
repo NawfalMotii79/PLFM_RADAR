@@ -31,3 +31,8 @@ extend-exclude = [
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I"]
+
+[tool.ruff.lint.per-file-ignores]
+"5_Simulations/**/*.py" = ["E501", "E701", "E702", "W293"]
+"9_Firmware/9_2_FPGA/tb/cosim/**/*.py" = ["E501", "E701", "E702", "E741", "F841", "W293"]
+"9_Firmware/9_3_GUI/v7/**/*.py" = ["E501"]

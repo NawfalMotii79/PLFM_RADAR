@@ -24,6 +24,7 @@ import os
 # Fixed-point utility functions
 # =============================================================================
 
+
 def sign_extend(value, bits):
     """Sign-extend a `bits`-wide integer to full Python int."""
     mask = (1 << bits) - 1
@@ -62,14 +63,70 @@ def arith_rshift(value, shift, width=None):
 # Quarter-wave sine LUT (64 entries, 16-bit unsigned)
 # Matches nco_400m_enhanced.v exactly
 NCO_SINE_LUT = [
-    0x0000, 0x0324, 0x0648, 0x096A, 0x0C8C, 0x0FAB, 0x12C8, 0x15E2,
-    0x18F9, 0x1C0B, 0x1F1A, 0x2223, 0x2528, 0x2826, 0x2B1F, 0x2E11,
-    0x30FB, 0x33DF, 0x36BA, 0x398C, 0x3C56, 0x3F17, 0x41CE, 0x447A,
-    0x471C, 0x49B4, 0x4C3F, 0x4EBF, 0x5133, 0x539B, 0x55F5, 0x5842,
-    0x5A82, 0x5CB3, 0x5ED7, 0x60EB, 0x62F1, 0x64E8, 0x66CF, 0x68A6,
-    0x6A6D, 0x6C23, 0x6DC9, 0x6F5E, 0x70E2, 0x7254, 0x73B5, 0x7504,
-    0x7641, 0x776B, 0x7884, 0x7989, 0x7A7C, 0x7B5C, 0x7C29, 0x7CE3,
-    0x7D89, 0x7E1D, 0x7E9C, 0x7F09, 0x7F61, 0x7FA6, 0x7FD8, 0x7FF5,
+    0x0000,
+    0x0324,
+    0x0648,
+    0x096A,
+    0x0C8C,
+    0x0FAB,
+    0x12C8,
+    0x15E2,
+    0x18F9,
+    0x1C0B,
+    0x1F1A,
+    0x2223,
+    0x2528,
+    0x2826,
+    0x2B1F,
+    0x2E11,
+    0x30FB,
+    0x33DF,
+    0x36BA,
+    0x398C,
+    0x3C56,
+    0x3F17,
+    0x41CE,
+    0x447A,
+    0x471C,
+    0x49B4,
+    0x4C3F,
+    0x4EBF,
+    0x5133,
+    0x539B,
+    0x55F5,
+    0x5842,
+    0x5A82,
+    0x5CB3,
+    0x5ED7,
+    0x60EB,
+    0x62F1,
+    0x64E8,
+    0x66CF,
+    0x68A6,
+    0x6A6D,
+    0x6C23,
+    0x6DC9,
+    0x6F5E,
+    0x70E2,
+    0x7254,
+    0x73B5,
+    0x7504,
+    0x7641,
+    0x776B,
+    0x7884,
+    0x7989,
+    0x7A7C,
+    0x7B5C,
+    0x7C29,
+    0x7CE3,
+    0x7D89,
+    0x7E1D,
+    0x7E9C,
+    0x7F09,
+    0x7F61,
+    0x7FA6,
+    0x7FD8,
+    0x7FF5,
 ]
 
 
@@ -95,31 +152,31 @@ class NCO:
 
     def __init__(self):
         self.phase_accumulator = 0  # 32-bit
-        self.phase_accum_reg = 0    # Stage 1 output
+        self.phase_accum_reg = 0  # Stage 1 output
         self.phase_with_offset = 0  # Stage 2 output
 
         # Stage 3a
-        self.lut_index_pipe = 0     # 6-bit
-        self.quadrant_pipe = 0      # 2-bit
+        self.lut_index_pipe = 0  # 6-bit
+        self.quadrant_pipe = 0  # 2-bit
 
         # Stage 3b
-        self.sin_abs_reg = 0        # 16-bit unsigned
-        self.cos_abs_reg = 0x7FFF   # 16-bit unsigned
-        self.quadrant_reg = 0       # 2-bit
+        self.sin_abs_reg = 0  # 16-bit unsigned
+        self.cos_abs_reg = 0x7FFF  # 16-bit unsigned
+        self.quadrant_reg = 0  # 2-bit
 
         # Stage 4
-        self.sin_neg_reg = 0        # 16-bit signed
+        self.sin_neg_reg = 0  # 16-bit signed
         self.cos_neg_reg = sign_extend((-0x7FFF) & 0xFFFF, 16)
         self.sin_abs_reg2 = 0
         self.cos_abs_reg2 = 0x7FFF
         self.quadrant_reg2 = 0
 
         # Stage 5 outputs
-        self.sin_out = 0            # 16-bit signed
-        self.cos_out = 0x7FFF       # 16-bit signed
+        self.sin_out = 0  # 16-bit signed
+        self.cos_out = 0x7FFF  # 16-bit signed
 
         # Valid pipeline
-        self.valid_pipe = 0         # 6-bit shift register
+        self.valid_pipe = 0  # 6-bit shift register
         self.dds_ready = False
 
     def _quadrant_and_index(self, phase_with_offset):
@@ -206,7 +263,9 @@ class NCO:
             #     new_phase_with_offset = old_phase_accum_reg + offset
             old_phase_accumulator = (self.phase_accumulator - ftw) & 0xFFFFFFFF  # reconstruct
             self.phase_accum_reg = old_phase_accumulator
-            self.phase_with_offset = (old_phase_accum_reg + ((phase_offset << 16) & 0xFFFFFFFF)) & 0xFFFFFFFF
+            self.phase_with_offset = (
+                old_phase_accum_reg + ((phase_offset << 16) & 0xFFFFFFFF)
+            ) & 0xFFFFFFFF
             # phase_accumulator was already updated above
 
         # ---- Stage 3a: Register LUT address + quadrant ----
@@ -236,7 +295,7 @@ class NCO:
         # Gated by valid_pipe[4]
         if (old_valid_pipe >> 4) & 1:
             q = old_quadrant_reg2
-            if q == 0:    # Q1: sin+, cos+
+            if q == 0:  # Q1: sin+, cos+
                 self.sin_out = sign_extend(old_sin_abs_reg2, 16)
                 self.cos_out = sign_extend(old_cos_abs_reg2, 16)
             elif q == 1:  # Q2: sin+, cos-
@@ -260,6 +319,7 @@ class NCO:
 # Mixer: DSP48E1 multiply with 3-cycle pipeline (AREG+MREG+PREG)
 # =============================================================================
 
+
 class Mixer:
     """
     Bit-accurate model of ddc_400m mixer.
@@ -278,20 +338,20 @@ class Mixer:
 
     def __init__(self):
         # Stage 1 (AREG/BREG)
-        self.adc_signed_reg = 0   # 18-bit signed
-        self.cos_pipe_reg = 0     # 16-bit signed
-        self.sin_pipe_reg = 0     # 16-bit signed
+        self.adc_signed_reg = 0  # 18-bit signed
+        self.cos_pipe_reg = 0  # 16-bit signed
+        self.sin_pipe_reg = 0  # 16-bit signed
 
         # Stage 2 (MREG)
         self.mult_i_internal = 0  # 34-bit signed
         self.mult_q_internal = 0  # 34-bit signed
 
         # Stage 3 (PREG)
-        self.mult_i_reg = 0       # 34-bit signed
-        self.mult_q_reg = 0       # 34-bit signed
+        self.mult_i_reg = 0  # 34-bit signed
+        self.mult_q_reg = 0  # 34-bit signed
 
         # Valid pipeline
-        self.valid_pipe = 0       # 3-bit
+        self.valid_pipe = 0  # 3-bit
 
     @staticmethod
     def adc_to_signed(adc_data_8bit):
@@ -363,6 +423,7 @@ class Mixer:
 # =============================================================================
 # CIC Decimator (5-stage, 4x decimation, DSP48E1 PCOUT cascade)
 # =============================================================================
+
 
 class CICDecimator:
     """
@@ -451,7 +512,7 @@ class CICDecimator:
             self.data_in_c_delayed = sign_extend(data_in_c, 48)
             self.int_stages[0] = (old_int[0] + old_data_in_c_delayed) & self.ACC_MASK
             for i in range(1, self.STAGES):
-                self.int_stages[i] = (old_int[i] + old_int[i-1]) & self.ACC_MASK
+                self.int_stages[i] = (old_int[i] + old_int[i - 1]) & self.ACC_MASK
 
         # ---- Decimation control ----
         if data_valid:
@@ -479,20 +540,20 @@ class CICDecimator:
                     inp = old_integrator_sampled
                     self.comb[0] = sign_extend(
                         (inp - old_comb_delay[0][self.COMB_DELAY - 1]) & self.COMB_MASK,
-                        self.COMB_WIDTH
+                        self.COMB_WIDTH,
                     )
                     # Shift delay line
                     for j in range(self.COMB_DELAY - 1, 0, -1):
-                        self.comb_delay[0][j] = old_comb_delay[0][j-1]
+                        self.comb_delay[0][j] = old_comb_delay[0][j - 1]
                     self.comb_delay[0][0] = inp
                 else:
-                    inp = old_comb[i-1]
+                    inp = old_comb[i - 1]
                     self.comb[i] = sign_extend(
                         (inp - old_comb_delay[i][self.COMB_DELAY - 1]) & self.COMB_MASK,
-                        self.COMB_WIDTH
+                        self.COMB_WIDTH,
                     )
                     for j in range(self.COMB_DELAY - 1, 0, -1):
-                        self.comb_delay[i][j] = old_comb_delay[i][j-1]
+                        self.comb_delay[i][j] = old_comb_delay[i][j - 1]
                     self.comb_delay[i][0] = inp
 
             # Scale by >>>10 (CIC gain = 4^5 = 1024 = 2^10)
@@ -500,8 +561,8 @@ class CICDecimator:
             self.temp_output = sign_extend(self.temp_scaled_output & 0x3FFFF, 18)
 
             # Pipeline Stage 2: saturation flags
-            self.sat_pos = (old_temp_scaled_output > 131071)
-            self.sat_neg = (old_temp_scaled_output < -131072)
+            self.sat_pos = old_temp_scaled_output > 131071
+            self.sat_neg = old_temp_scaled_output < -131072
             self.temp_output_pipe = sign_extend(old_temp_scaled_output & 0x3FFFF, 18)
             self.data_out_valid_pipe = True
         else:
@@ -529,10 +590,38 @@ class CICDecimator:
 # FIR coefficients (18-bit signed hex from fir_lowpass.v)
 # These are 18-bit signed values stored in Verilog as 18'sh...
 FIR_COEFFICIENTS_HEX = [
-    0x000AD, 0x000CE, 0x3FD87, 0x002A6, 0x000E0, 0x3F8C0, 0x00A45, 0x3FD82,
-    0x3F0B5, 0x01CAD, 0x3EE59, 0x3E821, 0x04841, 0x3B340, 0x3E299, 0x1FFFF,
-    0x1FFFF, 0x3E299, 0x3B340, 0x04841, 0x3E821, 0x3EE59, 0x01CAD, 0x3F0B5,
-    0x3FD82, 0x00A45, 0x3F8C0, 0x000E0, 0x002A6, 0x3FD87, 0x000CE, 0x000AD,
+    0x000AD,
+    0x000CE,
+    0x3FD87,
+    0x002A6,
+    0x000E0,
+    0x3F8C0,
+    0x00A45,
+    0x3FD82,
+    0x3F0B5,
+    0x01CAD,
+    0x3EE59,
+    0x3E821,
+    0x04841,
+    0x3B340,
+    0x3E299,
+    0x1FFFF,
+    0x1FFFF,
+    0x3E299,
+    0x3B340,
+    0x04841,
+    0x3E821,
+    0x3EE59,
+    0x01CAD,
+    0x3F0B5,
+    0x3FD82,
+    0x00A45,
+    0x3F8C0,
+    0x000E0,
+    0x002A6,
+    0x3FD87,
+    0x000CE,
+    0x000AD,
 ]
 
 # Convert to signed Python ints
@@ -607,19 +696,23 @@ class FIRFilter:
         if (old_valid_pipe >> 0) & 1:
             for i in range(16):
                 # Sign-extend products to ACCUM_WIDTH
-                a = sign_extend(mult_results[2*i] & ((1 << self.PRODUCT_WIDTH) - 1), self.PRODUCT_WIDTH)
-                b = sign_extend(mult_results[2*i+1] & ((1 << self.PRODUCT_WIDTH) - 1), self.PRODUCT_WIDTH)
+                a = sign_extend(
+                    mult_results[2 * i] & ((1 << self.PRODUCT_WIDTH) - 1), self.PRODUCT_WIDTH
+                )
+                b = sign_extend(
+                    mult_results[2 * i + 1] & ((1 << self.PRODUCT_WIDTH) - 1), self.PRODUCT_WIDTH
+                )
                 self.add_l0[i] = a + b
 
         # ---- Stage 2 (Level 1): 8 pairwise sums ----
         if (old_valid_pipe >> 1) & 1:
             for i in range(8):
-                self.add_l1[i] = old_l0[2*i] + old_l0[2*i+1]
+                self.add_l1[i] = old_l0[2 * i] + old_l0[2 * i + 1]
 
         # ---- Stage 3 (Level 2): 4 pairwise sums ----
         if (old_valid_pipe >> 2) & 1:
             for i in range(4):
-                self.add_l2[i] = old_l1[2*i] + old_l1[2*i+1]
+                self.add_l2[i] = old_l1[2 * i] + old_l1[2 * i + 1]
 
         # ---- Stage 4 (Level 3): 2 pairwise sums ----
         if (old_valid_pipe >> 3) & 1:
@@ -634,12 +727,12 @@ class FIRFilter:
         if (old_valid_pipe >> 5) & 1:
             accum = old_accum
             max_pos = (1 << (self.ACCUM_WIDTH - 2)) - 1  # 2^34 - 1
-            min_neg = -(1 << (self.ACCUM_WIDTH - 2))      # -2^34
+            min_neg = -(1 << (self.ACCUM_WIDTH - 2))  # -2^34
 
             if accum > max_pos:
                 self.data_out = (1 << (self.DATA_WIDTH - 1)) - 1  # 131071
             elif accum < min_neg:
-                self.data_out = -(1 << (self.DATA_WIDTH - 1))     # -131072
+                self.data_out = -(1 << (self.DATA_WIDTH - 1))  # -131072
             else:
                 # Round and truncate: accumulator_reg[ACCUM_WIDTH-2 : DATA_WIDTH-1]
                 # = accum[34:17] = bits 34 down to 17
@@ -659,6 +752,7 @@ class FIRFilter:
 # =============================================================================
 # DDC Input Interface (18 -> 16 bit rounding)
 # =============================================================================
+
 
 class DDCInputInterface:
     """
@@ -699,7 +793,7 @@ class DDCInputInterface:
             ddc_q = sign_extend(ddc_q_18 & 0x3FFFF, 18)
             # adc_i = ddc_i[17:2] + ddc_i[1]  (rounding)
             trunc_i = (ddc_i >> 2) & 0xFFFF  # bits [17:2]
-            round_i = (ddc_i >> 1) & 1       # bit [1]
+            round_i = (ddc_i >> 1) & 1  # bit [1]
             trunc_q = (ddc_q >> 2) & 0xFFFF
             round_q = (ddc_q >> 1) & 1
             self.adc_i = sign_extend((trunc_i + round_i) & 0xFFFF, 16)
@@ -712,6 +806,7 @@ class DDCInputInterface:
 # FFT Engine (1024-point radix-2 DIT, in-place, 32-bit internal)
 # =============================================================================
 
+
 def load_twiddle_rom(filepath=None):
     """
     Load 256-entry quarter-wave cosine ROM from hex file.
@@ -720,13 +815,13 @@ def load_twiddle_rom(filepath=None):
     if filepath is None:
         # Default path relative to this file
         base = os.path.dirname(os.path.abspath(__file__))
-        filepath = os.path.join(base, '..', '..', 'fft_twiddle_1024.mem')
+        filepath = os.path.join(base, "..", "..", "fft_twiddle_1024.mem")
 
     values = []
-    with open(filepath, 'r') as f:
+    with open(filepath, "r") as f:
         for line in f:
             line = line.strip()
-            if not line or line.startswith('//'):
+            if not line or line.startswith("//"):
                 continue
             val = int(line, 16)
             values.append(sign_extend(val, 16))
@@ -871,6 +966,7 @@ class FFTEngine:
 # Frequency Matched Filter (conjugate multiply, 4-stage pipeline)
 # =============================================================================
 
+
 class FreqMatchedFilter:
     """
     Bit-accurate model of frequency_matched_filter.v
@@ -942,6 +1038,7 @@ class FreqMatchedFilter:
 # Matched Filter Processing Chain
 # =============================================================================
 
+
 class MatchedFilterChain:
     """
     Complete matched filter: FFT(signal) * conj(FFT(ref)) -> IFFT
@@ -985,6 +1082,7 @@ class MatchedFilterChain:
 # =============================================================================
 # Range Bin Decimator (1024 -> 64, factor 16)
 # =============================================================================
+
 
 class RangeBinDecimator:
     """
@@ -1080,8 +1178,22 @@ class RangeBinDecimator:
 # Matches doppler_processor.v window_coeff[0:15]
 # w[n] = 0.54 - 0.46 * cos(2*pi*n/15), n=0..15, symmetric
 HAMMING_WINDOW = [
-    0x0A3D, 0x0E5C, 0x1B6D, 0x3088, 0x4B33, 0x6573, 0x7642, 0x7F62,
-    0x7F62, 0x7642, 0x6573, 0x4B33, 0x3088, 0x1B6D, 0x0E5C, 0x0A3D,
+    0x0A3D,
+    0x0E5C,
+    0x1B6D,
+    0x3088,
+    0x4B33,
+    0x6573,
+    0x7642,
+    0x7F62,
+    0x7F62,
+    0x7642,
+    0x6573,
+    0x4B33,
+    0x3088,
+    0x1B6D,
+    0x0E5C,
+    0x0A3D,
 ]
 
 
@@ -1097,7 +1209,7 @@ class DopplerProcessor:
     Total output per range bin: 32 bins (16 + 16), same interface as before.
     """
 
-    DOPPLER_FFT_SIZE = 16     # Per sub-frame
+    DOPPLER_FFT_SIZE = 16  # Per sub-frame
     RANGE_BINS = 64
     CHIRPS_PER_FRAME = 32
     CHIRPS_PER_SUBFRAME = 16
@@ -1150,6 +1262,7 @@ class DopplerProcessor:
         # cos(2*pi*k/16) for k=0..3
         # Matches fft_twiddle_16.mem: 7FFF, 7641, 5A82, 30FB
         import math
+
         cos_rom_16 = []
         for k in range(4):
             val = round(32767.0 * math.cos(2.0 * math.pi * k / 16.0))
@@ -1205,6 +1318,7 @@ class DopplerProcessor:
 # Complete Signal Chain (DDC through Doppler)
 # =============================================================================
 
+
 class SignalChain:
     """
     Full AERIS-10 signal processing chain.
@@ -1216,9 +1330,9 @@ class SignalChain:
     """
 
     # System parameters
-    FS_ADC = 400_000_000     # ADC sample rate
-    FS_SYS = 100_000_000     # System clock
-    IF_FREQ = 120_000_000    # IF frequency
+    FS_ADC = 400_000_000  # ADC sample rate
+    FS_SYS = 100_000_000  # System clock
+    IF_FREQ = 120_000_000  # IF frequency
     FTW_120MHZ = 0x4CCCCCCD  # Phase increment for 120 MHz at 400 MSPS
 
     def __init__(self, twiddle_file_1024=None, twiddle_file_16=None):
@@ -1247,19 +1361,22 @@ class SignalChain:
         sin_val, cos_val, nco_ready = self.nco.step(ftw, phase_offset=0, phase_valid=True)
 
         # Mixer
-        mix_i, mix_q, mix_valid = self.mixer.step(
-            adc_data_8bit, cos_val, sin_val, nco_ready, True
-        )
+        mix_i, mix_q, mix_valid = self.mixer.step(adc_data_8bit, cos_val, sin_val, nco_ready, True)
 
         # CIC (both channels)
         cic_i_out, cic_i_valid = self.cic_i.step(mix_i, mix_valid)
         cic_q_out, cic_q_valid = self.cic_q.step(mix_q, mix_valid)
 
         return {
-            'sin': sin_val, 'cos': cos_val, 'nco_ready': nco_ready,
-            'mix_i': mix_i, 'mix_q': mix_q, 'mix_valid': mix_valid,
-            'cic_i': cic_i_out, 'cic_q': cic_q_out,
-            'cic_valid': cic_i_valid and cic_q_valid,
+            "sin": sin_val,
+            "cos": cos_val,
+            "nco_ready": nco_ready,
+            "mix_i": mix_i,
+            "mix_q": mix_q,
+            "mix_valid": mix_valid,
+            "cic_i": cic_i_out,
+            "cic_q": cic_q_out,
+            "cic_valid": cic_i_valid and cic_q_valid,
         }
 
     def process_adc_block(self, adc_samples, ftw=None):
@@ -1299,24 +1416,22 @@ class SignalChain:
         for sample in adc_samples:
             result = self.ddc_step(sample, ftw)
 
-            if result['cic_valid']:
-                cic_outputs_i.append(result['cic_i'])
-                cic_outputs_q.append(result['cic_q'])
+            if result["cic_valid"]:
+                cic_outputs_i.append(result["cic_i"])
+                cic_outputs_q.append(result["cic_q"])
 
                 # FIR (runs at decimated rate, ~100 MHz)
                 # Only clock FIR when CIC has valid output — models the
                 # CDC crossing + FIR data_valid gating
-                fir_i_out, fir_i_valid = self.fir_i.step(result['cic_i'], True)
-                fir_q_out, fir_q_valid = self.fir_q.step(result['cic_q'], True)
+                fir_i_out, fir_i_valid = self.fir_i.step(result["cic_i"], True)
+                fir_q_out, fir_q_valid = self.fir_q.step(result["cic_q"], True)
 
                 if fir_i_valid and fir_q_valid:
                     fir_outputs_i.append(fir_i_out)
                     fir_outputs_q.append(fir_q_out)
 
                     # DDC input interface (18->16 bit rounding)
-                    bb_i, bb_q, bb_valid = self.ddc_interface.step(
-                        fir_i_out, fir_q_out, True, True
-                    )
+                    bb_i, bb_q, bb_valid = self.ddc_interface.step(fir_i_out, fir_q_out, True, True)
                     if bb_valid:
                         baseband_i.append(bb_i)
                         baseband_q.append(bb_q)
@@ -1325,18 +1440,19 @@ class SignalChain:
                     self.ddc_interface.step(0, 0, False, False)
 
         return {
-            'baseband_i': baseband_i,
-            'baseband_q': baseband_q,
-            'cic_i_raw': cic_outputs_i,
-            'cic_q_raw': cic_outputs_q,
-            'fir_i_raw': fir_outputs_i,
-            'fir_q_raw': fir_outputs_q,
+            "baseband_i": baseband_i,
+            "baseband_q": baseband_q,
+            "cic_i_raw": cic_outputs_i,
+            "cic_q_raw": cic_outputs_q,
+            "fir_i_raw": fir_outputs_i,
+            "fir_q_raw": fir_outputs_q,
         }
 
 
 # =============================================================================
 # Self-test / Validation
 # =============================================================================
+
 
 def _self_test():
     """Quick sanity checks for each module."""
@@ -1365,7 +1481,9 @@ def _self_test():
         mag_sq = s * s + c * c
         expected = 32767 * 32767
         error_pct = abs(mag_sq - expected) / expected * 100
-        print(f"  Quadrature check: sin^2+cos^2={mag_sq}, expected~{expected}, error={error_pct:.2f}%")
+        print(
+            f"  Quadrature check: sin^2+cos^2={mag_sq}, expected~{expected}, error={error_pct:.2f}%"
+        )
     print("  NCO: OK")
 
     # --- Mixer test ---
@@ -1452,5 +1570,5 @@ def _self_test():
     print("=" * 60)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     _self_test()

@@ -6,12 +6,13 @@ Provides two USB hardware interfaces:
   - STM32USBInterface   (USB CDC for commands and GPS)
 """
 
-import struct
 import logging
-from typing import List, Dict, Optional
+import struct
+from typing import Dict, List, Optional
 
 from .models import (
-    USB_AVAILABLE, FTDI_AVAILABLE,
+    FTDI_AVAILABLE,
+    USB_AVAILABLE,
     RadarSettings,
 )
 

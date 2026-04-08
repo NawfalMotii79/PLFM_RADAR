@@ -21,31 +21,36 @@ Usage:
   python radar_dashboard.py --record     # Launch with HDF5 recording
 """
 
-import os
-import time
-import queue
-import logging
 import argparse
+import logging
+import os
+import queue
 import threading
-from typing import Optional, Dict
-from collections import deque
-
-import numpy as np
-
+import time
 import tkinter as tk
-from tkinter import ttk, filedialog
+from collections import deque
+from tkinter import filedialog, ttk
+from typing import Dict, Optional
 
 import matplotlib
+import numpy as np
+
 matplotlib.use("TkAgg")
-from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.figure import Figure
 
 # Import protocol layer (no GUI deps)
 from radar_protocol import (
-    RadarProtocol, FT2232HConnection, ReplayConnection,
-    DataRecorder, RadarAcquisition,
-    RadarFrame, StatusResponse,
-    NUM_RANGE_BINS, NUM_DOPPLER_BINS, WATERFALL_DEPTH,
+    NUM_DOPPLER_BINS,
+    NUM_RANGE_BINS,
+    WATERFALL_DEPTH,
+    DataRecorder,
+    FT2232HConnection,
+    RadarAcquisition,
+    RadarFrame,
+    RadarProtocol,
+    ReplayConnection,
+    StatusResponse,
 )
 
 logging.basicConfig(
@@ -54,7 +59,6 @@ logging.basicConfig(
     datefmt="%H:%M:%S",
 )
 log = logging.getLogger("radar_dashboard")
-
 
 
 # ============================================================================
@@ -78,11 +82,10 @@ class RadarDashboard:
     UPDATE_INTERVAL_MS = 100  # 10 Hz display refresh
 
     # Radar parameters used for range-axis scaling.
-    BANDWIDTH = 500e6        # Hz — chirp bandwidth
-    C = 3e8                  # m/s — speed of light
+    BANDWIDTH = 500e6  # Hz — chirp bandwidth
+    C = 3e8  # m/s — speed of light
 
-    def __init__(self, root: tk.Tk, connection: FT2232HConnection,
-                 recorder: DataRecorder):
+    def __init__(self, root: tk.Tk, connection: FT2232HConnection, recorder: DataRecorder):
         self.root = root
         self.conn = connection
         self.recorder = recorder
@@ -124,17 +127,16 @@ class RadarDashboard:
         style.configure("TLabelframe.Label", background=BG, foreground=ACCENT)
         style.configure("Accent.TButton", background=ACCENT, foreground=BG)
         style.configure("TNotebook", background=BG)
-        style.configure("TNotebook.Tab", background=SURFACE, foreground=FG,
-                         padding=[12, 4])
-        style.map("TNotebook.Tab", background=[("selected", ACCENT)],
-                  foreground=[("selected", BG)])
+        style.configure("TNotebook.Tab", background=SURFACE, foreground=FG, padding=[12, 4])
+        style.map("TNotebook.Tab", background=[("selected", ACCENT)], foreground=[("selected", BG)])
 
         # Top bar
         top = ttk.Frame(self.root)
         top.pack(fill="x", padx=8, pady=(8, 0))
 
-        self.lbl_status = ttk.Label(top, text="DISCONNECTED", foreground=RED,
-                                     font=("Menlo", 11, "bold"))
+        self.lbl_status = ttk.Label(
+            top, text="DISCONNECTED", foreground=RED, font=("Menlo", 11, "bold")
+        )
         self.lbl_status.pack(side="left", padx=8)
 
         self.lbl_fps = ttk.Label(top, text="0.0 fps", font=("Menlo", 10))
@@ -146,9 +148,9 @@ class RadarDashboard:
         self.lbl_frame = ttk.Label(top, text="Frame: 0", font=("Menlo", 10))
         self.lbl_frame.pack(side="left", padx=16)
 
-        self.btn_connect = ttk.Button(top, text="Connect",
-                                       command=self._on_connect,
-                                       style="Accent.TButton")
+        self.btn_connect = ttk.Button(
+            top, text="Connect", command=self._on_connect, style="Accent.TButton"
+        )
         self.btn_connect.pack(side="right", padx=4)
 
         self.btn_record = ttk.Button(top, text="Record", command=self._on_record)
@@ -186,17 +188,21 @@ class RadarDashboard:
 
         # Matplotlib figure with 3 subplots
         self.fig = Figure(figsize=(14, 7), facecolor=BG)
-        self.fig.subplots_adjust(left=0.07, right=0.98, top=0.94, bottom=0.10,
-                                  wspace=0.30, hspace=0.35)
+        self.fig.subplots_adjust(
+            left=0.07, right=0.98, top=0.94, bottom=0.10, wspace=0.30, hspace=0.35
+        )
 
         # Range-Doppler heatmap
         self.ax_rd = self.fig.add_subplot(1, 3, (1, 2))
         self.ax_rd.set_facecolor(BG2)
         self._rd_img = self.ax_rd.imshow(
             np.zeros((NUM_RANGE_BINS, NUM_DOPPLER_BINS)),
-            aspect="auto", cmap="inferno", origin="lower",
+            aspect="auto",
+            cmap="inferno",
+            origin="lower",
             extent=[doppler_bin_lo, doppler_bin_hi, 0, max_range],
-            vmin=0, vmax=1000,
+            vmin=0,
+            vmax=1000,
         )
         self.ax_rd.set_title("Range-Doppler Map", color=FG, fontsize=12)
         self.ax_rd.set_xlabel("Doppler Bin (0-15: long PRI, 16-31: short PRI)", color=FG)
@@ -208,18 +214,22 @@ class RadarDashboard:
         self._range_per_bin = range_per_bin
 
         # CFAR detection overlay (scatter)
-        self._det_scatter = self.ax_rd.scatter([], [], s=30, c=GREEN,
-                                                marker="x", linewidths=1.5,
-                                                zorder=5, label="CFAR Det")
+        self._det_scatter = self.ax_rd.scatter(
+            [], [], s=30, c=GREEN, marker="x", linewidths=1.5, zorder=5, label="CFAR Det"
+        )
 
         # Waterfall plot (range profile vs time)
         self.ax_wf = self.fig.add_subplot(1, 3, 3)
         self.ax_wf.set_facecolor(BG2)
         wf_init = np.zeros((WATERFALL_DEPTH, NUM_RANGE_BINS))
         self._wf_img = self.ax_wf.imshow(
-            wf_init, aspect="auto", cmap="viridis", origin="lower",
+            wf_init,
+            aspect="auto",
+            cmap="viridis",
+            origin="lower",
             extent=[0, max_range, 0, WATERFALL_DEPTH],
-            vmin=0, vmax=5000,
+            vmin=0,
+            vmax=5000,
         )
         self.ax_wf.set_title("Range Waterfall", color=FG, fontsize=12)
         self.ax_wf.set_xlabel("Range (m)", color=FG)
@@ -240,27 +250,36 @@ class RadarDashboard:
         left = ttk.LabelFrame(outer, text="Quick Actions", padding=12)
         left.grid(row=0, column=0, sticky="nsew", padx=(0, 8))
 
-        ttk.Button(left, text="Trigger Chirp (0x01)",
-                   command=lambda: self._send_cmd(0x01, 1)).pack(fill="x", pady=3)
-        ttk.Button(left, text="Enable MTI (0x26)",
-                   command=lambda: self._send_cmd(0x26, 1)).pack(fill="x", pady=3)
-        ttk.Button(left, text="Disable MTI (0x26)",
-                   command=lambda: self._send_cmd(0x26, 0)).pack(fill="x", pady=3)
-        ttk.Button(left, text="Enable CFAR (0x25)",
-                   command=lambda: self._send_cmd(0x25, 1)).pack(fill="x", pady=3)
-        ttk.Button(left, text="Disable CFAR (0x25)",
-                   command=lambda: self._send_cmd(0x25, 0)).pack(fill="x", pady=3)
-        ttk.Button(left, text="Request Status (0xFF)",
-                   command=lambda: self._send_cmd(0xFF, 0)).pack(fill="x", pady=3)
+        ttk.Button(left, text="Trigger Chirp (0x01)", command=lambda: self._send_cmd(0x01, 1)).pack(
+            fill="x", pady=3
+        )
+        ttk.Button(left, text="Enable MTI (0x26)", command=lambda: self._send_cmd(0x26, 1)).pack(
+            fill="x", pady=3
+        )
+        ttk.Button(left, text="Disable MTI (0x26)", command=lambda: self._send_cmd(0x26, 0)).pack(
+            fill="x", pady=3
+        )
+        ttk.Button(left, text="Enable CFAR (0x25)", command=lambda: self._send_cmd(0x25, 1)).pack(
+            fill="x", pady=3
+        )
+        ttk.Button(left, text="Disable CFAR (0x25)", command=lambda: self._send_cmd(0x25, 0)).pack(
+            fill="x", pady=3
+        )
+        ttk.Button(
+            left, text="Request Status (0xFF)", command=lambda: self._send_cmd(0xFF, 0)
+        ).pack(fill="x", pady=3)
 
         ttk.Separator(left, orient="horizontal").pack(fill="x", pady=6)
 
         ttk.Label(left, text="FPGA Self-Test", font=("Menlo", 10, "bold")).pack(
-            anchor="w", pady=(2, 0))
-        ttk.Button(left, text="Run Self-Test (0x30)",
-                   command=lambda: self._send_cmd(0x30, 1)).pack(fill="x", pady=3)
-        ttk.Button(left, text="Read Self-Test Result (0x31)",
-                   command=lambda: self._send_cmd(0x31, 0)).pack(fill="x", pady=3)
+            anchor="w", pady=(2, 0)
+        )
+        ttk.Button(left, text="Run Self-Test (0x30)", command=lambda: self._send_cmd(0x30, 1)).pack(
+            fill="x", pady=3
+        )
+        ttk.Button(
+            left, text="Read Self-Test Result (0x31)", command=lambda: self._send_cmd(0x31, 0)
+        ).pack(fill="x", pady=3)
 
         # Self-test result display
         st_frame = ttk.LabelFrame(left, text="Self-Test Results", padding=6)
@@ -298,50 +317,51 @@ class RadarDashboard:
         ]
 
         for row_idx, (label, opcode, default) in enumerate(params):
-            ttk.Label(right, text=label).grid(row=row_idx, column=0,
-                                               sticky="w", pady=2)
+            ttk.Label(right, text=label).grid(row=row_idx, column=0, sticky="w", pady=2)
             var = tk.StringVar(value=default)
             self._param_vars[str(opcode)] = var
             ent = ttk.Entry(right, textvariable=var, width=10)
             ent.grid(row=row_idx, column=1, padx=8, pady=2)
             ttk.Button(
-                right, text="Set",
-                command=lambda op=opcode, v=var: self._send_cmd(op, int(v.get()))
+                right, text="Set", command=lambda op=opcode, v=var: self._send_cmd(op, int(v.get()))
             ).grid(row=row_idx, column=2, pady=2)
 
         # Custom command
         ttk.Separator(right, orient="horizontal").grid(
-            row=len(params), column=0, columnspan=3, sticky="ew", pady=8)
+            row=len(params), column=0, columnspan=3, sticky="ew", pady=8
+        )
 
-        ttk.Label(right, text="Custom Opcode (hex)").grid(
-            row=len(params) + 1, column=0, sticky="w")
+        ttk.Label(right, text="Custom Opcode (hex)").grid(row=len(params) + 1, column=0, sticky="w")
         self._custom_op = tk.StringVar(value="01")
         ttk.Entry(right, textvariable=self._custom_op, width=10).grid(
-            row=len(params) + 1, column=1, padx=8)
+            row=len(params) + 1, column=1, padx=8
+        )
 
-        ttk.Label(right, text="Value (dec)").grid(
-            row=len(params) + 2, column=0, sticky="w")
+        ttk.Label(right, text="Value (dec)").grid(row=len(params) + 2, column=0, sticky="w")
         self._custom_val = tk.StringVar(value="0")
         ttk.Entry(right, textvariable=self._custom_val, width=10).grid(
-            row=len(params) + 2, column=1, padx=8)
+            row=len(params) + 2, column=1, padx=8
+        )
 
-        ttk.Button(right, text="Send Custom",
-                   command=self._send_custom).grid(
-            row=len(params) + 2, column=2, pady=2)
+        ttk.Button(right, text="Send Custom", command=self._send_custom).grid(
+            row=len(params) + 2, column=2, pady=2
+        )
 
         outer.columnconfigure(0, weight=1)
         outer.columnconfigure(1, weight=2)
         outer.rowconfigure(0, weight=1)
 
     def _build_log_tab(self, parent):
-        self.log_text = tk.Text(parent, bg=BG2, fg=FG, font=("Menlo", 10),
-                                 insertbackground=FG, wrap="word")
+        self.log_text = tk.Text(
+            parent, bg=BG2, fg=FG, font=("Menlo", 10), insertbackground=FG, wrap="word"
+        )
         self.log_text.pack(fill="both", expand=True, padx=8, pady=8)
 
         # Redirect log handler to text widget
         handler = _TextHandler(self.log_text)
-        handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s",
-                                                datefmt="%H:%M:%S"))
+        handler.setFormatter(
+            logging.Formatter("%(asctime)s [%(levelname)s] %(message)s", datefmt="%H:%M:%S")
+        )
         logging.getLogger().addHandler(handler)
 
     # ------------------------------------------------------------ Actions
@@ -377,8 +397,8 @@ class RadarDashboard:
             self.lbl_status.config(text="CONNECTED", foreground=GREEN)
             self.btn_connect.config(text="Disconnect")
             self._acq_thread = RadarAcquisition(
-                self.conn, self.frame_queue, self.recorder,
-                status_callback=self._on_status_received)
+                self.conn, self.frame_queue, self.recorder, status_callback=self._on_status_received
+            )
             self._acq_thread.start()
             log.info("Connected and acquisition started")
         else:
@@ -419,7 +439,7 @@ class RadarDashboard:
 
     def _update_self_test_labels(self, status: StatusResponse):
         """Update the self-test result labels from a StatusResponse."""
-        if not hasattr(self, '_st_labels'):
+        if not hasattr(self, "_st_labels"):
             return
         flags = status.self_test_flags
         detail = status.self_test_detail
@@ -427,8 +447,7 @@ class RadarDashboard:
 
         busy_str = "RUNNING" if busy else "IDLE"
         busy_color = YELLOW if busy else FG
-        self._st_labels["busy"].config(text=f"Busy: {busy_str}",
-                                        foreground=busy_color)
+        self._st_labels["busy"].config(text=f"Busy: {busy_str}", foreground=busy_color)
         self._st_labels["flags"].config(text=f"Flags: {flags:05b}")
         self._st_labels["detail"].config(text=f"Detail: 0x{detail:02X}")
 
@@ -450,8 +469,7 @@ class RadarDashboard:
             else:
                 result_str = "FAIL"
                 color = RED
-            self._st_labels[key].config(
-                text=f"{name}: {result_str}", foreground=color)
+            self._st_labels[key].config(text=f"{name}: {result_str}", foreground=color)
 
     # --------------------------------------------------------- Display loop
     def _schedule_update(self):
@@ -493,8 +511,7 @@ class RadarDashboard:
 
         # Stable colorscale via EMA smoothing of vmax
         frame_vmax = float(np.max(mag)) if np.max(mag) > 0 else 1.0
-        self._vmax_ema = (self._vmax_alpha * frame_vmax +
-                          (1.0 - self._vmax_alpha) * self._vmax_ema)
+        self._vmax_ema = self._vmax_alpha * frame_vmax + (1.0 - self._vmax_alpha) * self._vmax_ema
         stable_vmax = max(self._vmax_ema, 1.0)
 
         self._rd_img.set_data(mag)
@@ -548,19 +565,23 @@ class _TextHandler(logging.Handler):
 # Entry Point
 # ============================================================================
 
+
 def main():
     parser = argparse.ArgumentParser(description="AERIS-10 Radar Dashboard")
-    parser.add_argument("--live", action="store_true",
-                        help="Use real FT2232H hardware (default: mock mode)")
-    parser.add_argument("--replay", type=str, metavar="NPY_DIR",
-                        help="Replay real data from .npy directory "
-                             "(e.g. tb/cosim/real_data/hex/)")
-    parser.add_argument("--no-mti", action="store_true",
-                        help="With --replay, use non-MTI Doppler data")
-    parser.add_argument("--record", action="store_true",
-                        help="Start HDF5 recording immediately")
-    parser.add_argument("--device", type=int, default=0,
-                        help="FT2232H device index (default: 0)")
+    parser.add_argument(
+        "--live", action="store_true", help="Use real FT2232H hardware (default: mock mode)"
+    )
+    parser.add_argument(
+        "--replay",
+        type=str,
+        metavar="NPY_DIR",
+        help="Replay real data from .npy directory (e.g. tb/cosim/real_data/hex/)",
+    )
+    parser.add_argument(
+        "--no-mti", action="store_true", help="With --replay, use non-MTI Doppler data"
+    )
+    parser.add_argument("--record", action="store_true", help="Start HDF5 recording immediately")
+    parser.add_argument("--device", type=int, default=0, help="FT2232H device index (default: 0)")
     args = parser.parse_args()
 
     if args.replay:
@@ -581,10 +602,7 @@ def main():
     dashboard = RadarDashboard(root, conn, recorder)
 
     if args.record:
-        filepath = os.path.join(
-            os.getcwd(),
-            f"radar_{time.strftime('%Y%m%d_%H%M%S')}.h5"
-        )
+        filepath = os.path.join(os.getcwd(), f"radar_{time.strftime('%Y%m%d_%H%M%S')}.h5")
         recorder.start(filepath)
 
     def on_closing():

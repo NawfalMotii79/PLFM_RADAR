@@ -9,9 +9,8 @@ This module defines the core data structures used throughout the application:
 """
 
 import logging
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from enum import Enum
-
 
 # ---------------------------------------------------------------------------
 # Optional dependency flags (graceful degradation)
@@ -25,9 +24,11 @@ except ImportError:
     logging.warning("pyusb not available. USB functionality will be disabled.")
 
 try:
-    from pyftdi.ftdi import Ftdi  # noqa: F401 — availability check
+    from pyftdi.ftdi import (
+        Ftdi,  # noqa: F401 — availability check
+        FtdiError,  # noqa: F401 — availability check
+    )
     from pyftdi.usbtools import UsbTools  # noqa: F401 — availability check
-    from pyftdi.ftdi import FtdiError  # noqa: F401 — availability check
     FTDI_AVAILABLE = True
 except ImportError:
     FTDI_AVAILABLE = False
