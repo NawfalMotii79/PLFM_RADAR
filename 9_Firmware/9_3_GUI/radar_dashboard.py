@@ -82,10 +82,11 @@ class RadarDashboard:
     C = 3e8                  # m/s — speed of light
 
     def __init__(self, root: tk.Tk, connection: FT2232HConnection,
-                 recorder: DataRecorder):
+                 recorder: DataRecorder, device_index: int = 0):
         self.root = root
         self.conn = connection
         self.recorder = recorder
+        self._device_index = device_index
 
         self.root.title("AERIS-10 Radar Dashboard — Bring-Up Edition")
         self.root.geometry("1600x950")
@@ -364,7 +365,7 @@ class RadarDashboard:
         self.root.update_idletasks()
 
         def _do_connect():
-            ok = self.conn.open()
+            ok = self.conn.open(device_index=self._device_index)
             # Schedule UI update back on the main thread
             self.root.after(0, lambda: self._on_connect_done(ok))
 
@@ -569,7 +570,7 @@ def main():
         mode_str = f"REPLAY ({npy_dir}, MTI={'OFF' if args.no_mti else 'ON'})"
     elif args.live:
         conn = FT2232HConnection(mock=False)
-        mode_str = "LIVE"
+        mode_str = f"LIVE (device={args.device})"
     else:
         conn = FT2232HConnection(mock=True)
         mode_str = "MOCK"
@@ -578,7 +579,7 @@ def main():
 
     root = tk.Tk()
 
-    dashboard = RadarDashboard(root, conn, recorder)
+    dashboard = RadarDashboard(root, conn, recorder, device_index=args.device)
 
     if args.record:
         filepath = os.path.join(
