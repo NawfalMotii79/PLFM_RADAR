@@ -68,6 +68,20 @@ extern "C" {
 
 #include "stm32f7xx_hal.h"
 
+#ifndef PLFM_ENABLE_RTOS_PHASE2
+#define PLFM_ENABLE_RTOS_PHASE2 (1)
+#endif
+
+#if PLFM_ENABLE_RTOS_PHASE2
+extern "C" {
+#include "../10_PLFM_RTOS_Firmware/include/plfm_config.h"
+#include "../10_PLFM_RTOS_Firmware/include/plfm_dsp.h"
+#include "../10_PLFM_RTOS_Firmware/include/plfm_hal_port.h"
+#include "../10_PLFM_RTOS_Firmware/include/plfm_tasks.h"
+#include "FreeRTOS.h"
+#include "task.h"
+}
+#endif
 
 
 
@@ -109,6 +123,8 @@ extern "C" {
 I2C_HandleTypeDef hi2c1;
 I2C_HandleTypeDef hi2c2;
 I2C_HandleTypeDef hi2c3;
+ADC_HandleTypeDef hadc_int1;
+DMA_HandleTypeDef hdma_adc_int1;
 
 SPI_HandleTypeDef hspi1;
 SPI_HandleTypeDef hspi4;
@@ -216,6 +232,17 @@ float Idq_reading[16]={0.0f};
  * If the main loop stalls, the MCU resets automatically. */
 IWDG_HandleTypeDef hiwdg;
 
+#if PLFM_ENABLE_RTOS_PHASE2
+static bool g_plfm_phase2_rtos_running = false;
+static uint32_t g_chirp_epoch_us = 0U;
+static int16_t *g_plfm_dma_iq_buf = nullptr;
+static uint32_t g_plfm_dma_iq_len = 0U;
+static uint32_t g_plfm_last_dma_half_us = 0U;
+static uint32_t g_plfm_last_pri_irq_us = 0U;
+static uint32_t g_plfm_pri_stats_count = 0U;
+static int32_t g_plfm_pri_err_acc_us = 0;
+#endif
+
 
 // Global manager instance ADF4382A
 ADF4382A_Manager lo_manager;
@@ -266,6 +293,7 @@ void SystemClock_Config(void);
 void PeriphCommonClock_Config(void);
 static void MPU_Config(void);
 static void MX_GPIO_Init(void);
+static void MX_ADC1_Init(void);
 static void MX_TIM1_Init(void);
 static void MX_TIM3_Init(void);  // B15 fix: DELADJ PWM timer init
 static void MX_I2C1_Init(void);
@@ -285,6 +313,12 @@ void initializeBeamMatrices();
 void runRadarPulseSequence();
 void executeChirpSequence(int num_chirps, uint32_t T1, uint32_t PRI1, uint32_t T2, uint32_t PRI2);
 void printSystemStatus();
+
+#if PLFM_ENABLE_RTOS_PHASE2
+static void PLFM_Phase2_StartRtosPipeline(void);
+static void PLFM_Phase2_TriggerEpochSync(void);
+static uint32_t PLFM_Phase2_GetMonotonicUs(void);
+#endif
 
 //////////////////////////////////////////////
 ////////////////////micros()//////////////////
@@ -346,7 +380,165 @@ extern "C" {
         USBD_CDC_SetRxBuffer(&hUsbDeviceFS, &usb_rx_buffer[0]);
         USBD_CDC_ReceivePacket(&hUsbDeviceFS);
     }
+
+#if PLFM_ENABLE_RTOS_PHASE2
+    void plfm_irq_hook_dma_half_complete(void *handle)
+    {
+        (void)handle;
+        if (g_plfm_phase2_rtos_running) {
+            plfm_tasks_notify_adc_half_complete(micros());
+        }
+    }
+
+    void plfm_irq_hook_dma_full_complete(void *handle)
+    {
+        (void)handle;
+        if (g_plfm_phase2_rtos_running) {
+            plfm_tasks_notify_adc_full_complete(micros());
+        }
+    }
+
+    void plfm_irq_hook_tim_elapsed(void *handle)
+    {
+        TIM_HandleTypeDef *htim = (TIM_HandleTypeDef *)handle;
+        if (!g_plfm_phase2_rtos_running) {
+            return;
+        }
+        if ((htim != nullptr) && (htim->Instance == TIM1)) {
+            PLFM_Phase2_TriggerEpochSync();
+        }
+    }
+
+    uint32_t plfm_hal_port_get_time_us(void)
+    {
+        return PLFM_Phase2_GetMonotonicUs();
+    }
+
+    int plfm_hal_port_start_acq_dma(int16_t *pingpong_iq, uint32_t sample_count)
+    {
+        if ((pingpong_iq == nullptr) || (sample_count == 0U)) {
+            return -1;
+        }
+        g_plfm_dma_iq_buf = pingpong_iq;
+        g_plfm_dma_iq_len = sample_count;
+        if (HAL_ADC_Start_DMA(&hadc_int1, (uint32_t *)g_plfm_dma_iq_buf, g_plfm_dma_iq_len) != HAL_OK) {
+            DIAG_ERR("RTOS", "HAL_ADC_Start_DMA failed; keeping simulation fallback.");
+            g_plfm_dma_iq_buf = nullptr;
+            g_plfm_dma_iq_len = 0U;
+            return -1;
+        }
+        DIAG("RTOS", "ADC1 DMA acquisition started, samples=%lu", (unsigned long)sample_count);
+        return 0;
+    }
+
+    int plfm_hal_port_start_pri_timer(uint32_t pri_us)
+    {
+        if (pri_us == 0U) {
+            return -1;
+        }
+        __HAL_TIM_DISABLE(&htim1);
+        __HAL_TIM_SET_AUTORELOAD(&htim1, pri_us - 1U);
+        __HAL_TIM_SET_COUNTER(&htim1, 0U);
+        return (HAL_TIM_Base_Start_IT(&htim1) == HAL_OK) ? 0 : -1;
+    }
+
+    int plfm_hal_port_stream_tx(const uint8_t *data, uint16_t len)
+    {
+        if ((data == nullptr) || (len == 0U)) {
+            return -1;
+        }
+        if (CDC_Transmit_FS((uint8_t *)data, len) == USBD_OK) {
+            return 0;
+        }
+        return (HAL_UART_Transmit(&huart3, (uint8_t *)data, len, 20U) == HAL_OK) ? 0 : -1;
+    }
+
+    void plfm_hal_port_watchdog_kick(void)
+    {
+        (void)HAL_IWDG_Refresh(&hiwdg);
+    }
+
+    void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef* hadc)
+    {
+        if ((hadc != nullptr) && (hadc->Instance == ADC1) && g_plfm_phase2_rtos_running) {
+            uint32_t now_us = PLFM_Phase2_GetMonotonicUs();
+            if (g_plfm_last_dma_half_us != 0U) {
+                uint32_t dt_us = now_us - g_plfm_last_dma_half_us;
+                uint32_t half_pairs = (g_plfm_dma_iq_len / 4U);
+                if ((dt_us > 0U) && (half_pairs > 0U) && ((g_plfm_pri_stats_count % 200U) == 0U)) {
+                    uint32_t fs_est_hz = (1000000UL * half_pairs) / dt_us;
+                    DIAG("RTOS", "ADC estimated fs=%lu Hz (half=%lu IQ pairs, dt=%lu us)",
+                         (unsigned long)fs_est_hz, (unsigned long)half_pairs, (unsigned long)dt_us);
+                }
+            }
+            g_plfm_last_dma_half_us = now_us;
+            plfm_tasks_notify_adc_half_complete(now_us);
+        }
+    }
+
+    void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
+    {
+        if ((hadc != nullptr) && (hadc->Instance == ADC1) && g_plfm_phase2_rtos_running) {
+            plfm_tasks_notify_adc_full_complete(PLFM_Phase2_GetMonotonicUs());
+        }
+    }
+#endif
 }
+
+#if PLFM_ENABLE_RTOS_PHASE2
+static uint32_t PLFM_Phase2_GetMonotonicUs(void)
+{
+    /* DWT is enabled during early init and gives monotonic time independent of TIM1 ARR changes. */
+    return (uint32_t)((uint64_t)DWT->CYCCNT / ((uint64_t)SystemCoreClock / 1000000ULL));
+}
+
+static void PLFM_Phase2_TriggerEpochSync(void)
+{
+    uint32_t now_us = PLFM_Phase2_GetMonotonicUs();
+    if (g_plfm_last_pri_irq_us != 0U) {
+        uint32_t dt = now_us - g_plfm_last_pri_irq_us;
+        int32_t err = (int32_t)dt - (int32_t)__HAL_TIM_GET_AUTORELOAD(&htim1) - 1;
+        g_plfm_pri_err_acc_us += err;
+        g_plfm_pri_stats_count++;
+        if ((g_plfm_pri_stats_count % 500U) == 0U) {
+            DIAG("RTOS", "PRI avg error=%ld us over %lu cycles",
+                 (long)(g_plfm_pri_err_acc_us / (int32_t)g_plfm_pri_stats_count),
+                 (unsigned long)g_plfm_pri_stats_count);
+        }
+    }
+    g_plfm_last_pri_irq_us = now_us;
+    g_chirp_epoch_us = now_us;
+}
+
+static void PLFM_Phase2_StartRtosPipeline(void)
+{
+    plfm_config_blob_t cfg;
+    plfm_dsp_cfg_t dsp_cfg;
+    plfm_status_t st;
+
+    st = plfm_config_load(&cfg);
+    if (st != PLFM_OK) {
+        (void)plfm_config_default(&cfg);
+        (void)plfm_config_save(&cfg);
+    }
+
+    dsp_cfg.fft_size = 1024U;
+    dsp_cfg.window = cfg.chirp.window;
+    dsp_cfg.matched_filter_i = nullptr;
+    dsp_cfg.matched_filter_q = nullptr;
+    (void)plfm_dsp_init(&dsp_cfg);
+
+    if (plfm_tasks_start(&cfg) == PLFM_OK) {
+        g_plfm_phase2_rtos_running = true;
+        DIAG("RTOS", "Phase 2 pipeline started. PRI=%u us, pulses=%u",
+             (unsigned int)cfg.chirp.pri_us, (unsigned int)cfg.chirp.pulses_per_cpi);
+        vTaskStartScheduler();
+    }
+
+    DIAG_ERR("RTOS", "Phase 2 failed to start scheduler. Falling back to legacy loop.");
+    g_plfm_phase2_rtos_running = false;
+}
+#endif
 
 void systemPowerUpSequence() {
     DIAG_SECTION("PWR: systemPowerUpSequence");
@@ -1355,6 +1547,7 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_ADC1_Init();
   MX_TIM1_Init();
   MX_TIM3_Init();  // B15 fix: init DELADJ PWM timer before LO manager uses it
   MX_I2C1_Init();
@@ -1965,6 +2158,11 @@ int main(void)
 
   DIAG("SYS", "=== INIT COMPLETE -- entering main loop ===");
 
+#if PLFM_ENABLE_RTOS_PHASE2
+  DIAG_SECTION("RTOS PHASE 2");
+  DIAG("RTOS", "Handing control to RTOS scheduler (legacy loop kept as fallback).");
+  PLFM_Phase2_StartRtosPipeline();
+#endif
 
 
 
@@ -2458,7 +2656,7 @@ static void MX_TIM1_Init(void)
   {
     Error_Handler();
   }
-  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_UPDATE;
   sMasterConfig.MasterOutputTrigger2 = TIM_TRGO2_RESET;
   sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
   if (HAL_TIMEx_MasterConfigSynchronization(&htim1, &sMasterConfig) != HAL_OK)
@@ -2469,6 +2667,49 @@ static void MX_TIM1_Init(void)
 
   /* USER CODE END TIM1_Init 2 */
 
+}
+
+/**
+  * @brief ADC1 Initialization Function (phase-2 DMA source)
+  * @param None
+  * @retval None
+  */
+static void MX_ADC1_Init(void)
+{
+  ADC_ChannelConfTypeDef sConfig = {0};
+
+  hadc_int1.Instance = ADC1;
+  hadc_int1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
+  hadc_int1.Init.Resolution = ADC_RESOLUTION_12B;
+  hadc_int1.Init.ScanConvMode = ENABLE;
+  hadc_int1.Init.ContinuousConvMode = ENABLE;
+  hadc_int1.Init.DiscontinuousConvMode = DISABLE;
+  hadc_int1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
+  hadc_int1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
+  hadc_int1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
+  hadc_int1.Init.NbrOfConversion = 2;
+  hadc_int1.Init.DMAContinuousRequests = ENABLE;
+  hadc_int1.Init.EOCSelection = ADC_EOC_SEQ_CONV;
+  if (HAL_ADC_Init(&hadc_int1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  sConfig.Channel = PLFM_ADC_I_CHANNEL;
+  sConfig.Rank = 1;
+  sConfig.SamplingTime = PLFM_ADC_SAMPLE_TIME;
+  if (HAL_ADC_ConfigChannel(&hadc_int1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  sConfig.Channel = PLFM_ADC_Q_CHANNEL;
+  sConfig.Rank = 2;
+  sConfig.SamplingTime = PLFM_ADC_SAMPLE_TIME;
+  if (HAL_ADC_ConfigChannel(&hadc_int1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
 }
 
 /**

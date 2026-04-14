@@ -165,6 +165,18 @@ void Error_Handler(void);
 #define DAC_2_VG_LDAC_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
+/*
+ * PLFM phase-2 ADC I/Q capture map.
+ * Default map uses ADC1_IN10/IN11 on PC0/PC1.
+ * Override these defines for board-specific IF I/Q wiring.
+ */
+#define PLFM_ADC_I_CHANNEL       ADC_CHANNEL_10
+#define PLFM_ADC_Q_CHANNEL       ADC_CHANNEL_11
+#define PLFM_ADC_I_GPIO_Port     GPIOC
+#define PLFM_ADC_I_GPIO_Pin      GPIO_PIN_0
+#define PLFM_ADC_Q_GPIO_Port     GPIOC
+#define PLFM_ADC_Q_GPIO_Pin      GPIO_PIN_1
+#define PLFM_ADC_SAMPLE_TIME     ADC_SAMPLETIME_84CYCLES
 
 /* USER CODE END Private defines */
 

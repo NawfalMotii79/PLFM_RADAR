@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.20)
 project(plfm_rtos_firmware C)
 
 add_library(plfm_rtos STATIC
+    src/plfm_hal_port.c
     src/plfm_bootloader.c
     src/plfm_config.c
     src/plfm_dsp.c

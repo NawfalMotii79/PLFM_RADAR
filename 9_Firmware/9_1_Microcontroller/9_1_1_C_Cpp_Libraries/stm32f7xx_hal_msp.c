@@ -41,6 +41,7 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN PV */
+extern DMA_HandleTypeDef hdma_adc_int1;
 
 /* USER CODE END PV */
 
@@ -269,6 +270,74 @@ void HAL_I2C_MspDeInit(I2C_HandleTypeDef* hi2c)
 }
 
 /**
+  * @brief ADC MSP Initialization
+  * @param hadc: ADC handle pointer
+  * @retval None
+  */
+void HAL_ADC_MspInit(ADC_HandleTypeDef* hadc)
+{
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
+  if(hadc->Instance==ADC1)
+  {
+    if (PLFM_ADC_I_GPIO_Port == GPIOA || PLFM_ADC_Q_GPIO_Port == GPIOA) { __HAL_RCC_GPIOA_CLK_ENABLE(); }
+    if (PLFM_ADC_I_GPIO_Port == GPIOB || PLFM_ADC_Q_GPIO_Port == GPIOB) { __HAL_RCC_GPIOB_CLK_ENABLE(); }
+    if (PLFM_ADC_I_GPIO_Port == GPIOC || PLFM_ADC_Q_GPIO_Port == GPIOC) { __HAL_RCC_GPIOC_CLK_ENABLE(); }
+    if (PLFM_ADC_I_GPIO_Port == GPIOD || PLFM_ADC_Q_GPIO_Port == GPIOD) { __HAL_RCC_GPIOD_CLK_ENABLE(); }
+    if (PLFM_ADC_I_GPIO_Port == GPIOE || PLFM_ADC_Q_GPIO_Port == GPIOE) { __HAL_RCC_GPIOE_CLK_ENABLE(); }
+    if (PLFM_ADC_I_GPIO_Port == GPIOF || PLFM_ADC_Q_GPIO_Port == GPIOF) { __HAL_RCC_GPIOF_CLK_ENABLE(); }
+    if (PLFM_ADC_I_GPIO_Port == GPIOG || PLFM_ADC_Q_GPIO_Port == GPIOG) { __HAL_RCC_GPIOG_CLK_ENABLE(); }
+    __HAL_RCC_ADC1_CLK_ENABLE();
+    __HAL_RCC_DMA2_CLK_ENABLE();
+
+    GPIO_InitStruct.Pin = PLFM_ADC_I_GPIO_Pin;
+    GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    HAL_GPIO_Init(PLFM_ADC_I_GPIO_Port, &GPIO_InitStruct);
+    if ((PLFM_ADC_Q_GPIO_Port != PLFM_ADC_I_GPIO_Port) || (PLFM_ADC_Q_GPIO_Pin != PLFM_ADC_I_GPIO_Pin)) {
+      GPIO_InitStruct.Pin = PLFM_ADC_Q_GPIO_Pin;
+      HAL_GPIO_Init(PLFM_ADC_Q_GPIO_Port, &GPIO_InitStruct);
+    }
+
+    hdma_adc_int1.Instance = DMA2_Stream0;
+    hdma_adc_int1.Init.Channel = DMA_CHANNEL_0;
+    hdma_adc_int1.Init.Direction = DMA_PERIPH_TO_MEMORY;
+    hdma_adc_int1.Init.PeriphInc = DMA_PINC_DISABLE;
+    hdma_adc_int1.Init.MemInc = DMA_MINC_ENABLE;
+    hdma_adc_int1.Init.PeriphDataAlignment = DMA_PDATAALIGN_HALFWORD;
+    hdma_adc_int1.Init.MemDataAlignment = DMA_MDATAALIGN_HALFWORD;
+    hdma_adc_int1.Init.Mode = DMA_CIRCULAR;
+    hdma_adc_int1.Init.Priority = DMA_PRIORITY_HIGH;
+    hdma_adc_int1.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
+    if (HAL_DMA_Init(&hdma_adc_int1) != HAL_OK)
+    {
+      Error_Handler();
+    }
+
+    __HAL_LINKDMA(hadc,DMA_Handle,hdma_adc_int1);
+
+    HAL_NVIC_SetPriority(DMA2_Stream0_IRQn, 5, 0);
+    HAL_NVIC_EnableIRQ(DMA2_Stream0_IRQn);
+  }
+}
+
+/**
+  * @brief ADC MSP De-Initialization
+  * @param hadc: ADC handle pointer
+  * @retval None
+  */
+void HAL_ADC_MspDeInit(ADC_HandleTypeDef* hadc)
+{
+  if(hadc->Instance==ADC1)
+  {
+    __HAL_RCC_ADC1_CLK_DISABLE();
+    HAL_GPIO_DeInit(PLFM_ADC_I_GPIO_Port, PLFM_ADC_I_GPIO_Pin);
+    HAL_GPIO_DeInit(PLFM_ADC_Q_GPIO_Port, PLFM_ADC_Q_GPIO_Pin);
+    HAL_DMA_DeInit(hadc->DMA_Handle);
+    HAL_NVIC_DisableIRQ(DMA2_Stream0_IRQn);
+  }
+}
+
+/**
   * @brief SPI MSP Initialization
   * This function configures the hardware resources used in this example
   * @param hspi: SPI handle pointer
@@ -394,6 +463,8 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef* htim_base)
     /* USER CODE END TIM1_MspInit 0 */
     /* Peripheral clock enable */
     __HAL_RCC_TIM1_CLK_ENABLE();
+    HAL_NVIC_SetPriority(TIM1_UP_TIM10_IRQn, 6, 0);
+    HAL_NVIC_EnableIRQ(TIM1_UP_TIM10_IRQn);
     /* USER CODE BEGIN TIM1_MspInit 1 */
 
     /* USER CODE END TIM1_MspInit 1 */
@@ -417,6 +488,7 @@ void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef* htim_base)
     /* USER CODE END TIM1_MspDeInit 0 */
     /* Peripheral clock disable */
     __HAL_RCC_TIM1_CLK_DISABLE();
+    HAL_NVIC_DisableIRQ(TIM1_UP_TIM10_IRQn);
     /* USER CODE BEGIN TIM1_MspDeInit 1 */
 
     /* USER CODE END TIM1_MspDeInit 1 */
