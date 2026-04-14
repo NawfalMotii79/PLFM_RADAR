@@ -211,8 +211,8 @@ We welcome contributions! Please see our [Contributing Guidelines](/CONTRIBUTING
 
 Areas where help is especially appreciated:
 - **RF Engineers**: Review designs, optimize antenna performance
-- **FPGA Developers**: Optimize signal processing pipeline
-- **Software Developers**: Enhance Python GUI and SDK
+- **FPGA Developers**: Architect and optimize ultra-low-latency, high-throughput signal processing pipelines for maximum performance and reliability
+- **Software Developers**: Build and refine a powerful Python GUI and production-grade SDK for seamless integration and exceptional user experience
 - **Beta Testers**: University researchers, drone startups, advanced makers
 
 ## 📞 Contact & Collaboration

@@ -38,6 +38,21 @@
 #include "no_os_list.h"
 #include "no_os_irq.h"
 #include "no_os_util.h"
+
+__weak void plfm_irq_hook_tim_elapsed(void *handle)
+{
+	(void)handle;
+}
+
+__weak void plfm_irq_hook_dma_half_complete(void *handle)
+{
+	(void)handle;
+}
+
+__weak void plfm_irq_hook_dma_full_complete(void *handle)
+{
+	(void)handle;
+}
 #include "no_os_alloc.h"
 #include "stm32_irq.h"
 #include "stm32_hal.h"
@@ -150,6 +165,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 
 	if (a->callback)
 		a->callback(a->ctx);
+
+	plfm_irq_hook_tim_elapsed((void *)htim);
 }
 
 void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim)
@@ -264,6 +281,7 @@ void _SAI_RxHalfCpltCallback(SAI_HandleTypeDef *hsai)
 void _DMA_RX_CpltCallback(DMA_HandleTypeDef* hdma)
 {
 	_common_dma_callback(hdma, NO_OS_EVT_DMA_RX_COMPLETE);
+	plfm_irq_hook_dma_full_complete((void *)hdma);
 }
 
 void _DMA_TX_CpltCallback(DMA_HandleTypeDef* hdma)
@@ -274,6 +292,7 @@ void _DMA_TX_CpltCallback(DMA_HandleTypeDef* hdma)
 void _DMA_HalfCpltCallback(DMA_HandleTypeDef *hdma)
 {
 	_common_dma_callback(hdma, NO_OS_EVT_DMA_RX_HALF_COMPLETE);
+	plfm_irq_hook_dma_half_complete((void *)hdma);
 }
 #endif
 
