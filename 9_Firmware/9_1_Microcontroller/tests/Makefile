@@ -27,6 +27,10 @@ CXX_LIB_DIR := ../9_1_1_C_Cpp_Libraries
 CXX_SRCS    := $(CXX_LIB_DIR)/ADAR1000_AGC.cpp $(CXX_LIB_DIR)/ADAR1000_Manager.cpp
 CXX_OBJS    := ADAR1000_AGC.o ADAR1000_Manager.o
 
+# GPS driver source
+GPS_SRC := ../9_1_3_C_Cpp_Code/um982_gps.c
+GPS_OBJ := um982_gps.o
+
 # Real source files compiled against mock headers
 REAL_SRC := ../9_1_1_C_Cpp_Libraries/adf4382a_manager.c
 
@@ -73,7 +77,10 @@ TESTS_WITH_PLATFORM := test_bug11_platform_spi_transmit_only
 # C++ tests (AGC outer loop)
 TESTS_WITH_CXX := test_agc_outer_loop
 
-ALL_TESTS := $(TESTS_WITH_REAL) $(TESTS_MOCK_ONLY) $(TESTS_STANDALONE) $(TESTS_WITH_PLATFORM) $(TESTS_WITH_CXX)
+# GPS driver tests (need mocks + GPS source + -lm)
+TESTS_GPS := test_um982_gps
+
+ALL_TESTS := $(TESTS_WITH_REAL) $(TESTS_MOCK_ONLY) $(TESTS_STANDALONE) $(TESTS_WITH_PLATFORM) $(TESTS_WITH_CXX) $(TESTS_GPS)
 
 .PHONY: all build test clean \
         $(addprefix test_,bug1 bug2 bug3 bug4 bug5 bug6 bug7 bug8 bug9 bug10 bug11 bug12 bug13 bug14 bug15) \
@@ -188,6 +195,20 @@ test_agc_outer_loop: test_agc_outer_loop.cpp $(CXX_OBJS) $(MOCK_OBJS)
 .PHONY: test_agc
 test_agc: test_agc_outer_loop
 	./test_agc_outer_loop
+
+# --- GPS driver rules ---
+
+$(GPS_OBJ): $(GPS_SRC)
+	$(CC) $(CFLAGS) $(INCLUDES) -I../9_1_3_C_Cpp_Code -c $< -o $@
+
+# Note: test includes um982_gps.c directly for white-box testing (static fn access)
+test_um982_gps: test_um982_gps.c $(MOCK_OBJS)
+	$(CC) $(CFLAGS) $(INCLUDES) -I../9_1_3_C_Cpp_Code $< $(MOCK_OBJS) -lm -o $@
+
+# Convenience target
+.PHONY: test_gps
+test_gps: test_um982_gps
+	./test_um982_gps
 
 # --- Individual test targets ---
 

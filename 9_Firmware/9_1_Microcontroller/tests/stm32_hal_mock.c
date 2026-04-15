@@ -21,6 +21,7 @@ SPI_HandleTypeDef  hspi4 = { .id = 4 };
 I2C_HandleTypeDef  hi2c1 = { .id = 1 };
 I2C_HandleTypeDef  hi2c2 = { .id = 2 };
 UART_HandleTypeDef huart3 = { .id = 3 };
+UART_HandleTypeDef huart5 = { .id = 5 };  /* GPS UART */
 ADC_HandleTypeDef  hadc3 = { .id = 3 };
 TIM_HandleTypeDef  htim3 = { .id = 3 };
 
@@ -33,6 +34,26 @@ uint32_t mock_tick = 0;
 
 /* ========================= Printf control ========================= */
 int mock_printf_enabled = 0;
+
+/* ========================= Mock UART TX capture =================== */
+uint8_t  mock_uart_tx_buf[MOCK_UART_TX_BUF_SIZE];
+uint16_t mock_uart_tx_len = 0;
+
+/* ========================= Mock UART RX buffer ==================== */
+#define MOCK_UART_RX_SLOTS 8
+
+static struct {
+    uint32_t uart_id;
+    uint8_t  buf[MOCK_UART_RX_BUF_SIZE];
+    uint16_t head;
+    uint16_t tail;
+} mock_uart_rx[MOCK_UART_RX_SLOTS];
+
+void mock_uart_tx_clear(void)
+{
+    mock_uart_tx_len = 0;
+    memset(mock_uart_tx_buf, 0, sizeof(mock_uart_tx_buf));
+}
 
 /* ========================= Mock GPIO read ========================= */
 #define GPIO_READ_TABLE_SIZE 32
@@ -49,6 +70,9 @@ void spy_reset(void)
     mock_tick = 0;
     mock_printf_enabled = 0;
     memset(gpio_read_table, 0, sizeof(gpio_read_table));
+    memset(mock_uart_rx, 0, sizeof(mock_uart_rx));
+    mock_uart_tx_len = 0;
+    memset(mock_uart_tx_buf, 0, sizeof(mock_uart_tx_buf));
 }
 
 const SpyRecord *spy_get(int index)
@@ -185,6 +209,83 @@ HAL_StatusTypeDef HAL_UART_Transmit(UART_HandleTypeDef *huart, const uint8_t *pD
         .value = Timeout,
         .extra = huart
     });
+    /* Capture TX data for test inspection */
+    for (uint16_t i = 0; i < Size && mock_uart_tx_len < MOCK_UART_TX_BUF_SIZE; i++) {
+        mock_uart_tx_buf[mock_uart_tx_len++] = pData[i];
+    }
+    return HAL_OK;
+}
+
+/* ========================= Mock UART RX helpers ====================== */
+
+/* find_rx_slot, mock_uart_rx_load, etc. use the mock_uart_rx declared above */
+
+static int find_rx_slot(UART_HandleTypeDef *huart)
+{
+    if (huart == NULL) return -1;
+    /* Find existing slot */
+    for (int i = 0; i < MOCK_UART_RX_SLOTS; i++) {
+        if (mock_uart_rx[i].uart_id == huart->id && mock_uart_rx[i].head != mock_uart_rx[i].tail) {
+            return i;
+        }
+        if (mock_uart_rx[i].uart_id == huart->id) {
+            return i;
+        }
+    }
+    /* Find empty slot */
+    for (int i = 0; i < MOCK_UART_RX_SLOTS; i++) {
+        if (mock_uart_rx[i].uart_id == 0) {
+            mock_uart_rx[i].uart_id = huart->id;
+            return i;
+        }
+    }
+    return -1;
+}
+
+void mock_uart_rx_load(UART_HandleTypeDef *huart, const uint8_t *data, uint16_t len)
+{
+    int slot = find_rx_slot(huart);
+    if (slot < 0) return;
+    mock_uart_rx[slot].uart_id = huart->id;
+    for (uint16_t i = 0; i < len; i++) {
+        uint16_t next = (mock_uart_rx[slot].head + 1) % MOCK_UART_RX_BUF_SIZE;
+        if (next == mock_uart_rx[slot].tail) break;  /* Buffer full */
+        mock_uart_rx[slot].buf[mock_uart_rx[slot].head] = data[i];
+        mock_uart_rx[slot].head = next;
+    }
+}
+
+void mock_uart_rx_clear(UART_HandleTypeDef *huart)
+{
+    int slot = find_rx_slot(huart);
+    if (slot < 0) return;
+    mock_uart_rx[slot].head = 0;
+    mock_uart_rx[slot].tail = 0;
+}
+
+HAL_StatusTypeDef HAL_UART_Receive(UART_HandleTypeDef *huart, uint8_t *pData,
+                                    uint16_t Size, uint32_t Timeout)
+{
+    (void)Timeout;
+    int slot = find_rx_slot(huart);
+    if (slot < 0) return HAL_TIMEOUT;
+
+    for (uint16_t i = 0; i < Size; i++) {
+        if (mock_uart_rx[slot].head == mock_uart_rx[slot].tail) {
+            return HAL_TIMEOUT;  /* No more data */
+        }
+        pData[i] = mock_uart_rx[slot].buf[mock_uart_rx[slot].tail];
+        mock_uart_rx[slot].tail = (mock_uart_rx[slot].tail + 1) % MOCK_UART_RX_BUF_SIZE;
+    }
+
+    spy_push((SpyRecord){
+        .type  = SPY_UART_RX,
+        .port  = NULL,
+        .pin   = Size,
+        .value = Timeout,
+        .extra = huart
+    });
+
     return HAL_OK;
 }
 

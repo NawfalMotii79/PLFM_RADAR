@@ -105,6 +105,7 @@ typedef struct {
 extern SPI_HandleTypeDef  hspi1, hspi4;
 extern I2C_HandleTypeDef  hi2c1, hi2c2;
 extern UART_HandleTypeDef huart3;
+extern UART_HandleTypeDef huart5;  /* GPS UART */
 extern ADC_HandleTypeDef  hadc3;
 extern TIM_HandleTypeDef  htim3;  /* Timer for DELADJ PWM */
 
@@ -139,6 +140,7 @@ typedef enum {
     SPY_TIM_SET_COMPARE,
     SPY_SPI_TRANSMIT_RECEIVE,
     SPY_SPI_TRANSMIT,
+    SPY_UART_RX,
 } SpyCallType;
 
 typedef struct {
@@ -187,6 +189,23 @@ void          HAL_GPIO_TogglePin(GPIO_TypeDef *GPIOx, uint16_t GPIO_Pin);
 uint32_t      HAL_GetTick(void);
 void          HAL_Delay(uint32_t Delay);
 HAL_StatusTypeDef HAL_UART_Transmit(UART_HandleTypeDef *huart, const uint8_t *pData, uint16_t Size, uint32_t Timeout);
+HAL_StatusTypeDef HAL_UART_Receive(UART_HandleTypeDef *huart, uint8_t *pData, uint16_t Size, uint32_t Timeout);
+
+/* ========================= Mock UART RX buffer ======================= */
+
+/* Inject bytes into the mock UART RX buffer for a specific UART handle.
+ * HAL_UART_Receive will return these bytes one at a time. */
+#define MOCK_UART_RX_BUF_SIZE 2048
+
+void mock_uart_rx_load(UART_HandleTypeDef *huart, const uint8_t *data, uint16_t len);
+void mock_uart_rx_clear(UART_HandleTypeDef *huart);
+
+/* Capture buffer for UART TX data (to verify commands sent to GPS module) */
+#define MOCK_UART_TX_BUF_SIZE 2048
+
+extern uint8_t  mock_uart_tx_buf[MOCK_UART_TX_BUF_SIZE];
+extern uint16_t mock_uart_tx_len;
+void mock_uart_tx_clear(void);
 
 /* ========================= SPI stubs ============================== */
 
