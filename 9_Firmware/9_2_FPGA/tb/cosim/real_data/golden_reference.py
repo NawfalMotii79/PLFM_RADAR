@@ -292,7 +292,7 @@ def run_ddc(adc_samples):
         # adc_signed_w = {1'b0, adc_data, 9'b0} - {1'b0, 8'hFF, 9'b0}/2
         # Simplified: center around zero, scale to 18-bit
         adc_val = int(adc_samples[n])
-        adc_signed = (adc_val - 128) << 9  # Approximate RTL sign conversion to 18-bit
+        adc_signed = (adc_val << 9) - 0xFF00  # Exact RTL: {1'b0,adc,9'b0} - {1'b0,8'hFF,9'b0}/2
         adc_signed = saturate(adc_signed, 18)
         
         # NCO lookup (ignoring dithering for golden reference)

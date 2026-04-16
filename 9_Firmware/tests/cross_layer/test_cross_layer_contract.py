@@ -49,8 +49,8 @@ sys.path.insert(0, str(cp.GUI_DIR))
 # Helpers
 # ===================================================================
 
-IVERILOG = os.environ.get("IVERILOG", "/opt/homebrew/bin/iverilog")
-VVP = os.environ.get("VVP", "/opt/homebrew/bin/vvp")
+IVERILOG = os.environ.get("IVERILOG", "iverilog")
+VVP = os.environ.get("VVP", "vvp")
 CXX = os.environ.get("CXX", "c++")
 
 # Check tool availability for conditional skipping

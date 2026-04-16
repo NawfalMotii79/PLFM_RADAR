@@ -494,9 +494,10 @@ def count_concat_bits(concat_expr: str, port_widths: dict[str, int]) -> ConcatWi
             fragments.append((part, w))
             total += w
         else:
-            # Unknown width — flag it
+            # Unknown width — flag it and stop accumulating
             fragments.append((part, -1))
             total = -1  # Can't compute
+            break
 
     return ConcatWidth(
         total_bits=total,
