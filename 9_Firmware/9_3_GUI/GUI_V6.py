@@ -1734,9 +1734,9 @@ class RadarGUI:
         """Step 39: Process incoming radar data from FTDI"""
         buffer = b''
         while True:
-            if self.running and self.ftdi_interface.is_open:
+            if self.running and self.ft601_interface.is_open:
                 try:
-                    data = self.ftdi_interface.read_data(4096)
+                    data = self.ft601_interface.read_data(4096)
                     if data:
                         buffer += data
                         
