@@ -552,6 +552,83 @@ class TestTier1AgcCrossLayerInvariant:
         )
 
 
+class TestTier1Adar1000ChannelConvention:
+    """
+    Verify ADAR1000Manager channel-indexed register helpers agree with
+    their callers' convention.
+
+    Callers (ADAR1000_AGC.cpp and ADAR1000_Manager.cpp internal call
+    sites) pass 1-based channel: `mgr.adarSetRxVgaGain(dev, ch + 1, ...)`
+    where `ch` iterates 0..3. The comment on ADAR1000_AGC.cpp explicitly
+    states "Channel parameter is 1-based per Manager convention".
+
+    The helpers, however, compute the register address as
+    `REG_CH1_* + (channel & 0x03) * stride`. With 1-based input this
+    produces:
+
+        caller ch=0 (hw CH1) -> channel=1 -> offset 1 -> REG_CH2
+        caller ch=1 (hw CH2) -> channel=2 -> offset 2 -> REG_CH3
+        caller ch=2 (hw CH3) -> channel=3 -> offset 3 -> REG_CH4
+        caller ch=3 (hw CH4) -> channel=4 -> offset 0 -> REG_CH1
+
+    i.e. every write is rotated +1 mod 4. See upstream issue #90.
+
+    The fix collapses one side:
+        (a) callers switch to 0-based `ch`; helpers keep `(channel & 0x03)`
+        (b) callers keep `ch + 1`; helpers use `(channel - 1)`
+
+    Either fix drops one of the two counted populations to zero.
+    """
+
+    _ADAR_CHANNEL_SETTERS = (
+        "adarSetRxPhase",
+        "adarSetTxPhase",
+        "adarSetRxVgaGain",
+        "adarSetTxVgaGain",
+    )
+
+    @pytest.mark.xfail(
+        strict=True,
+        reason=(
+            "#90 — ADAR1000Manager channel helpers use `(channel & 0x03)` "
+            "while all call sites pass 1-based `ch + 1`, rotating writes by "
+            "+1 mod 4. Upstream issue open as of 2026-04-17."
+        ),
+    )
+    def test_adar1000_caller_helper_channel_convention_agrees(self):
+        """Caller indexing base must match helper indexing base."""
+        manager_cpp = (cp.MCU_LIB_DIR / "ADAR1000_Manager.cpp").read_text()
+        agc_cpp = (cp.MCU_LIB_DIR / "ADAR1000_AGC.cpp").read_text()
+
+        # Count call sites passing 1-based `ch + 1` (or `(ch + 1)`) as the
+        # channel argument to any ADAR1000 channel-indexed setter.
+        one_based_call_sites = 0
+        for fn in self._ADAR_CHANNEL_SETTERS:
+            pattern = (
+                rf'{fn}\s*\([^)]*?,\s*\(?\s*ch\s*\+\s*1\s*\)?\s*,'
+            )
+            for text in (manager_cpp, agc_cpp):
+                one_based_call_sites += len(re.findall(pattern, text))
+
+        # Count helper sites that index REG_CH1_* via `(channel & 0x03)`.
+        masked_helper_sites = len(
+            re.findall(
+                r'REG_CH1_\w+\s*\+\s*\(\s*channel\s*&\s*0x03\s*\)',
+                manager_cpp,
+            )
+        )
+
+        # If both populations are non-empty, the conventions disagree and
+        # every channel write is rotated +1 mod 4.
+        assert not (one_based_call_sites > 0 and masked_helper_sites > 0), (
+            f"ADAR1000 channel convention mismatch: "
+            f"{one_based_call_sites} call sites pass 1-based `ch + 1` while "
+            f"{masked_helper_sites} helper sites compute "
+            f"`REG_CH1_* + (channel & 0x03)` (0-based). "
+            "See upstream issue #90 — rotates CH1..CH4 writes by +1 mod 4."
+        )
+
+
 class TestTier1DataPacketLayout:
     """Verify data packet byte layout matches between Python and Verilog."""
 
