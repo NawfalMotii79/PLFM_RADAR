@@ -84,8 +84,8 @@ margin = 0.25*lambda_g_mm
 # ===================================
 # FDTD / CSX / MESH (explicit lines)
 # ===================================
-unit_mm = 1e-3
-Sim_Path = os.path.join(tempfile.gettempdir(), f'openems_quartz_slotted_wg_{PROFILE}')
+unit_mm = 1e-3  # mm → m
+Sim_Path = os.path.join(tempfile.gettempdir(), f'openems_wg_{PROFILE}')  # temp sim path
 
 FDTD = openEMS(NrTS=int(6e5), EndCriteria=1e-5)
 FDTD.SetGaussExcite(0.5*(f_start+f_stop), 0.5*(f_stop-f_start))
