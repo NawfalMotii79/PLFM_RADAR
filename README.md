@@ -25,7 +25,7 @@ The AERIS-10 project aims to democratize radar technology by providing a fully o
 - **Full Electronic Beam Steering** - ±45° electronic steering in elevation and azimuth
 - **Advanced Signal Processing** - On-board FPGA handles pulse compression, Doppler FFT, MTI, and CFAR
 - **Python GUI** - User-friendly interface with map integration
-- **GPS/IMU Integration** - Real-time position and attitude correction
+- **GPS/IMU Integration** - Real-time position and altitude correction
 - **Modular Design** - Separate power management, frequency synthesis, and RF boards
 
 ## 🏗️ System Architecture
