@@ -47,7 +47,7 @@ The AERIS-10 main sub-systems are:
 
 - **Main Board** containing:
   - **DAC** - Generates the RADAR Chirps
-  - **2x Microwave Mixers (LT5552)** - For up-conversion and IF-down-conversion
+  - **2x Microwave Mixers (LTC5552)** - For up-conversion and IF-down-conversion
   - **4x 4-Channel Phase Shifters (ADAR1000)** - For RX and TX chain beamforming
   - **16x Front End Chips (ADTR1107)** - Used for both Low Noise Amplifying (RX) and Power Amplifying (TX) stages
   - **XC7A50T FPGA** - Handles RADAR Signal Processing on the upstream FTG256 board:
@@ -92,7 +92,7 @@ The AERIS-10 main sub-systems are:
 ### Processing Pipeline
 
 1. **Waveform Generation** - DAC creates LFM chirps
-2. **Up/Down Conversion** - LT5552 mixers handle frequency translation
+2. **Up/Down Conversion** - LTC5552 mixers handle frequency translation
 3. **Beam Steering** - ADAR1000 phase shifters control 16 elements
 4. **Signal Processing (FPGA)**:
    - Raw ADC data capture
