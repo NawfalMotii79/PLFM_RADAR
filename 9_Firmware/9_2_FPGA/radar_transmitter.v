@@ -72,10 +72,13 @@ module radar_transmitter(
     output wire stm32_cs_adar4_1v8,
 	 
 			 // Beam Position Tracking
-	 output wire [5:0] current_elevation,
-	 output wire [5:0] current_azimuth,
-	 output wire [5:0] current_chirp,
-	 output wire new_chirp_frame
+    output wire [5:0] current_elevation,
+    output wire [5:0] current_azimuth,
+    output wire [5:0] current_chirp,
+    output wire new_chirp_frame,
+
+    // Range mode: 2'b01=3km (medium chirp), 2'b00=20km (long+short)
+    input wire [1:0] cfg_range_mode
 
 
     );
@@ -208,6 +211,7 @@ plfm_chirp_controller_enhanced plfm_chirp_inst (
     .clk_120m(clk_120m_dac),
     .clk_100m(clk_100m),
     .reset_n(reset_n),
+    .cfg_range_mode(cfg_range_mode),
     .new_chirp(new_chirp_pulse_120m),      // CDC-synchronized pulse in clk_120m domain
     .new_elevation(new_elevation_pulse),
     .new_azimuth(new_azimuth_pulse),

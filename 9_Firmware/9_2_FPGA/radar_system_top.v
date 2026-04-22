@@ -511,7 +511,10 @@ radar_transmitter tx_inst (
     .current_elevation(tx_current_elevation),
     .current_azimuth(tx_current_azimuth),
     .current_chirp(tx_current_chirp),
-    .new_chirp_frame(tx_new_chirp_frame)
+    .new_chirp_frame(tx_new_chirp_frame),
+
+    // Range mode — drives TX chirp LUT and FSM path selection
+    .cfg_range_mode(host_range_mode)
 );
 
 // ============================================================================
@@ -962,23 +965,24 @@ always @(posedge clk_100m_buf or negedge sys_reset_n) begin
     if (!sys_reset_n) begin
         host_radar_mode    <= 2'b01;   // Default: auto-scan
         host_trigger_pulse <= 1'b0;
-        host_detect_threshold <= 16'd10000; // Default threshold
-        host_stream_control <= `RP_STREAM_CTRL_DEFAULT; // Default: all streams, mag-only mode
-        host_gain_shift     <= 4'd0;      // Default: pass-through (no gain change)
-        // Gap 2: chirp timing defaults (match radar_mode_controller parameters)
-        host_long_chirp_cycles  <= 16'd3000;
-        host_long_listen_cycles <= 16'd13700;
-        host_guard_cycles       <= 16'd17540;
-        host_short_chirp_cycles <= 16'd50;
-        host_short_listen_cycles <= 16'd17450;
-        host_chirps_per_elev    <= 6'd32;
-        host_status_request     <= 1'b0;
-        chirps_mismatch_error   <= 1'b0;
-        host_range_mode         <= 2'b00;     // Default: 3 km mode (all short chirps)
-        // CFAR defaults (disabled by default — backward-compatible)
-        host_cfar_guard         <= 4'd2;      // 2 guard cells each side
-        host_cfar_train         <= 5'd8;      // 8 training cells each side
-        host_cfar_alpha         <= 8'h30;     // alpha=3.0 (Q4.4)
+        host_detect_threshold <= `RP_DEF_DETECT_THRESHOLD;
+        host_stream_control <= `RP_STREAM_CTRL_DEFAULT;
+        host_gain_shift     <= 4'd0;
+        // Chirp timing defaults — 20km preset from radar_params.vh
+        host_long_chirp_cycles   <= `RP_DEF_LONG_CHIRP_CYCLES;
+        host_long_listen_cycles  <= `RP_DEF_LONG_LISTEN_CYCLES;
+        host_guard_cycles        <= `RP_DEF_GUARD_CYCLES;
+        host_short_chirp_cycles  <= `RP_DEF_SHORT_CHIRP_CYCLES;
+        host_short_listen_cycles <= `RP_DEF_SHORT_LISTEN_CYCLES;
+        host_chirps_per_elev     <= `RP_DEF_CHIRPS_PER_ELEV;
+        host_status_request      <= 1'b0;
+        chirps_mismatch_error    <= 1'b0;
+        // Default range mode: 20km (RP_RANGE_MODE_20KM) — opcode 0x20 switches to 3km
+        host_range_mode          <= `RP_RANGE_MODE_20KM;
+        // CFAR defaults
+        host_cfar_guard         <= `RP_DEF_CFAR_GUARD;
+        host_cfar_train         <= `RP_DEF_CFAR_TRAIN;
+        host_cfar_alpha         <= `RP_DEF_CFAR_ALPHA;
         host_cfar_mode          <= 2'b00;     // CA-CFAR
         host_cfar_enable        <= 1'b0;      // Disabled (simple threshold)
         // Ground clutter removal defaults (disabled — backward-compatible)
@@ -1024,7 +1028,34 @@ always @(posedge clk_100m_buf or negedge sys_reset_n) begin
                     end
                 end
                 8'h16: host_gain_shift         <= usb_cmd_value[3:0];  // Fix 3: digital gain
-                8'h20: host_range_mode         <= usb_cmd_value[1:0];  // Range mode
+                // Opcode 0x20: atomic range-mode preset load.
+                // Writes host_range_mode AND all RX timing registers in one cycle
+                // so TX and RX switch coherently with no intermediate state.
+                // TX timing is driven directly from cfg_range_mode inside
+                // plfm_chirp_controller_enhanced — no separate TX opcode needed.
+                // Encoding from radar_params.vh:
+                //   RP_RANGE_MODE_3KM  (2'b00) = 3km  — medium chirp only
+                //   RP_RANGE_MODE_20KM (2'b01) = 20km — long + short chirp
+                8'h20: begin
+                    host_range_mode <= usb_cmd_value[1:0];
+                    if (usb_cmd_value[1:0] == `RP_RANGE_MODE_3KM) begin
+                        // 3km preset — all timings @ 100 MHz from radar_params.vh
+                        host_long_chirp_cycles   <= `RP_DEF_MED_CHIRP_CYCLES;
+                        host_long_listen_cycles  <= `RP_DEF_MED_LISTEN_CYCLES;
+                        host_guard_cycles        <= 16'd0;   // no guard in 3km mode
+                        host_short_chirp_cycles  <= 16'd0;   // short chirp suppressed
+                        host_short_listen_cycles <= 16'd0;
+                        host_chirps_per_elev     <= `RP_DEF_CHIRPS_PER_ELEV;
+                    end else begin
+                        // 20km preset — all timings @ 100 MHz from radar_params.vh
+                        host_long_chirp_cycles   <= `RP_DEF_LONG_CHIRP_CYCLES;
+                        host_long_listen_cycles  <= `RP_DEF_LONG_LISTEN_CYCLES;
+                        host_guard_cycles        <= `RP_DEF_GUARD_CYCLES;
+                        host_short_chirp_cycles  <= `RP_DEF_SHORT_CHIRP_CYCLES;
+                        host_short_listen_cycles <= `RP_DEF_SHORT_LISTEN_CYCLES;
+                        host_chirps_per_elev     <= `RP_DEF_CHIRPS_PER_ELEV;
+                    end
+                end
                 // CFAR configuration opcodes
                 8'h21: host_cfar_guard         <= usb_cmd_value[3:0];
                 8'h22: host_cfar_train         <= usb_cmd_value[4:0];

@@ -374,10 +374,11 @@ wire [10:0] sample_addr_from_chain;
 chirp_memory_loader_param chirp_mem (
     .clk(clk),
     .reset_n(reset_n),
+    .cfg_range_mode(host_range_mode),
     .segment_select(segment_request),
     .mem_request(mem_request),
     .use_long_chirp(use_long_chirp),
-	 .sample_addr(sample_addr_from_chain),
+    .sample_addr(sample_addr_from_chain),
     .ref_i(ref_i),
     .ref_q(ref_q),
     .mem_ready(mem_ready)

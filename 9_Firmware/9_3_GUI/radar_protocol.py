@@ -261,6 +261,61 @@ class RadarProtocol:
         sr.self_test_busy = (words[5] >> 24) & 0x01
         return sr
 
+    # Range-mode presets — mirror the FPGA opcode 0x20 atomic preset values.
+    # All RX timing values are in 100 MHz cycles; TX timing is handled inside
+    # plfm_chirp_controller_enhanced via cfg_range_mode directly.
+    # Encoding matches radar_params.vh: RP_RANGE_MODE_3KM=0x00, RP_RANGE_MODE_20KM=0x01
+    # All RX timing values in 100 MHz cycles, matching RP_DEF_* macros.
+    RANGE_PRESETS: dict[str, dict] = {
+        "3km": {
+            "mode_value":      0x00,   # RP_RANGE_MODE_3KM
+            "long_chirp":      500,    # RP_DEF_MED_CHIRP_CYCLES — 5µs medium chirp
+            "long_listen":     2500,   # RP_DEF_MED_LISTEN_CYCLES — 25µs → 3.75 km
+            "guard":           0,      # no guard in 3km mode
+            "short_chirp":     0,      # short chirp suppressed
+            "short_listen":    0,
+            "chirps_per_elev": 32,     # RP_DEF_CHIRPS_PER_ELEV
+        },
+        "20km": {
+            "mode_value":      0x01,   # RP_RANGE_MODE_20KM
+            "long_chirp":      3000,   # RP_DEF_LONG_CHIRP_CYCLES — 30µs
+            "long_listen":     13700,  # RP_DEF_LONG_LISTEN_CYCLES — 137µs → 20.5 km
+            "guard":           17540,  # RP_DEF_GUARD_CYCLES — 175.4µs
+            "short_chirp":     50,     # RP_DEF_SHORT_CHIRP_CYCLES — 0.5µs
+            "short_listen":    17450,  # RP_DEF_SHORT_LISTEN_CYCLES — 174.5µs
+            "chirps_per_elev": 32,     # RP_DEF_CHIRPS_PER_ELEV
+        },
+    }
+
+    @classmethod
+    def apply_range_preset(cls, mode: str) -> list[bytes]:
+        """
+        Return the ordered list of 4-byte command words that atomically
+        configure the FPGA for the requested range mode.
+
+        The RANGE_MODE opcode (0x20) is sent last so the FPGA latches the
+        preset values already written into the RX timing registers.
+
+        Args:
+            mode: "3km" or "20km"
+
+        Returns:
+            List of 4-byte command words ready to send over FT2232H.
+        """
+        p = cls.RANGE_PRESETS[mode]
+        cmds = [
+            cls.build_command(Opcode.LONG_CHIRP,      p["long_chirp"]),
+            cls.build_command(Opcode.LONG_LISTEN,     p["long_listen"]),
+            cls.build_command(Opcode.GUARD,           p["guard"]),
+            cls.build_command(Opcode.SHORT_CHIRP,     p["short_chirp"]),
+            cls.build_command(Opcode.SHORT_LISTEN,    p["short_listen"]),
+            cls.build_command(Opcode.CHIRPS_PER_ELEV, p["chirps_per_elev"]),
+            # RANGE_MODE last — FPGA opcode 0x20 also writes all timing regs
+            # atomically; the preceding individual writes are belt-and-suspenders.
+            cls.build_command(Opcode.RANGE_MODE, p["mode_value"]),
+        ]
+        return cmds
+
     @staticmethod
     def find_packet_boundaries(buf: bytes) -> list[tuple[int, int, str]]:
         """

@@ -143,25 +143,56 @@
 `define RP_CFAR_MAG_DEPTH       (`RP_MAX_OUTPUT_BINS * `RP_NUM_DOPPLER_BINS)
 
 // ============================================================================
-// CHIRP TIMING DEFAULTS (100 MHz clock cycles)
+// CHIRP TIMING — RX DOMAIN (100 MHz clock cycles)
 // ============================================================================
-// Reset defaults for host-configurable timing registers.
-// Match radar_mode_controller.v parameters and main.cpp STM32 defaults.
+// Reset defaults for host-configurable timing registers (opcode 0x10-0x15).
+// Opcode 0x20 preset-loads the correct set atomically.
+// All values are in 100 MHz cycles.  Mirror RP_TX_* values below (120 MHz).
 
-`define RP_DEF_LONG_CHIRP_CYCLES    3000    // 30 us
-`define RP_DEF_LONG_LISTEN_CYCLES   13700   // 137 us
-`define RP_DEF_GUARD_CYCLES         17540   // 175.4 us
-`define RP_DEF_SHORT_CHIRP_CYCLES   50      // 0.5 us
-`define RP_DEF_SHORT_LISTEN_CYCLES  17450   // 174.5 us
+// --- 20 km preset (RP_RANGE_MODE_20KM = 2'b01) ---
+`define RP_DEF_LONG_CHIRP_CYCLES    3000    // 30 µs long chirp
+`define RP_DEF_LONG_LISTEN_CYCLES   13700   // 137 µs → 20.5 km
+`define RP_DEF_GUARD_CYCLES         17540   // 175.4 µs guard
+`define RP_DEF_SHORT_CHIRP_CYCLES   50      // 0.5 µs short chirp
+`define RP_DEF_SHORT_LISTEN_CYCLES  17450   // 174.5 µs listen
 `define RP_DEF_CHIRPS_PER_ELEV      32
+
+// --- 3 km preset (RP_RANGE_MODE_3KM = 2'b00) ---
+`define RP_DEF_MED_CHIRP_CYCLES     500     // 5 µs medium chirp @ 100 MHz
+`define RP_DEF_MED_LISTEN_CYCLES    2500    // 25 µs listen → 3.75 km margin
+
+// ============================================================================
+// CHIRP TIMING — TX DOMAIN (120 MHz clock cycles)
+// ============================================================================
+// Used by plfm_chirp_controller_enhanced.  Derived from RX values scaled by 1.2.
+
+// --- 20 km preset ---
+`define RP_TX_LONG_SAMPLES          3600    // 30 µs × 120 MHz
+`define RP_TX_LONG_LISTEN           16440   // 137 µs × 120 MHz
+`define RP_TX_GUARD_SAMPLES         21048   // 175.4 µs × 120 MHz
+`define RP_TX_SHORT_SAMPLES         60      // 0.5 µs × 120 MHz
+`define RP_TX_SHORT_LISTEN          20940   // 174.5 µs × 120 MHz
+
+// --- 3 km preset ---
+`define RP_TX_MEDIUM_SAMPLES        600     // 5 µs × 120 MHz  (TX LUT active samples)
+`define RP_TX_MEDIUM_LISTEN         3000    // 25 µs × 120 MHz (listen window for 3km)
+
+// ============================================================================
+// MEDIUM CHIRP MEMORY (3 km mode — chirp_memory_loader_param.v)
+// ============================================================================
+`define RP_MEDIUM_CHIRP_SAMPLES_RX  500     // 5 µs at 100 MHz (RX reference IQ)
+`define RP_MEDIUM_CHIRP_SAMPLES_TX  600     // 5 µs at 120 MHz (TX DAC LUT)
+`define RP_MEDIUM_CHIRP_MEM_DEPTH   1024    // BRAM depth (next power of 2 ≥ 600)
 
 // ============================================================================
 // BLIND ZONE CONSTANTS (informational, for comments and GUI)
 // ============================================================================
-// Long chirp blind zone:  c * 30 us / 2 = 4500 m
-// Short chirp blind zone: c * 0.5 us / 2 = 75 m
+// Long chirp:   c × 30 µs / 2 = 4500 m  — 3 km target invisible
+// Medium chirp: c × 5 µs / 2  =  750 m  — 3 km target visible
+// Short chirp:  c × 0.5 µs / 2 =  75 m
 
 `define RP_LONG_BLIND_ZONE_M        4500
+`define RP_MEDIUM_BLIND_ZONE_M      750
 `define RP_SHORT_BLIND_ZONE_M       75
 
 // ============================================================================
@@ -205,10 +236,12 @@
 `define RP_MODE_RESERVED            2'b11
 
 // ============================================================================
-// RANGE MODE ENCODING (host_range_mode, opcode 0x20)
+// RANGE MODE ENCODING (host_range_mode / cfg_range_mode, opcode 0x20)
 // ============================================================================
+// 2'b00 = 3 km  — medium chirp only (no short chirp phase)
+// 2'b01 = 20 km — long chirp (first half) + short chirp disambiguation
 `define RP_RANGE_MODE_3KM           2'b00
-`define RP_RANGE_MODE_LONG          2'b01
+`define RP_RANGE_MODE_20KM          2'b01
 `define RP_RANGE_MODE_RSVD2         2'b10
 `define RP_RANGE_MODE_RSVD3         2'b11
 

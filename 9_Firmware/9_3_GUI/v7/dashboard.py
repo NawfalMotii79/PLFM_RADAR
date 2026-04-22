@@ -662,6 +662,21 @@ class RadarDashboard(QMainWindow):
 
         left_layout.addWidget(grp_op)
 
+        # -- Range Mode --
+        grp_range = QGroupBox("Range Mode")
+        range_layout = QVBoxLayout(grp_range)
+
+        self._range_mode_combo = QComboBox()
+        self._range_mode_combo.addItem("20 km (long + short chirp)", "20km")
+        self._range_mode_combo.addItem("3 km (medium chirp only)", "3km")
+        range_layout.addWidget(self._range_mode_combo)
+
+        btn_apply_range = QPushButton("Apply Range Preset")
+        btn_apply_range.clicked.connect(self._apply_range_preset)
+        range_layout.addWidget(btn_apply_range)
+
+        left_layout.addWidget(grp_range)
+
         # -- Signal Processing --
         grp_sp = QGroupBox("Signal Processing")
         sp_layout = QVBoxLayout(grp_sp)
@@ -1244,6 +1259,20 @@ class RadarDashboard(QMainWindow):
             logger.info(f"Sent FPGA cmd: 0x{opcode:02X} = {value}")
         else:
             logger.error(f"Failed to send FPGA cmd: 0x{opcode:02X}")
+
+    def _apply_range_preset(self):
+        """Send the full ordered sequence of commands for the selected range mode."""
+        mode = self._range_mode_combo.currentData()
+        if self._connection is None or not self._connection.is_open:
+            logger.warning(f"Cannot apply range preset '{mode}': no connection")
+            return
+        cmds = RadarProtocol.apply_range_preset(mode)
+        for cmd in cmds:
+            ok = self._connection.write(cmd)
+            if not ok:
+                logger.error(f"Range preset '{mode}' failed on cmd {cmd.hex()}")
+                return
+        logger.info(f"Range preset '{mode}' applied ({len(cmds)} commands)")
 
     def _send_fpga_validated(self, opcode: int, value: int, bits: int):
         """Clamp value to bit-width and send.

@@ -1,9 +1,12 @@
 `timescale 1ns / 1ps
+`include "radar_params.vh"
 
 module plfm_chirp_controller_enhanced (
     input wire clk_120m,
     input wire clk_100m,
     input wire reset_n,
+    // cfg_range_mode: RP_RANGE_MODE_3KM=2'b00 (medium chirp only), RP_RANGE_MODE_20KM=2'b01 (long+short)
+    input wire [1:0] cfg_range_mode,
     input wire new_chirp,
     input wire new_elevation,
     input wire new_azimuth,
@@ -33,16 +36,24 @@ module plfm_chirp_controller_enhanced (
 );
 
 // Chirp parameters
-parameter F_START = 30000000;       // 30 MHz (starting frequency)
-parameter F_END = 10000000;         // 10 MHz (ending frequency)
-parameter FS = 120000000;           // 120 MHz
+parameter F_START = 30000000;       // 30 MHz
+parameter F_END   = 10000000;       // 10 MHz
+parameter FS      = 120000000;      // 120 MHz
 
-// Timing parameters
-parameter T1_SAMPLES = 3600;        // 30us at 120MHz
-parameter T1_RADAR_LISTENING = 16440; //137us at 120MHz
-parameter T2_SAMPLES = 60;          // 0.5us at 120MHz
-parameter T2_RADAR_LISTENING = 20940; //174.5us at 120MHz
-parameter GUARD_SAMPLES = 21048;    // 175.4us at 120MHz
+// ---- Timing presets — source from radar_params.vh (all at 120 MHz) ----
+localparam T1_SAMPLES_20KM    = `RP_TX_LONG_SAMPLES;      // 3600 — 30µs long chirp
+localparam T1_LISTEN_20KM     = `RP_TX_LONG_LISTEN;       // 16440 — 137µs
+localparam GUARD_SAMPLES      = `RP_TX_GUARD_SAMPLES;     // 21048 — guard
+localparam T2_SAMPLES         = `RP_TX_SHORT_SAMPLES;     // 60 — 0.5µs short chirp
+localparam T2_RADAR_LISTENING = `RP_TX_SHORT_LISTEN;      // 20940 — short listen
+localparam T1_SAMPLES_3KM     = `RP_TX_MEDIUM_SAMPLES;    // 600 — 5µs medium chirp
+localparam T1_LISTEN_3KM      = `RP_TX_MEDIUM_LISTEN;     // 3000 — 25µs
+
+// Runtime MUX: 3km (RP_RANGE_MODE_3KM=2'b00) selects medium; 20km selects long
+wire [15:0] T1_SAMPLES         = (cfg_range_mode == `RP_RANGE_MODE_3KM)
+                                   ? T1_SAMPLES_3KM : T1_SAMPLES_20KM;
+wire [15:0] T1_RADAR_LISTENING = (cfg_range_mode == `RP_RANGE_MODE_3KM)
+                                   ? T1_LISTEN_3KM  : T1_LISTEN_20KM;
 
 // Chirp and beam parameters
 parameter CHIRP_MAX = 32;
@@ -68,11 +79,13 @@ reg [15:0] sample_counter;
 wire chirp__toggling, elevation__toggling, azimuth__toggling;
 
 // LUTs for chirp waveforms
-(* ram_style = "block" *) reg [7:0] long_chirp_lut [0:3599];  // T1_SAMPLES-1
-reg [7:0] short_chirp_lut [0:59];   // T2_SAMPLES-1
+(* ram_style = "block" *) reg [7:0] long_chirp_lut   [0:3599]; // 30µs @ 120MHz (20km)
+(* ram_style = "block" *) reg [7:0] medium_chirp_lut  [0:599];  // 5µs  @ 120MHz (3km)
+reg [7:0] short_chirp_lut [0:59];                               // 0.5µs inline  (20km)
 
-// Registered BRAM read output (sync-only for BRAM inference)
+// Registered BRAM read outputs (sync-only for BRAM inference)
 reg [7:0] long_chirp_rd_data;
+reg [7:0] medium_chirp_rd_data;
 
 // Edge detection
 assign chirp__toggling = new_chirp;
@@ -101,15 +114,16 @@ assign adar_rx_load_4 = 1'b0;
 
 
 
-// LUT Initialization
-// Long PLFM chirp LUT loaded from .mem file for BRAM inference
+// LUT Initialization — both loaded at synthesis/simulation
 initial begin
-    $readmemh("long_chirp_lut.mem", long_chirp_lut);
+    $readmemh("long_chirp_lut.mem",    long_chirp_lut);
+    $readmemh("medium_chirp_lut.mem",  medium_chirp_lut);
 end
 
-// Synchronous-only BRAM read (no async reset) for BRAM inference
+// Synchronous BRAM reads (no async reset — REQP-1839/1840)
 always @(posedge clk_120m) begin
-    long_chirp_rd_data <= long_chirp_lut[sample_counter];
+    long_chirp_rd_data   <= long_chirp_lut[sample_counter];
+    medium_chirp_rd_data <= medium_chirp_lut[sample_counter[9:0]];
 end
 
 // Short PLFM chirp LUT initialization (too small for BRAM, keep inline)
@@ -192,10 +206,19 @@ always @(*) begin
         
         LONG_LISTEN: begin
             if (sample_counter == T1_RADAR_LISTENING-1) begin
-                if (chirp_counter == (CHIRP_MAX/2)-1)
-                    next_state = GUARD_TIME;
-                else
-                    next_state = LONG_CHIRP;
+                if (cfg_range_mode == `RP_RANGE_MODE_3KM) begin
+                    // 3km: all CHIRP_MAX chirps are medium — no short chirp phase
+                    if (chirp_counter == CHIRP_MAX-1)
+                        next_state = DONE;
+                    else
+                        next_state = LONG_CHIRP;
+                end else begin
+                    // 20km: first half long, then GUARD → short chirp phase
+                    if (chirp_counter == (CHIRP_MAX/2)-1)
+                        next_state = GUARD_TIME;
+                    else
+                        next_state = LONG_CHIRP;
+                end
             end else begin
                 next_state = LONG_LISTEN;
             end
@@ -259,7 +282,7 @@ always @(posedge clk_120m or negedge reset_n) begin
         if (current_state == LONG_CHIRP || current_state == LONG_LISTEN || 
             current_state == GUARD_TIME || current_state == SHORT_CHIRP || 
             current_state == SHORT_LISTEN) begin
-            if (sample_counter == get_max_counter(current_state) - 1) begin
+            if (sample_counter == get_max_counter(current_state, T1_SAMPLES, T1_RADAR_LISTENING) - 1) begin
                 sample_counter <= 0;
                 // Increment chirp counter at end of listen states
                 if (current_state == LONG_LISTEN || current_state == SHORT_LISTEN) begin
@@ -281,11 +304,11 @@ always @(posedge clk_120m or negedge reset_n) begin
             LONG_CHIRP: begin
                 rf_switch_ctrl <= 1'b1;
                 {adar_tr_1, adar_tr_2, adar_tr_3, adar_tr_4} <= 4'b1111;
-                
-                // CRITICAL FIX: Generate valid signal
                 if (sample_counter < T1_SAMPLES) begin
-                    chirp_data <= long_chirp_rd_data;
-                    chirp_valid <= 1'b1;  // Valid during entire chirp
+                    // 3km → medium chirp LUT; 20km → long chirp LUT
+                    chirp_data  <= (cfg_range_mode == `RP_RANGE_MODE_3KM)
+                                   ? medium_chirp_rd_data : long_chirp_rd_data;
+                    chirp_valid <= 1'b1;
                 end else begin
                     chirp_data <= 8'd128;
                 end
@@ -339,13 +362,16 @@ always @(posedge clk_120m or negedge reset_n) begin
     end
 end
 
-// Helper function to get max counter for each state
+// Helper function — timing arguments passed in because functions cannot read
+// module-level wires (T1_SAMPLES / T1_RADAR_LISTENING are runtime-selected).
 function [15:0] get_max_counter;
-    input [2:0] state;
+    input [2:0]  state;
+    input [15:0] t1_samp;
+    input [15:0] t1_listen;
     begin
         case (state)
-            LONG_CHIRP:   get_max_counter = T1_SAMPLES;
-            LONG_LISTEN:  get_max_counter = T1_RADAR_LISTENING;
+            LONG_CHIRP:   get_max_counter = t1_samp;
+            LONG_LISTEN:  get_max_counter = t1_listen;
             GUARD_TIME:   get_max_counter = GUARD_SAMPLES;
             SHORT_CHIRP:  get_max_counter = T2_SAMPLES;
             SHORT_LISTEN: get_max_counter = T2_RADAR_LISTENING;

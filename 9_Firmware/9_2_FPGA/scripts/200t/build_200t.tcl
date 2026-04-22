@@ -107,7 +107,12 @@ add_files -fileset constrs_1 -norecurse [file join $project_root "constraints" "
 add_files -fileset constrs_1 -norecurse [file join $project_root "constraints" "adc_clk_mmcm.xdc"]
 
 set_property top $top_module [current_fileset]
-set_property verilog_define {FFT_XPM_BRAM} [current_fileset]
+# FFT_XPM_BRAM: use XPM BRAM-based FFT twiddle storage (not LUTRAM)
+# SUPPORT_LONG_RANGE: enable 20km data path (wider range bins, 8 segments, dual-chirp FSM)
+#   Must be set on 200T builds only — 50T lacks the BRAM/LUT budget for 20km paths.
+#   Mirrors radar_params.vh variant selection; mti_canceller.v and doppler_processor.v
+#   gate their full range-bin widths behind this define.
+set_property verilog_define {FFT_XPM_BRAM SUPPORT_LONG_RANGE} [current_fileset]
 # Override USB_MODE to 0 (FT601) for 200T premium board.
 # The RTL default is USB_MODE=1 (FT2232H, production 50T).
 set_property generic {USB_MODE=0} [current_fileset]

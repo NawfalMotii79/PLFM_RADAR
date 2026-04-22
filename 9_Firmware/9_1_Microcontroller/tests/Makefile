@@ -22,6 +22,20 @@ CXXFLAGS := -std=c++17 -Wall -Wextra -Wno-unused-parameter -g -O0
 # Shim headers come FIRST so they override real headers
 INCLUDES := -Ishims -I. -I../9_1_1_C_Cpp_Libraries
 
+# Hardware variant flag — mirrors the STM32CubeIDE "C Defines" field.
+# To test the 3 km firmware variant (HARDWARE_3KM defined in main.cpp):
+#   make HARDWARE_VARIANT=3KM
+# To test the 20 km (default) variant, omit the variable or:
+#   make HARDWARE_VARIANT=20KM
+# In STM32CubeIDE: Project → Properties → C/C++ Build → Settings →
+#   MCU GCC Compiler → Preprocessor → Add "HARDWARE_3KM" for the 3km build.
+ifneq ($(HARDWARE_VARIANT),)
+  ifeq ($(HARDWARE_VARIANT),3KM)
+    CFLAGS   += -DHARDWARE_3KM
+    CXXFLAGS += -DHARDWARE_3KM
+  endif
+endif
+
 # C++ library directory (AGC, ADAR1000 Manager)
 CXX_LIB_DIR := ../9_1_1_C_Cpp_Libraries
 CXX_SRCS    := $(CXX_LIB_DIR)/ADAR1000_AGC.cpp $(CXX_LIB_DIR)/ADAR1000_Manager.cpp
@@ -65,6 +79,7 @@ TESTS_MOCK_ONLY := test_bug2_ad9523_double_setup \
 # Tests that are standalone (no mocks needed, pure logic)
 TESTS_STANDALONE := test_bug12_pa_cal_loop_inverted \
                     test_bug13_dac2_adc_buffer_mismatch \
+                    test_gap3_fault_ack_clears_emergency \
                     test_gap3_iwdg_config \
                     test_gap3_temperature_max \
                     test_gap3_idq_periodic_reread \
@@ -85,7 +100,7 @@ ALL_TESTS := $(TESTS_WITH_REAL) $(TESTS_MOCK_ONLY) $(TESTS_STANDALONE) $(TESTS_W
 
 .PHONY: all build test clean \
         $(addprefix test_,bug1 bug2 bug3 bug4 bug5 bug6 bug7 bug8 bug9 bug10 bug11 bug12 bug13 bug14 bug15) \
-        test_gap3_estop test_gap3_iwdg test_gap3_temp test_gap3_idq test_gap3_order \
+        test_gap3_fault_ack test_gap3_estop test_gap3_iwdg test_gap3_temp test_gap3_idq test_gap3_order \
         test_gap3_overtemp test_gap3_wdog
 
 all: build test
@@ -160,6 +175,9 @@ test_gap3_emergency_stop_rails: test_gap3_emergency_stop_rails.c $(MOCK_OBJS)
 	$(CC) $(CFLAGS) $(INCLUDES) $< $(MOCK_OBJS) -o $@
 
 # Gap-3 safety tests -- standalone (pure logic)
+test_gap3_fault_ack_clears_emergency: test_gap3_fault_ack_clears_emergency.c
+	$(CC) $(CFLAGS) $< -o $@
+
 test_gap3_iwdg_config: test_gap3_iwdg_config.c
 	$(CC) $(CFLAGS) $< -lm -o $@
 
@@ -260,6 +278,9 @@ test_bug14: test_bug14_diag_section_args
 
 test_bug15: test_bug15_htim3_dangling_extern
 	./test_bug15_htim3_dangling_extern
+
+test_gap3_fault_ack: test_gap3_fault_ack_clears_emergency
+	./test_gap3_fault_ack_clears_emergency
 
 test_gap3_estop: test_gap3_emergency_stop_rails
 	./test_gap3_emergency_stop_rails

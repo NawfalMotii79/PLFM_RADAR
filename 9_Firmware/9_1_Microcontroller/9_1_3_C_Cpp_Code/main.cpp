@@ -1032,6 +1032,15 @@ void getSystemStatusForGUI(char* status_buffer, size_t buffer_size) {
                  n, y, m);
     if (w > 0 && (size_t)w < rem) { off += (size_t)w; rem -= (size_t)w; }
 
+    // Hardware variant — lets the GUI auto-apply the correct range preset on connect.
+    // Define HARDWARE_3KM in CMakeLists.txt or the IDE build config for the 3 km build.
+#ifdef HARDWARE_3KM
+    w = snprintf(status_buffer + off, rem, "HW_VARIANT:3KM|");
+#else
+    w = snprintf(status_buffer + off, rem, "HW_VARIANT:20KM|");
+#endif
+    if (w > 0 && (size_t)w < rem) { off += (size_t)w; rem -= (size_t)w; }
+
     // NUL termination guaranteed by snprintf, but be safe
     status_buffer[buffer_size - 1] = '\0';
 }

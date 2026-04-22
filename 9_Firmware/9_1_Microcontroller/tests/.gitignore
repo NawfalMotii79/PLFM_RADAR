@@ -23,6 +23,7 @@ test_gap3_emergency_stop_rails
 # TESTS_STANDALONE
 test_bug12_pa_cal_loop_inverted
 test_bug13_dac2_adc_buffer_mismatch
+test_gap3_fault_ack_clears_emergency
 test_gap3_iwdg_config
 test_gap3_temperature_max
 test_gap3_idq_periodic_reread
