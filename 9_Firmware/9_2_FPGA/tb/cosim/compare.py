@@ -38,10 +38,11 @@ from fpga_model import SignalChain
 
 # Thresholds for pass/fail
 # These are generous because of LFSR dithering and CDC latency jitter
-MAX_RMS_ERROR_LSB = 50.0     # Max RMS error in 18-bit LSBs
-MIN_CORRELATION = 0.90        # Min Pearson correlation coefficient
-MAX_LATENCY_DRIFT = 15        # Max latency offset between RTL and model (samples)
-MAX_COUNT_DIFF = 20           # Max output count difference (LFSR dithering affects CIC timing)
+MAX_RMS_ERROR_LSB = 50.0       # Max RMS error in 18-bit LSBs
+MAX_ABS_ERROR_LSB = 200.0     # Max absolute error in 18-bit LSBs (4x RMS threshold)
+MIN_CORRELATION = 0.90         # Min Pearson correlation coefficient
+MAX_LATENCY_DRIFT = 15         # Max latency offset between RTL and model (samples)
+MAX_COUNT_DIFF = 20            # Max output count difference (LFSR dithering affects CIC timing)
 
 # Scenarios
 SCENARIOS = {
@@ -314,8 +315,8 @@ def compare_scenario(scenario_name):
     # ---- Error metrics (after alignment) ----
     rms_i = compute_rms_error(aligned_rtl_i, aligned_py_i)
     rms_q = compute_rms_error(aligned_rtl_q, aligned_py_q)
-    compute_max_abs_error(aligned_rtl_i, aligned_py_i)
-    compute_max_abs_error(aligned_rtl_q, aligned_py_q)
+    max_abs_i = compute_max_abs_error(aligned_rtl_i, aligned_py_i)
+    max_abs_q = compute_max_abs_error(aligned_rtl_q, aligned_py_q)
     corr_i_aligned = compute_correlation(aligned_rtl_i, aligned_py_i)
     corr_q_aligned = compute_correlation(aligned_rtl_q, aligned_py_q)
 
@@ -397,6 +398,15 @@ def compare_scenario(scenario_name):
     lag_ok = abs(best_lag) <= MAX_LATENCY_DRIFT
     results.append(('Latency offset', lag_ok,
                      f"|{best_lag}| <= {MAX_LATENCY_DRIFT}"))
+
+    # Check 7: Max absolute error
+    # Catches outlier spikes (pipeline corruption, saturation, CDC glitches)
+    # that RMS and correlation metrics alone can miss.
+    max_abs_err = max(max_abs_i, max_abs_q)
+    max_abs_threshold = cfg.get('max_abs', MAX_ABS_ERROR_LSB)
+    max_abs_ok = max_abs_err <= max_abs_threshold
+    results.append(('Max absolute error', max_abs_ok,
+                     f"max(I={max_abs_i}, Q={max_abs_q}) <= {max_abs_threshold:.0f}"))
 
     # ---- Report ----
     all_pass = True
