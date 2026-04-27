@@ -102,6 +102,7 @@ class RadarMapWidget(QWidget):
         self._tile_server = TileServer.OPENSTREETMAP
         self._show_coverage = True
         self._show_trails = False
+        self._show_3d = False
 
         # Build UI
         self._setup_ui()
@@ -158,6 +159,12 @@ class RadarMapWidget(QWidget):
         self._trails_check.stateChanged.connect(self._on_trails_toggled)
         bar_layout.addWidget(self._trails_check)
 
+        #added 3d mode creates a checkbox next to the trails box
+        self._3d_check = QCheckBox("3D")
+        self._3d_check.setChecked(False)
+        self._3d_check.stateChanged.connect(self._on_3d_toggled)
+        bar_layout.addWidget(self._3d_check)
+
         btn_style = f"""
             QPushButton {{
                 background-color: {DARK_BUTTON}; color: {DARK_FG};
@@ -208,6 +215,7 @@ class RadarMapWidget(QWidget):
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script src="qrc:///qtwebchannel/qwebchannel.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <style>
 * {{ margin:0; padding:0; box-sizing:border-box; }}
 html, body {{ height:100%; width:100%; font-family:'Segoe UI',Arial,sans-serif; }}
@@ -243,7 +251,21 @@ html, body {{ height:100%; width:100%; font-family:'Segoe UI',Arial,sans-serif; 
 </style>
 </head>
 <body>
+
+<! This is the block that it generates  >
+
 <div id="map"></div>
+<div id="view3d" style="display:none; width:100%; height:100%;
+    background:#1a1a2e; position:relative;">
+    <div id="popup3d" style="
+        display:none; position:absolute; background:#3c3f41;
+        color:#e0e0e0; border:1px solid #555; border-radius:8px;
+        padding:12px; font-size:12px; font-family:'Segoe UI',Arial,sans-serif;
+        pointer-events:none; z-index:100; min-width:160px;
+        box-shadow:0 4px 12px rgba(0,0,0,0.5);
+    "></div>
+</div>
+
 <script>
 var map, radarMarker, coverageCircle;
 var targetMarkers = {{}};
@@ -423,6 +445,7 @@ function updateTargets(targetsJson) {{
                 delete targetTrailHistory[id];
             }}
         }}
+        if(show3D) render3D(targets); 
     }} catch(e) {{
         if(bridge) bridge.logFromJS('updateTargets ERROR: '+e.message);
     }}
@@ -504,6 +527,304 @@ function fitAllTargets() {{
 
 function setZoom(lvl) {{ map.setZoom(lvl); }}
 
+var show3D = false;
+var scene, camera, renderer;
+var targetMeshes = {{}}, dropLines = {{}};
+var trailLines3D = {{}}, trailHistory3D = {{}}, targetData = {{}};
+
+/* new lines for the rings */
+var groundRingsGroup = null;
+var coverageRingRadius = {cov};
+
+function init3D() {{
+    var container = document.getElementById('view3d');
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x1a1a2e);
+
+    camera = new THREE.PerspectiveCamera(
+        60, container.clientWidth / container.clientHeight, 1, 200000
+    );
+    camera.position.set(0, 12000, 20000);
+    camera.lookAt(0, 0, 0);
+
+    renderer = new THREE.WebGLRenderer({{ antialias: true }});
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    container.appendChild(renderer.domElement);
+
+    //var grid = new THREE.GridHelper(100000, 20, 0x444466, 0x333355);
+    //scene.add(grid);
+
+    drawGroundRings(coverageRingRadius);
+
+
+
+    var radarGeo = new THREE.SphereGeometry(100, 16, 16);
+    var radarMat = new THREE.MeshBasicMaterial({{ color: 0xFF5252 }});
+    scene.add(new THREE.Mesh(radarGeo, radarMat));
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+
+    var isDragging = false, prevX = 0, prevY = 0;
+    var theta = 0, phi = Math.PI / 4, radius = 10000;
+
+    renderer.domElement.addEventListener('mousedown', function(e) {{
+        isDragging = true; prevX = e.clientX; prevY = e.clientY;
+    }});
+    renderer.domElement.addEventListener('mouseup', function() {{ isDragging = false; }});
+    renderer.domElement.addEventListener('mousemove', function(e) {{
+        if(!isDragging) return;
+        theta -= (e.clientX - prevX) * 0.005;
+        phi   -= (e.clientY - prevY) * 0.005;
+        phi = Math.max(0.1, Math.min(Math.PI/2, phi));
+        prevX = e.clientX; prevY = e.clientY;
+        camera.position.set(
+            radius * Math.sin(phi) * Math.sin(theta),
+            radius * Math.cos(phi),
+            radius * Math.sin(phi) * Math.cos(theta)
+        );
+        camera.lookAt(0, 0, 0);
+    }});
+    renderer.domElement.addEventListener('wheel', function(e) {{
+        radius = Math.max(5000, Math.min(150000, radius + e.deltaY * 10));
+        camera.position.set(
+            radius * Math.sin(phi) * Math.sin(theta),
+            radius * Math.cos(phi),
+            radius * Math.sin(phi) * Math.cos(theta)
+        );
+        camera.lookAt(0, 0, 0);
+    }});
+
+    var raycaster = new THREE.Raycaster();
+    var mouse = new THREE.Vector2();
+
+    renderer.domElement.addEventListener('click', function(e) {{
+        var rect = renderer.domElement.getBoundingClientRect();
+        mouse.x =  ((e.clientX - rect.left) / rect.width)  * 2 - 1;
+        mouse.y = -((e.clientY - rect.top)  / rect.height) * 2 + 1;
+
+        raycaster.setFromCamera(mouse, camera);
+        var meshes = Object.values(targetMeshes);
+        var hits = raycaster.intersectObjects(meshes);
+
+        var popup = document.getElementById('popup3d');
+        if(hits.length > 0) {{
+            var hit = hits[0].object;
+            var tid = Object.keys(targetMeshes).find(function(k) {{
+                return targetMeshes[k] === hit;
+            }});
+            var t = targetData[tid];
+            if(t) {{
+                var status = t.velocity > 1 ? 'Approaching' :
+                    (t.velocity < -1 ? 'Receding' : 'Stationary');
+                var statusColor = t.velocity > 1 ? '#F44336' :
+                    (t.velocity < -1 ? '#2196F3' : '#9E9E9E');
+                popup.innerHTML =
+                    '<div style="font-weight:bold;color:#4e9eff;'+
+                    'margin-bottom:8px;border-bottom:1px solid #555;'+
+                    'padding-bottom:6px;">Target #'+t.id+'</div>'+
+                    '<div>Range: '+t.range.toFixed(1)+' m</div>'+
+                    '<div>Velocity: '+t.velocity.toFixed(1)+' m/s</div>'+
+                    '<div>Azimuth: '+t.azimuth.toFixed(1)+'°</div>'+
+                    '<div>Elevation: '+t.elevation.toFixed(1)+'°</div>'+
+                    '<div>SNR: '+t.snr.toFixed(1)+' dB</div>'+
+                    '<div>Track: '+t.track_id+'</div>'+
+                    '<div>Status: <span style="color:'+statusColor+'">'+status+'</span></div>';
+                popup.style.left = (e.clientX - rect.left + 10) + 'px';
+                popup.style.top  = (e.clientY - rect.top  + 10) + 'px';
+                popup.style.display = 'block';
+            }}
+        }} else {{
+            popup.style.display = 'none';
+        }}
+    }});
+
+    animate3D();
+}}
+
+function animate3D() {{
+    requestAnimationFrame(animate3D);
+    if(show3D) renderer.render(scene, camera);
+}}
+
+function render3D(targets) {{
+    if(!scene) return;
+    var seen = {{}};
+    targets.forEach(function(t) {{
+        seen[t.id] = true;
+        var az = t.azimuth  * Math.PI / 180;
+        var el = t.elevation * Math.PI / 180;
+        var r  = t.range;
+        var x  =  r * Math.cos(el) * Math.sin(az);
+        var y  =  r * Math.sin(el);
+        var z  =  r * Math.cos(el) * Math.cos(az);
+        if(!trailHistory3D[t.id]) trailHistory3D[t.id] = [];
+        trailHistory3D[t.id].push(new THREE.Vector3(x, y, z));
+        if(trailHistory3D[t.id].length > 30) trailHistory3D[t.id].shift();
+        var color = getTargetColor3D(t.velocity);
+        targetData[t.id] = t;
+
+        if(targetMeshes[t.id]) {{
+            targetMeshes[t.id].position.set(x, y, z);
+            targetMeshes[t.id].material.color.set(color);
+            if(dropLines[t.id]) {{
+                dropLines[t.id].geometry.setFromPoints([
+                    new THREE.Vector3(x, y, z),
+                    new THREE.Vector3(x, 0, z)
+                ]);
+            }}
+            if(trailLines3D[t.id] && trailHistory3D[t.id].length > 1) {{
+                trailLines3D[t.id].geometry.setFromPoints(trailHistory3D[t.id]);
+            }}
+        }} else {{
+            var geo = new THREE.SphereGeometry(80, 12, 12);
+            var mat = new THREE.MeshBasicMaterial({{ color: color }});
+            var mesh = new THREE.Mesh(geo, mat);
+            mesh.position.set(x, y, z);
+            scene.add(mesh);
+            targetMeshes[t.id] = mesh;
+
+
+            // this block renders the droplines
+            var dropGeo = new THREE.BufferGeometry().setFromPoints([
+                new THREE.Vector3(x, y, z),
+                new THREE.Vector3(x, 0, z)
+            ]);
+            var dropMat = new THREE.LineBasicMaterial({{
+                color: color, opacity: 0.4, transparent: true
+            }});
+            var dropLine = new THREE.Line(dropGeo, dropMat);
+            scene.add(dropLine);
+            dropLines[t.id] = dropLine;
+            var trailGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(x,y,z)]);
+            var trailMat = new THREE.LineBasicMaterial({{
+                color: color, opacity: 0.6, transparent: true
+            }});1
+            var trailLine = new THREE.Line(trailGeo, trailMat);
+            scene.add(trailLine);
+            trailLines3D[t.id] = trailLine;
+        }}
+    }});
+
+    for(var id in targetMeshes) {{
+        if(!seen[id]) {{
+            scene.remove(targetMeshes[id]);
+            delete targetMeshes[id];
+            if(dropLines[id]) {{
+                scene.remove(dropLines[id]);
+                delete dropLines[id];
+            }}
+            if(trailLines3D[id]) {{
+                scene.remove(trailLines3D[id]);
+                delete trailLines3D[id];
+            }}
+            if(trailHistory3D[id]) delete trailHistory3D[id];
+        }}
+    }}
+}}
+
+function getTargetColor3D(v) {{
+    if(v > 1)  return 0xFF5252;
+    if(v < -1) return 0x2196F3;
+    return 0x9E9E9E;
+}}
+
+function toggle3D(enable) {{
+    show3D = enable;
+    document.getElementById('map').style.display    = enable ? 'none'  : 'block';
+    document.getElementById('view3d').style.display = enable ? 'block' : 'none';
+    if(enable && !renderer) init3D();
+}}
+
+// Fuunction to draw the ground rings //
+function drawGroundRings(coverageRadius) {{
+    if(groundRingsGroup) {{
+        scene.remove(groundRingsGroup);
+        groundRingsGroup = null;
+    }}
+
+    groundRingsGroup = new THREE.Group();
+
+    var renderDistance = coverageRadius * 2.5;
+    var ringCount = 8;
+    var spacing = renderDistance / ringCount;
+
+    for(var i = 1; i <= ringCount; i++) {{
+        var r = spacing * i;
+        var isCoverage = Math.abs(r - coverageRadius) < spacing * 0.15;
+
+        var segments = 128;
+        var points = [];
+        for(var j = 0; j <= segments; j++) {{
+            var angle = (j / segments) * Math.PI * 2;
+            points.push(new THREE.Vector3(
+                Math.sin(angle) * r, 0, Math.cos(angle) * r
+            ));
+        }}
+
+        var geo = new THREE.BufferGeometry().setFromPoints(points);
+        var mat = new THREE.LineBasicMaterial({{
+            color: isCoverage ? 0x00ff88 : 0x334455,
+            linewidth: isCoverage ? 3 : 1,
+            opacity: isCoverage ? 1.0 : 0.5,
+            transparent: !isCoverage
+        }});
+        var ring = new THREE.Line(geo, mat);
+        groundRingsGroup.add(ring);
+
+        // Distance label on east side
+        var labelText = r >= 1000
+            ? (r/1000).toFixed(1) + ' km'
+            : r.toFixed(0) + ' m';
+        if(isCoverage) labelText += ' ◀ coverage';
+        var ringColor = isCoverage ? '#00ff88' : '#445566';
+        addGroundLabel(labelText, r + 200, 0, 0, ringColor, groundRingsGroup);
+    }}
+
+    // NSEW labels at outermost ring
+    var outer = spacing * ringCount;
+    addGroundLabel('N', 0, 0, -(outer + 1500), '#aaaacc', groundRingsGroup);
+    addGroundLabel('S', 0, 0,  (outer + 1500), '#aaaacc', groundRingsGroup);
+    addGroundLabel('E', (outer + 1500), 0, 0,  '#aaaacc', groundRingsGroup);
+    addGroundLabel('W', -(outer + 1500), 0, 0, '#aaaacc', groundRingsGroup);
+
+    // Bearing lines (N-S and E-W cross)
+    var lineColor = 0x334455;
+    [[0,0,-(outer), 0,0,(outer)], [-(outer),0,0, (outer),0,0]].forEach(function(pts) {{
+        var lpts = [
+            new THREE.Vector3(pts[0],pts[1],pts[2]),
+            new THREE.Vector3(pts[3],pts[4],pts[5])
+        ];
+        var lg = new THREE.BufferGeometry().setFromPoints(lpts);
+        var lm = new THREE.LineBasicMaterial({{ color:lineColor, opacity:0.4, transparent:true }});
+        groundRingsGroup.add(new THREE.Line(lg, lm));
+    }});
+
+    scene.add(groundRingsGroup);
+}}
+
+function addGroundLabel(text, x, y, z, color, group) {{
+    var canvas = document.createElement('canvas');
+    canvas.width = 230; canvas.height = 64;
+    var ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, 230, 64);
+    ctx.font = 'bold 17px Arial';
+    ctx.fillStyle = color;
+    ctx.textAlign = 'center';
+    ctx.fillText(text, 128, 40);
+
+    var tex = new THREE.CanvasTexture(canvas);
+    var mat = new THREE.SpriteMaterial({{ map: tex, transparent: true }});
+    var sprite = new THREE.Sprite(mat);
+    sprite.position.set(x, y, z);
+    sprite.scale.set(2000, 500, 1);
+    group.add(sprite);
+}}
+
+function updateCoverageRing(radius) {{
+    coverageRingRadius = radius;
+    if(show3D) drawGroundRings(radius);
+}}
+
 document.addEventListener('DOMContentLoaded', function() {{
     new QWebChannel(qt.webChannelTransport, function(ch) {{
         bridge = ch.objects.bridge;
@@ -568,6 +889,13 @@ document.addEventListener('DOMContentLoaded', function() {{
         self._show_trails = vis
         self._run_js(f"setTrailsVisible({str(vis).lower()})")
 
+
+    # Added a new function to toggle the 3d state.
+    def _on_3d_toggled(self, state: int):
+        vis = state == Qt.CheckState.Checked.value
+        self._show_3d = vis
+        self._run_js(f"toggle3D({str(vis).lower()})")
+
     def _center_on_radar(self):
         self._run_js("centerOnRadar()")
 
@@ -598,9 +926,12 @@ document.addEventListener('DOMContentLoaded', function() {{
         self._status_label.setText(f"{len(targets)} targets tracked")
         self._run_js(f"updateTargets('{js_payload}')")
 
+
+
     def set_coverage_radius(self, radius_m: float):
-        self._coverage_radius = radius_m
-        self._run_js(f"setCoverageRadius({radius_m})")
+       self._coverage_radius = radius_m
+       self._run_js(f"setCoverageRadius({radius_m})")
+       self._run_js(f"updateCoverageRing({radius_m})")
 
     def set_zoom(self, level: int):
         level = max(0, min(22, level))
