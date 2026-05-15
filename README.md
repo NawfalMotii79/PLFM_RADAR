@@ -204,7 +204,7 @@ Originally, the entire project used the MIT license. The community (special than
 
 ## 📚 Documentation
 
-Comprehensive documentation is available in the `/docs` folder and served via GitHub Pages at [https://NawfalMotii79.github.io/PLFM_RADAR/docs/](https://NawfalMotii79.github.io/PLFM_RADAR/docs/):
+Comprehensive documentation is available in the `/docs` folder and served via GitHub Pages at [https://NawfalMotii79.github.io/PLFM_RADAR/](https://NawfalMotii79.github.io/PLFM_RADAR/):
 
 - [System Architecture](/docs/architecture.html)
 - [Implementation Log](/docs/implementation-log.html)
