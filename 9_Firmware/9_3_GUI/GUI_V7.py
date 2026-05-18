@@ -224,10 +224,10 @@ class MapGenerator:
                         var targetInfo = new google.maps.InfoWindow({{
                             content: `
                                 <div class="info-window">
-                                    <h3>Target #{target.id}</h3>
+                                    <h3>Target #{{target.id}}</h3>
                                     <p>Range: ${{target.range:.1f}}m</p>
                                     <p>Velocity: ${{target.velocity:.1f}}m/s</p>
-                                    <p>Azimuth: ${{target.azimuth}}°</p>
+                                    <p>Azimuth: {{target.azimuth}}°</p>
                                     <p>Elevation: ${{target.elevation:.1f}}°</p>
                                     <p>SNR: ${{target.snr:.1f}}dB</p>
                                 </div>
@@ -1930,6 +1930,8 @@ class RadarGUI:
             
             # Simulate a radar packet
             packet = {
+                'type': 'range',
+                'range': 100 + (chirp_num % 500),  # Simulate range
                 'chirp': chirp_num,
                 'chirp_type': chirp_type,
                 'azimuth': (chirp_num % 360),  # Simulate azimuth sweep
