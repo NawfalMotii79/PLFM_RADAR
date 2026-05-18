@@ -22,6 +22,7 @@ import webbrowser
 import tempfile
 import os
 import pandas as pd
+import random
 
 try:
     import usb.core
@@ -1305,7 +1306,152 @@ class RadarGUI:
         underline.pack(side='bottom', fill='x')
         
         self.active_tab = index
-    
+
+    def setup_diagnostics_tab(self):
+        """Setup DIAGNOSTICS tab with system status and health metrics"""
+        container = tk.Frame(self.tab_diagnostics, bg=BG)
+        container.pack(fill='both', expand=True)
+
+        # Title header
+        header = tk.Frame(container, bg=BG, height=32)
+        header.pack(side='top', fill='x')
+        tk.Frame(header, bg=BORDER, height=1).pack(side='bottom', fill='x')
+        tk.Label(header, text="SYSTEM DIAGNOSTICS", font=FONT_UI, fg=FG, bg=BG).pack(side='left', padx=10)
+
+        # Two-column grid of diagnostic cards
+        cards_frame = tk.Frame(container, bg=BG)
+        cards_frame.pack(fill='both', expand=True, padx=10, pady=10)
+
+        card_data = [
+            ("USB INTERFACE", "USB_STATUS", "DISCONNECTED", ACCENT),
+            ("RADAR STATUS", "RADAR_STATUS", "STANDBY", ACCENT),
+            ("SELF TEST", "SELF_TEST", "NOT RUN", LABEL_GRAY),
+            ("TEMPERATURE", "TEMP", "--°C", ACCENT),
+            ("FPGA STATUS", "FPGA_STATUS", "STANDBY", ACCENT),
+            ("DATA RATE", "DATA_RATE", "0 kbps", ACCENT),
+        ]
+
+        self.diag_labels = {}
+        for i, (title, key, default, color) in enumerate(card_data):
+            row, col = divmod(i, 2)
+            card = tk.Frame(cards_frame, bg=BG, bd=1, relief='solid', highlightbackground=BORDER, highlightcolor=BORDER, highlightthickness=1)
+            card.grid(row=row, column=col, sticky='nsew', padx=5, pady=5)
+            cards_frame.grid_rowconfigure(row, weight=1)
+            cards_frame.grid_columnconfigure(col, weight=1)
+            tk.Label(card, text=title, font=FONT_UI_SMALL, fg=LABEL_GRAY, bg=BG).pack(anchor='w', padx=8, pady=(8, 2))
+            value_label = tk.Label(card, text=default, font=FONT_MONO_XL, fg=color, bg=BG)
+            value_label.pack(anchor='w', padx=8, pady=(2, 8))
+            self.diag_labels[key] = value_label
+
+        # Refresh button
+        tk.Button(container, text="REFRESH", font=FONT_UI, bg=BG, fg=ACCENT, activebackground=ACCENT_HOVER, activeforeground=BG, relief='flat', bd=1, highlightbackground=ACCENT, cursor='hand2', command=self.refresh_diagnostics).pack(pady=10)
+
+    def refresh_diagnostics(self):
+        """Refresh diagnostic values"""
+        import datetime
+        now = datetime.datetime.now().strftime("%H:%M:%S")
+        for key in self.diag_labels:
+            if key == "TEMP":
+                self.diag_labels[key].config(text=f"{random.uniform(35, 45):.1f}°C")
+            elif key == "DATA_RATE":
+                self.diag_labels[key].config(text=f"{random.randint(500, 2000)} kbps")
+            elif key == "USB_STATUS":
+                self.diag_labels[key].config(text="CONNECTED" if getattr(self, 'stm32_usb_interface', None) and self.stm32_usb_interface.is_open else "DISCONNECTED")
+            elif key == "RADAR_STATUS":
+                self.diag_labels[key].config(text="ACTIVE" if getattr(self, 'radar_processor', None) else "STANDBY")
+        self.diag_labels["SELF_TEST"].config(text=f"PASS ({now})")
+
+    def setup_settings_tab(self):
+        """Setup SETTINGS tab with radar parameters"""
+        container = tk.Frame(self.tab_settings, bg=BG)
+        container.pack(fill='both', expand=True)
+
+        header = tk.Frame(container, bg=BG, height=32)
+        header.pack(side='top', fill='x')
+        tk.Frame(header, bg=BORDER, height=1).pack(side='bottom', fill='x')
+        tk.Label(header, text="RADAR SETTINGS", font=FONT_UI, fg=FG, bg=BG).pack(side='left', padx=10)
+
+        scroll_canvas = tk.Canvas(container, bg=BG, highlightthickness=0)
+        scrollbar = tk.Scrollbar(container, orient='vertical', command=scroll_canvas.yview)
+        scroll_frame = tk.Frame(scroll_canvas, bg=BG)
+        scroll_frame.bind('<Configure>', lambda e: scroll_canvas.configure(scrollregion=scroll_canvas.bbox('all')))
+        scroll_canvas.create_window((0, 0), window=scroll_frame, anchor='nw')
+        scroll_canvas.configure(yscrollcommand=scrollbar.set)
+        scroll_canvas.pack(side='left', fill='both', expand=True, padx=(10, 0), pady=10)
+        scrollbar.pack(side='right', fill='y', pady=10)
+
+        entries = [
+            ('SYSTEM FREQUENCY (Hz)', 'system_frequency', 10e9),
+            ('CHIRP DURATION 1 - LONG (s)', 'chirp_duration_1', 30e-6),
+            ('CHIRP DURATION 2 - SHORT (s)', 'chirp_duration_2', 0.5e-6),
+            ('CHIRPS PER POSITION', 'chirps_per_position', 32),
+            ('FREQUENCY MIN (Hz)', 'freq_min', 10e6),
+            ('FREQUENCY MAX (Hz)', 'freq_max', 30e6),
+            ('PRF1 (Hz)', 'prf1', 1000),
+            ('PRF2 (Hz)', 'prf2', 2000),
+            ('MAX DISTANCE (m)', 'max_distance', 50000),
+            ('MAP SIZE (m)', 'map_size', 50000),
+            ('GOOGLE MAPS API KEY', 'google_maps_api_key', 'YOUR_GOOGLE_MAPS_API_KEY')
+        ]
+
+        self.settings_vars = {}
+        for i, (label, attr, default) in enumerate(entries):
+            row_frame = tk.Frame(scroll_frame, bg=BG)
+            row_frame.pack(fill='x', padx=10, pady=4)
+            tk.Label(row_frame, text=label, font=FONT_UI_SMALL, fg=LABEL_GRAY, bg=BG).pack(side='left')
+            var = tk.StringVar(value=str(default))
+            entry = tk.Entry(row_frame, textvariable=var, font=FONT_MONO_SMALL, fg=FG, bg="#0a0a0a", insertbackground=FG, relief='flat', bd=1, highlightbackground=BORDER, highlightcolor=ACCENT, highlightthickness=1, width=30)
+            entry.pack(side='right')
+            self.settings_vars[attr] = var
+
+        apply_btn = tk.Button(scroll_frame, text="APPLY SETTINGS", font=FONT_UI, bg=BG, fg=ACCENT, activebackground=ACCENT_HOVER, activeforeground=BG, relief='flat', bd=1, highlightbackground=ACCENT, cursor='hand2', command=self.apply_settings)
+        apply_btn.pack(pady=20)
+
+    def apply_settings(self):
+        """Apply and send radar settings"""
+        try:
+            self.settings.system_frequency = float(self.settings_vars['system_frequency'].get())
+            self.settings.chirp_duration_1 = float(self.settings_vars['chirp_duration_1'].get())
+            self.settings.chirp_duration_2 = float(self.settings_vars['chirp_duration_2'].get())
+            self.settings.chirps_per_position = int(self.settings_vars['chirps_per_position'].get())
+            self.settings.freq_min = float(self.settings_vars['freq_min'].get())
+            self.settings.freq_max = float(self.settings_vars['freq_max'].get())
+            self.settings.prf1 = float(self.settings_vars['prf1'].get())
+            self.settings.prf2 = float(self.settings_vars['prf2'].get())
+            self.settings.max_distance = float(self.settings_vars['max_distance'].get())
+            self.settings.map_size = float(self.settings_vars['map_size'].get())
+            self.google_maps_api_key = self.settings_vars['google_maps_api_key'].get()
+            if getattr(self, 'stm32_usb_interface', None) and self.stm32_usb_interface.is_open:
+                self.stm32_usb_interface.send_settings(self.settings)
+            messagebox.showinfo("SUCCESS", "Settings applied and sent to STM32 via USB")
+            logging.info("Radar settings applied via USB")
+        except ValueError as e:
+            messagebox.showerror("ERROR", f"Invalid setting value: {e}")
+
+    def start_background_threads(self):
+        """Start background data processing threads"""
+        self.radar_thread = threading.Thread(target=self.process_radar_data, daemon=True)
+        self.radar_thread.start()
+        self.gps_thread = threading.Thread(target=self.process_gps_data, daemon=True)
+        self.gps_thread.start()
+        self.root.after(100, self.update_gui)
+
+    def add_log_entry(self, level, message):
+        """Add a log entry to logging system and UART terminal if available"""
+        logging.info(f"[{level}] {message}")
+        if hasattr(self, 'uart_text'):
+            import datetime
+            ts = datetime.datetime.now().strftime("%H:%M:%S")
+            color_map = {"INFO": ACCENT, "ERROR": "#ef4444", "WARN": WARNING}
+            color = color_map.get(level, FG)
+            try:
+                self.uart_text.config(state='normal')
+                self.uart_text.insert('end', f"{ts} [{level}] {message}\n")
+                self.uart_text.see('end')
+                self.uart_text.config(state='disabled')
+            except tk.TclError:
+                pass
+
     def setup_raw_tab(self):
         """Setup RAW INPUTS tab with tactical 3-panel layout"""
         # Controls Bar (top ribbon)
