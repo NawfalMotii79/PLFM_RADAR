@@ -2421,7 +2421,8 @@ class RadarGUI:
     def refresh_map(self):
         """Refresh the map with current data"""
         if self.current_gps.latitude == 0 and self.current_gps.longitude == 0:
-            self.map_status_label.config(text="MAP: WAITING FOR GPS")
+            if hasattr(self, 'map_status_text'):
+                self.map_status_text.config(text="WAITING FOR GPS")
             return
         try:
             self.generate_map_file()
@@ -2431,7 +2432,8 @@ class RadarGUI:
     def generate_map_file(self):
         """Generate Google Maps HTML file with current targets"""
         if self.current_gps.latitude == 0 and self.current_gps.longitude == 0:
-            self.map_status_label.config(text="MAP: WAITING FOR GPS")
+            if hasattr(self, 'map_status_text'):
+                self.map_status_text.config(text="WAITING FOR GPS")
             return
         try:
             with tempfile.NamedTemporaryFile(mode='w', suffix='.html', delete=False, encoding='utf-8') as f:
@@ -2443,7 +2445,8 @@ class RadarGUI:
                 )
                 f.write(map_html)
                 self.map_file_path = f.name
-            self.map_status_label.config(text="MAP: GENERATED")
+            if hasattr(self, 'map_status_text'):
+                self.map_status_text.config(text="MAP READY")
             logging.info(f"Map generated: {self.map_file_path}")
         except Exception as e:
             logging.error(f"Error generating map: {e}")
@@ -2454,11 +2457,11 @@ class RadarGUI:
             while not self.gps_data_queue.empty():
                 gps_data = self.gps_data_queue.get_nowait()
                 self.current_gps = gps_data
-                if hasattr(self, 'gps_label'):
-                    self.gps_label.config(
-                        text=f"GPS: Lat {gps_data.latitude:.6f}, Lon {gps_data.longitude:.6f}, Alt {gps_data.altitude:.1f}m")
-                if hasattr(self, 'pitch_label'):
-                    self.pitch_label.config(text=f"Pitch: {gps_data.pitch:+.1f}°")
+                if hasattr(self, 'gps_coords_label'):
+                    self.gps_coords_label.config(
+                        text=f"Lat {gps_data.latitude:.6f}, Lon {gps_data.longitude:.6f}, Alt {gps_data.altitude:.1f}m")
+                if hasattr(self, 'pitch_value_label'):
+                    self.pitch_value_label.config(text=f"{gps_data.pitch:+.1f}°")
                 self.refresh_map()
         except queue.Empty:
             pass
