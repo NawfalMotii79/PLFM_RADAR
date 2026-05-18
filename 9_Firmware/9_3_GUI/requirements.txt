@@ -1,0 +1,25 @@
+# Radar System GUI V7 dependencies
+# Install: pip3 install -r requirements.txt
+# Note: Use pip3 on Linux/macOS, pip on Windows
+
+# Core numerical & data processing
+numpy>=1.24.0
+scipy>=1.11.0
+pandas>=2.0.0
+scikit-learn>=1.3.0
+filterpy>=1.4.5
+crcmod>=1.7
+
+# Plotting for radar displays
+matplotlib>=3.7.0
+
+# USB device communication (optional)
+pyusb>=1.2.0
+pyftdi>=0.54
+
+# GUI framework
+customtkinter>=5.2.0
+Pillow>=10.0.0
+
+# System monitoring
+psutil>=5.9.0

@@ -39,6 +39,12 @@
 # Python
 __pycache__/
 *.pyc
+*.pyo
+*.backup
+backup_*
+get-pip.py
+venv/
+.venv/
 
 # Local organization/archival folders (not part of repo source)
 10_docs/
