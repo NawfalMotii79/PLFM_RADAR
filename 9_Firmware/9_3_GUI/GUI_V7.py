@@ -1804,11 +1804,11 @@ class RadarGUI:
         fig.subplots_adjust(left=0.08, right=0.95, top=0.95, bottom=0.08)
         self.range_doppler_ax = fig.add_subplot(111, facecolor=BG)
         self.range_doppler_plot = self.range_doppler_ax.imshow(
-            np.random.rand(1024, 32), aspect='auto', cmap='jet', 
-            extent=[0, 32, 0, 1024], vmin=0, vmax=2.5
+            np.random.rand(1024, 32), aspect='auto', cmap='hot', 
+            extent=[0, 32, 0, 1024]
         )
-        self.range_doppler_ax.set_xlabel('Velocity (m/s)', color=FG, fontproperties={'family': 'monospace', 'size': 10})
-        self.range_doppler_ax.set_ylabel('Range (m)', color=FG, fontproperties={'family': 'monospace', 'size': 10})
+        self.range_doppler_ax.set_xlabel('Doppler Bin', color=FG, fontproperties={'family': 'monospace', 'size': 10})
+        self.range_doppler_ax.set_ylabel('Range Bin', color=FG, fontproperties={'family': 'monospace', 'size': 10})
         self.range_doppler_ax.tick_params(colors=LABEL_GRAY, labelsize=9)
         self.range_doppler_ax.spines['bottom'].set_color(BORDER)
         self.range_doppler_ax.spines['top'].set_color(BORDER)
@@ -1945,13 +1945,8 @@ class RadarGUI:
         if not self.test_data_loaded or self.test_data_groups is None:
             return
         
-        prev_cursor = self.test_data_cursor
         frame = self.test_data_groups[self.test_data_cursor]
         self.test_data_cursor = (self.test_data_cursor + 1) % self.test_data_length
-        
-        # Reset R-D map on sweep wrap to show only current sweep's targets
-        if prev_cursor > self.test_data_cursor:
-            self.radar_processor.range_doppler_map.fill(0)
         
         chirp_num = frame['chirp_num']
         
@@ -1973,8 +1968,8 @@ class RadarGUI:
         num_targets = 3 + (chirp_num % 5)
         self.radar_processor.detected_targets.clear()
         for t in range(num_targets):
-            t_range = 80 + t * 200 + (chirp_num * 15) % 500
-            t_velocity = 10 + t * 5 + (chirp_num % 10)
+            t_range = 500 + t * 5000 + (chirp_num * 300) % 15000
+            t_velocity = (chirp_num * 4 + t * 6) % 32
             t_azimuth = (t * 60 + chirp_num * 20) % 360
             target = RadarTarget(
                 track_id=t,
@@ -1986,7 +1981,6 @@ class RadarGUI:
                 id=chirp_num * 10 + t
             )
             self.radar_processor.detected_targets.append(target)
-            # Update range-doppler map with this target's range/velocity
             r_bin = min(int(t_range / 50), 1023)
             d_bin = min(abs(int(t_velocity)), 31)
             self.radar_processor.range_doppler_map[r_bin, d_bin] += 10
