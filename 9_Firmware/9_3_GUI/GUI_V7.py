@@ -2467,17 +2467,53 @@ class RadarGUI:
         except queue.Empty:
             pass
 
+    def update_targets_list(self):
+        """Update the targets list display"""
+        self.targets_tree.delete(*self.targets_tree.get_children())
+        for target in self.radar_processor.detected_targets[-50:]:
+            raw_elev = "N/A"
+            for correction in self.corrected_elevations[-50:]:
+                if abs(correction['corrected'] - target.elevation) < 0.1:
+                    raw_elev = f"{correction['raw']}"
+                    break
+            self.targets_tree.insert('', 'end', values=(
+                "●" if target.snr >= 20 else "○",
+                target.track_id if hasattr(target, 'track_id') else target.id,
+                f"{target.range:.0f}",
+                f"{target.velocity:.1f}",
+                target.azimuth,
+                raw_elev,
+                f"{target.elevation:.1f}",
+                f"{target.snr:.1f}",
+                target.id
+            ))
+
     def update_gui(self):
         try:
-            while not self.radar_data_queue.empty():
-                data = self.radar_data_queue.get_nowait()
-                if hasattr(self, 'range_doppler_plot'):
-                    self.range_doppler_plot.set_data(data.get('range_doppler', np.random.rand(1024, 32)))
-                    self.canvas.draw()
+            if hasattr(self, 'range_doppler_plot'):
+                display_data = np.log10(self.radar_processor.range_doppler_map + 1)
+                self.range_doppler_plot.set_array(display_data)
+                self.canvas.draw_idle()
+            self.update_targets_list()
             self.update_gps_display()
+            if hasattr(self, 'status_label'):
+                self.status_label.config(text=f"PKT {self.received_packets} | TGT {len(self.radar_processor.detected_targets)}")
+            if hasattr(self, 'targets_count_label'):
+                self.targets_count_label.config(text=f"{len(self.radar_processor.detected_targets)} TGT")
+            if hasattr(self, 'targets_stats_label') and self.radar_processor.detected_targets:
+                targets = self.radar_processor.detected_targets
+                avg_range = sum(t.range for t in targets) / len(targets)
+                max_snr = max(t.snr for t in targets)
+                self.targets_stats_label.config(text=f"AVG {avg_range:.0f}m | MAX SNR {max_snr:.0f}dB | PKT {self.received_packets}")
+            if hasattr(self, 'stats_val_0') and self.current_gps:
+                self.stats_val_0.config(text=f"{self.current_gps.latitude:.4f}, {self.current_gps.longitude:.4f}")
+            if hasattr(self, 'stats_val_1'):
+                self.stats_val_1.config(text=f"{len(self.radar_processor.detected_targets)} active")
+            if hasattr(self, 'stats_val_3'):
+                self.stats_val_3.config(text="SURVEILLANCE" if self.running else "STANDBY")
         except Exception as e:
             logging.error(f"Error updating GUI: {e}")
-        self.root.after(100, self.update_gui)
+        self.root.after(250, self.update_gui)
 
 def main():
     """Main application entry point"""
