@@ -1804,8 +1804,8 @@ class RadarGUI:
         fig.subplots_adjust(left=0.08, right=0.95, top=0.95, bottom=0.08)
         self.range_doppler_ax = fig.add_subplot(111, facecolor=BG)
         self.range_doppler_plot = self.range_doppler_ax.imshow(
-            np.random.rand(1024, 32), aspect='auto', cmap='hot', 
-            extent=[0, 32, 0, 1024]
+            np.random.rand(1024, 32), aspect='auto', cmap='jet',
+            extent=[0, 32, 0, 1024], vmin=0, vmax=3
         )
         self.range_doppler_ax.set_xlabel('Doppler Bin', color=FG, fontproperties={'family': 'monospace', 'size': 10})
         self.range_doppler_ax.set_ylabel('Range Bin', color=FG, fontproperties={'family': 'monospace', 'size': 10})
@@ -1971,7 +1971,7 @@ class RadarGUI:
         num_targets = 3 + (chirp_num % 5)
         self.radar_processor.detected_targets.clear()
         for t in range(num_targets):
-            t_range = 50 + t * 150 + (chirp_num * 25) % 500
+            t_range = 200 + t * 3000 + (chirp_num * 150) % 8000
             t_velocity = (chirp_num * 4 + t * 6) % 32
             t_azimuth = (t * 60 + chirp_num * 20) % 360
             target = RadarTarget(
@@ -1986,8 +1986,14 @@ class RadarGUI:
             self.radar_processor.detected_targets.append(target)
             r_bin = min(int(t_range / 50), 1023)
             d_bin = min(abs(int(t_velocity)), 31)
-            self.radar_processor.range_doppler_map[r_bin, d_bin] += 20
-        
+            self.radar_processor.range_doppler_map[r_bin, d_bin] += 50
+            # Bleed into adjacent bins so each target shows as a visible blob
+            for dr in (-1, 1):
+                for dd in (-1, 1):
+                    nr, nd = r_bin + dr, d_bin + dd
+                    if 0 <= nr < 1024 and 0 <= nd < 32:
+                        self.radar_processor.range_doppler_map[nr, nd] += 15
+
         self.received_packets += 1
     
     def simulate_gps_data(self):
