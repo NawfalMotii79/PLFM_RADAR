@@ -1964,11 +1964,14 @@ class RadarGUI:
         # Process through radar processor
         self.process_radar_packet(packet)
         
+        # Decay old R-D map values so moving blobs are visible
+        self.radar_processor.range_doppler_map *= 0.92
+
         # Replace detected targets with current frame's moving targets
         num_targets = 3 + (chirp_num % 5)
         self.radar_processor.detected_targets.clear()
         for t in range(num_targets):
-            t_range = 500 + t * 5000 + (chirp_num * 300) % 15000
+            t_range = 50 + t * 150 + (chirp_num * 25) % 500
             t_velocity = (chirp_num * 4 + t * 6) % 32
             t_azimuth = (t * 60 + chirp_num * 20) % 360
             target = RadarTarget(
@@ -1983,7 +1986,7 @@ class RadarGUI:
             self.radar_processor.detected_targets.append(target)
             r_bin = min(int(t_range / 50), 1023)
             d_bin = min(abs(int(t_velocity)), 31)
-            self.radar_processor.range_doppler_map[r_bin, d_bin] += 10
+            self.radar_processor.range_doppler_map[r_bin, d_bin] += 20
         
         self.received_packets += 1
     
@@ -2358,10 +2361,12 @@ class RadarGUI:
             outline=ACCENT, width=1, tags='pulse'
         )
         
-        # Draw target markers
-        for i, target in enumerate(self.radar_processor.detected_targets[-10:]):
-            # Convert polar to canvas coordinates
-            scale = 0.5  # pixels per meter
+        # Draw target markers with adaptive scale
+        canvas_targets = self.radar_processor.detected_targets[-10:]
+        max_range = max((t.range for t in canvas_targets), default=500)
+        max_vis = min(cx, cy) * 0.8
+        scale = max_vis / max_range if max_range > 0 else 0.5
+        for i, target in enumerate(canvas_targets):
             target_x = cx + target.range * scale * math.cos(math.radians(target.azimuth - 90))
             target_y = cy + target.range * scale * math.sin(math.radians(target.azimuth - 90))
             
