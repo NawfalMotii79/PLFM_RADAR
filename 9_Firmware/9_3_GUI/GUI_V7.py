@@ -1805,7 +1805,7 @@ class RadarGUI:
         self.range_doppler_ax = fig.add_subplot(111, facecolor=BG)
         self.range_doppler_plot = self.range_doppler_ax.imshow(
             np.random.rand(1024, 32), aspect='auto', cmap='jet', 
-            extent=[0, 32, 0, 1024], vmin=0, vmax=10
+            extent=[0, 32, 0, 1024], vmin=0, vmax=2.5
         )
         self.range_doppler_ax.set_xlabel('Velocity (m/s)', color=FG, fontproperties={'family': 'monospace', 'size': 10})
         self.range_doppler_ax.set_ylabel('Range (m)', color=FG, fontproperties={'family': 'monospace', 'size': 10})
@@ -1945,8 +1945,13 @@ class RadarGUI:
         if not self.test_data_loaded or self.test_data_groups is None:
             return
         
+        prev_cursor = self.test_data_cursor
         frame = self.test_data_groups[self.test_data_cursor]
         self.test_data_cursor = (self.test_data_cursor + 1) % self.test_data_length
+        
+        # Reset R-D map on sweep wrap to show only current sweep's targets
+        if prev_cursor > self.test_data_cursor:
+            self.radar_processor.range_doppler_map.fill(0)
         
         chirp_num = frame['chirp_num']
         
@@ -1965,23 +1970,26 @@ class RadarGUI:
         self.process_radar_packet(packet)
         
         # Replace detected targets with current frame's moving targets
-        # Targets move by using chirp_num as a time-varying parameter
         num_targets = 3 + (chirp_num % 5)
         self.radar_processor.detected_targets.clear()
         for t in range(num_targets):
             t_range = 80 + t * 200 + (chirp_num * 15) % 500
+            t_velocity = 10 + t * 5 + (chirp_num % 10)
             t_azimuth = (t * 60 + chirp_num * 20) % 360
-            self.radar_processor.detected_targets.append(
-                RadarTarget(
-                    track_id=t,
-                    range=t_range,
-                    velocity=10 + t * 5 + (chirp_num % 10),
-                    azimuth=t_azimuth,
-                    elevation=5 + (t % 10),
-                    snr=18 + t * 3 + (chirp_num % 8),
-                    id=chirp_num * 10 + t
-                )
+            target = RadarTarget(
+                track_id=t,
+                range=t_range,
+                velocity=t_velocity,
+                azimuth=t_azimuth,
+                elevation=5 + (t % 10),
+                snr=18 + t * 3 + (chirp_num % 8),
+                id=chirp_num * 10 + t
             )
+            self.radar_processor.detected_targets.append(target)
+            # Update range-doppler map with this target's range/velocity
+            r_bin = min(int(t_range / 50), 1023)
+            d_bin = min(abs(int(t_velocity)), 31)
+            self.radar_processor.range_doppler_map[r_bin, d_bin] += 10
         
         self.received_packets += 1
     
