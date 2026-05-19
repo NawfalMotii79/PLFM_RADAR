@@ -1121,6 +1121,7 @@ class RadarGUI:
         self.google_maps_api_key = "YOUR_GOOGLE_MAPS_API_KEY"
         
         self.create_gui()
+        self.root.after(500, lambda: self.load_test_data(silent=True))
         self.start_background_threads()
         
     def apply_pitch_correction(self, raw_elevation, pitch_angle):
@@ -1881,21 +1882,21 @@ class RadarGUI:
         ft601_names = [dev['description'] for dev in ft601_devices]
         self.ft601_combo['values'] = ft601_names
     
-    def load_test_data(self):
+    def load_test_data(self, silent=False):
         """Load test radar data from CSV file for GUI testing"""
-        # Default to test_radar_data.csv in the same directory
         default_path = os.path.join(os.path.dirname(__file__), 'test_radar_data.csv')
-        
-        # Open file dialog to select CSV file
-        csv_path = filedialog.askopenfilename(
-            title="Select Test Radar Data CSV",
-            initialdir=os.path.dirname(__file__),
-            initialfile='test_radar_data.csv',
-            filetypes=[("CSV files", "*.csv"), ("All files", "*.*")]
-        )
-        
-        if not csv_path:
-            return
+
+        if silent:
+            csv_path = default_path
+        else:
+            csv_path = filedialog.askopenfilename(
+                title="Select Test Radar Data CSV",
+                initialdir=os.path.dirname(__file__),
+                initialfile='test_radar_data.csv',
+                filetypes=[("CSV files", "*.csv"), ("All files", "*.*")]
+            )
+            if not csv_path:
+                return
         
         try:
             # Load CSV data
