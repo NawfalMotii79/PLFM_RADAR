@@ -1799,8 +1799,8 @@ class RadarGUI:
             np.random.rand(1024, 32), aspect='auto', cmap='jet', 
             extent=[0, 32, 0, 1024], vmin=0, vmax=10
         )
-        self.range_doppler_ax.set_xlabel('Range (m)', color=FG, fontproperties={'family': 'monospace', 'size': 10})
-        self.range_doppler_ax.set_ylabel('Velocity (m/s)', color=FG, fontproperties={'family': 'monospace', 'size': 10})
+        self.range_doppler_ax.set_xlabel('Velocity (m/s)', color=FG, fontproperties={'family': 'monospace', 'size': 10})
+        self.range_doppler_ax.set_ylabel('Range (m)', color=FG, fontproperties={'family': 'monospace', 'size': 10})
         self.range_doppler_ax.tick_params(colors=LABEL_GRAY, labelsize=9)
         self.range_doppler_ax.spines['bottom'].set_color(BORDER)
         self.range_doppler_ax.spines['top'].set_color(BORDER)
@@ -1943,25 +1943,18 @@ class RadarGUI:
             # Process the packet through radar processor
             self.process_radar_packet(packet)
             
-            # Update range-doppler map with sample data
-            if hasattr(self.radar_processor, 'range_doppler_map'):
-                # Create a simple range-doppler matrix from the data
-                rd_matrix = np.abs(complex_signal[:32]).reshape(32, 1) * np.ones((32, 32))
-                self.radar_processor.range_doppler_map = rd_matrix
-            
-            # Simulate some detected targets
-            if chirp_num % 50 == 0:  # Every 50 chirps, add a target
-                self.radar_processor.detected_targets.append(
-                    RadarTarget(
-                        track_id=len(self.radar_processor.detected_targets),
-                        range=100 + chirp_num * 10,
-                        velocity=5 + (chirp_num % 20),
-                        azimuth=chirp_num % 360,
-                        elevation=5 + (chirp_num % 15),
-                        snr=20 + (chirp_num % 15),
-                        id=chirp_num
-                    )
+            # Add direct targets (visible ranges on tactical canvas with scale=0.5)
+            self.radar_processor.detected_targets.append(
+                RadarTarget(
+                    track_id=len(self.radar_processor.detected_targets),
+                    range=50 + chirp_num * 25,  # 50, 75, 100, ... 825m
+                    velocity=5 + (chirp_num * 3) % 25,
+                    azimuth=(chirp_num * 30) % 360,
+                    elevation=5 + (chirp_num % 15),
+                    snr=15 + (chirp_num % 15),
+                    id=chirp_num + 100
                 )
+            )
         
         self.received_packets = len(grouped)
     
