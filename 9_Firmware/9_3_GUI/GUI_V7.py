@@ -1120,6 +1120,12 @@ class RadarGUI:
         self.map_file_path = None
         self.google_maps_api_key = "YOUR_GOOGLE_MAPS_API_KEY"
         
+        # Test data streaming state
+        self.test_data_groups = None
+        self.test_data_cursor = 0
+        self.test_data_length = 0
+        self.test_data_loaded = False
+        
         self.create_gui()
         self.root.after(500, lambda: self.load_test_data(silent=True))
         self.start_background_threads()
@@ -1246,6 +1252,8 @@ class RadarGUI:
         self.tab_buttons = []
         self.active_tab = 0
         
+        self.tab_underline = None
+        
         for i, tab_name in enumerate(self.tabs):
             btn = tk.Button(
                 self.tab_bar,
@@ -1259,10 +1267,10 @@ class RadarGUI:
                 bd=0,
                 padx=15,
                 pady=8,
-                cursor='hand2'
+                cursor='hand2',
+                command=lambda idx=i: self.switch_tab(idx)
             )
             btn.pack(side='left', padx=2)
-            btn.bind('<Button-1>', lambda e, idx=i: self.switch_tab(idx))
             self.tab_buttons.append(btn)
         
         # Create tab content frames
@@ -1290,21 +1298,21 @@ class RadarGUI:
         for tab in self.tab_contents:
             tab.pack_forget()
         
-        # Reset all button styles
-        for i, btn in enumerate(self.tab_buttons):
+        # Reset all button colors
+        for btn in self.tab_buttons:
             btn.config(fg=LABEL_GRAY)
-            # Remove underline if exists
-            for widget in btn.winfo_children():
-                widget.destroy()
         
         # Show selected tab
         self.tab_contents[index].pack(fill='both', expand=True)
         
         # Style active button
         self.tab_buttons[index].config(fg=FG)
-        # Add green underline
-        underline = tk.Frame(self.tab_buttons[index], bg=ACCENT, height=2)
-        underline.pack(side='bottom', fill='x')
+        
+        # Move underline indicator to active button
+        if self.tab_underline is not None:
+            self.tab_underline.destroy()
+        self.tab_underline = tk.Frame(self.tab_bar, bg=ACCENT, height=2)
+        self.tab_underline.place(in_=self.tab_buttons[index], relx=0, rely=1.0, relwidth=1)
         
         self.active_tab = index
 
@@ -1904,59 +1912,78 @@ class RadarGUI:
             
             self.add_log_entry("INFO", f"Loaded {len(df)} samples from {os.path.basename(csv_path)}")
             
-            # Process the data and simulate radar packets
-            self.process_test_data(df)
+            # Pre-compute chirp groups for streaming
+            grouped = list(df.groupby(['chirp_number', 'chirp_type']))
+            self.test_data_groups = []
+            for (chirp_num, chirp_type), group in grouped:
+                i_values = group['I_value'].values
+                q_values = group['Q_value'].values
+                self.test_data_groups.append({
+                    'chirp_num': chirp_num,
+                    'chirp_type': chirp_type,
+                    'complex_signal': i_values + 1j * q_values,
+                    'range': chirp_num * 20,
+                    'azimuth': (chirp_num * 45) % 360,
+                    'elevation': 5 + (chirp_num % 20)
+                })
+            self.test_data_length = len(self.test_data_groups)
+            self.test_data_cursor = 0
+            self.test_data_loaded = True
             
-            # Simulate GPS data for testing
+            # Set initial GPS
             self.simulate_gps_data()
             
-            self.add_log_entry("INFO", "Test data processing complete")
+            self.add_log_entry("INFO", f"Test data ready: {self.test_data_length} chirp frames")
             
         except Exception as e:
             self.add_log_entry("ERROR", f"Failed to load test data: {e}")
-            messagebox.showerror("Error", f"Failed to load test data: {e}")
+            if not silent:
+                messagebox.showerror("Error", f"Failed to load test data: {e}")
     
-    def process_test_data(self, df):
-        """Process test CSV data and feed into radar processor"""
-        # Group by chirp_number and chirp_type
-        grouped = df.groupby(['chirp_number', 'chirp_type'])
+    def process_test_data_step(self):
+        """Process the next chirp frame from test data (called by update_gui)"""
+        if not self.test_data_loaded or self.test_data_groups is None:
+            return
         
-        for (chirp_num, chirp_type), group in grouped:
-            # Extract I and Q values
-            i_values = group['I_value'].values
-            q_values = group['Q_value'].values
-            
-            # Create complex signal
-            complex_signal = i_values + 1j * q_values
-            
-            # Simulate a radar packet
-            packet = {
-                'type': 'range',
-                'range': 100 + (chirp_num % 500),  # Simulate range
-                'chirp': chirp_num,
-                'chirp_type': chirp_type,
-                'azimuth': (chirp_num % 360),  # Simulate azimuth sweep
-                'elevation': 5 + (chirp_num % 20),  # Simulate elevation
-                'timestamp': time.time()
-            }
-            
-            # Process the packet through radar processor
-            self.process_radar_packet(packet)
-            
-            # Add direct targets (visible ranges on tactical canvas with scale=0.5)
+        frame = self.test_data_groups[self.test_data_cursor]
+        self.test_data_cursor = (self.test_data_cursor + 1) % self.test_data_length
+        
+        chirp_num = frame['chirp_num']
+        
+        # Simulate a radar packet
+        packet = {
+            'type': 'range',
+            'range': frame['range'],
+            'chirp': chirp_num,
+            'chirp_type': frame['chirp_type'],
+            'azimuth': frame['azimuth'],
+            'elevation': frame['elevation'],
+            'timestamp': time.time()
+        }
+        
+        # Process through radar processor
+        self.process_radar_packet(packet)
+        
+        # Replace detected targets with current frame's moving targets
+        # Targets move by using chirp_num as a time-varying parameter
+        num_targets = 3 + (chirp_num % 5)
+        self.radar_processor.detected_targets.clear()
+        for t in range(num_targets):
+            t_range = 80 + t * 200 + (chirp_num * 15) % 500
+            t_azimuth = (t * 60 + chirp_num * 20) % 360
             self.radar_processor.detected_targets.append(
                 RadarTarget(
-                    track_id=len(self.radar_processor.detected_targets),
-                    range=50 + chirp_num * 25,  # 50, 75, 100, ... 825m
-                    velocity=5 + (chirp_num * 3) % 25,
-                    azimuth=(chirp_num * 30) % 360,
-                    elevation=5 + (chirp_num % 15),
-                    snr=15 + (chirp_num % 15),
-                    id=chirp_num + 100
+                    track_id=t,
+                    range=t_range,
+                    velocity=10 + t * 5 + (chirp_num % 10),
+                    azimuth=t_azimuth,
+                    elevation=5 + (t % 10),
+                    snr=18 + t * 3 + (chirp_num % 8),
+                    id=chirp_num * 10 + t
                 )
             )
         
-        self.received_packets = len(grouped)
+        self.received_packets += 1
     
     def simulate_gps_data(self):
         """Simulate GPS data for testing"""
@@ -2483,6 +2510,7 @@ class RadarGUI:
 
     def update_gui(self):
         try:
+            self.process_test_data_step()
             if hasattr(self, 'range_doppler_plot'):
                 display_data = np.log10(self.radar_processor.range_doppler_map + 1)
                 self.range_doppler_plot.set_array(display_data)
