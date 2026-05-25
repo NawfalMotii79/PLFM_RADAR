@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--/19975798/1593508/2.50/6/3/Filter/-->
+<!DOCTYPE curve SYSTEM "eagle.dtd">
+<eagle version="7.7.0">
+<drawing>
+<settings>
+<setting alwaysvectorfont="no"/>
+<setting verticaltext="up"/>
+</settings>
+<grid distance="0.1" unitdist="inch" unit="inch" style="lines" multiple="1" display="no" altdistance="0.01" altunitdist="inch" altunit="inch"/>
+<layers>
+<layer number="1" name="Top" color="4" fill="1" visible="yes" active="yes"/>
+<layer number="16" name="Bottom" color="1" fill="1" visible="yes" active="yes"/>
+<layer number="17" name="Pads" color="2" fill="1" visible="yes" active="yes"/>
+<layer number="18" name="Vias" color="2" fill="1" visible="yes" active="yes"/>
+<layer number="19" name="Unrouted" color="6" fill="1" visible="yes" active="yes"/>
+<layer number="20" name="Dimension" color="15" fill="1" visible="yes" active="yes"/>
+<layer number="21" name="tPlace" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="22" name="bPlace" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="23" name="tOrigins" color="15" fill="1" visible="yes" active="yes"/>
+<layer number="24" name="bOrigins" color="15" fill="1" visible="yes" active="yes"/>
+<layer number="25" name="tNames" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="26" name="bNames" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="27" name="tValues" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="28" name="bValues" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="29" name="tStop" color="7" fill="3" visible="no" active="yes"/>
+<layer number="30" name="bStop" color="7" fill="6" visible="no" active="yes"/>
+<layer number="31" name="tCream" color="7" fill="4" visible="no" active="yes"/>
+<layer number="32" name="bCream" color="7" fill="5" visible="no" active="yes"/>
+<layer number="33" name="tFinish" color="6" fill="3" visible="no" active="yes"/>
+<layer number="34" name="bFinish" color="6" fill="6" visible="no" active="yes"/>
+<layer number="35" name="tGlue" color="7" fill="4" visible="no" active="yes"/>
+<layer number="36" name="bGlue" color="7" fill="5" visible="no" active="yes"/>
+<layer number="37" name="tTest" color="7" fill="1" visible="no" active="yes"/>
+<layer number="38" name="bTest" color="7" fill="1" visible="no" active="yes"/>
+<layer number="39" name="tKeepout" color="4" fill="11" visible="yes" active="yes"/>
+<layer number="40" name="bKeepout" color="1" fill="11" visible="yes" active="yes"/>
+<layer number="41" name="tRestrict" color="4" fill="10" visible="yes" active="yes"/>
+<layer number="42" name="bRestrict" color="1" fill="10" visible="yes" active="yes"/>
+<layer number="43" name="vRestrict" color="2" fill="10" visible="yes" active="yes"/>
+<layer number="44" name="Drills" color="7" fill="1" visible="no" active="yes"/>
+<layer number="45" name="Holes" color="7" fill="1" visible="no" active="yes"/>
+<layer number="46" name="Milling" color="3" fill="1" visible="no" active="yes"/>
+<layer number="47" name="Measures" color="7" fill="1" visible="no" active="yes"/>
+<layer number="48" name="Document" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="49" name="Reference" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="51" name="tDocu" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="52" name="bDocu" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="90" name="Modules" color="5" fill="1" visible="yes" active="yes"/>
+<layer number="91" name="Nets" color="2" fill="1" visible="yes" active="yes"/>
+<layer number="92" name="Busses" color="1" fill="1" visible="yes" active="yes"/>
+<layer number="93" name="Pins" color="2" fill="1" visible="no" active="yes"/>
+<layer number="94" name="Symbols" color="4" fill="1" visible="yes" active="yes"/>
+<layer number="95" name="Names" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="96" name="Values" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="97" name="Info" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="98" name="Guide" color="6" fill="1" visible="yes" active="yes"/>
+</layers>
+<library>
+<description>&lt;Signal Conditioning 978 MHz Temperature Compensated SAW Filter&lt;/b&gt;&lt;p&gt;
+&lt;author&gt;Created by SamacSys&lt;/author&gt;</description>
+<packages>
+<package name="AFIITC0015">
+<description>&lt;b&gt;6-SMD, No Lead&lt;/b&gt;&lt;br&gt;
+</description>
+<smd name="1" x="-1.195" y="-0.745" dx="1.700" dy="0.810" layer="1" rot="R90"/>
+<smd name="2" x="0.000" y="-1.070" dx="1.050" dy="0.810" layer="1" rot="R90"/>
+<smd name="3" x="1.195" y="-1.070" dx="1.050" dy="0.810" layer="1" rot="R90"/>
+<smd name="4" x="1.195" y="1.070" dx="1.050" dy="0.810" layer="1" rot="R90"/>
+<smd name="5" x="0.000" y="1.070" dx="1.050" dy="0.810" layer="1" rot="R90"/>
+<smd name="6" x="-1.195" y="1.070" dx="1.050" dy="0.810" layer="1" rot="R90"/>
+<text x="-0.000" y="0.000" align="center" size="1.27" layer="25" rot="R0" >&gt;NAME</text>
+<text x="-0.000" y="0.000" align="center" size="1.27" layer="27" rot="R0" >&gt;VALUE</text>
+<wire x1="-1.5" y1="1.5" x2="1.5" y2="1.5" width="0.1" layer="51"/>
+<wire x1="1.5" y1="1.5" x2="1.5" y2="-1.5" width="0.1" layer="51"/>
+<wire x1="1.5" y1="-1.5" x2="-1.5" y2="-1.5" width="0.1" layer="51"/>
+<wire x1="-1.5" y1="-1.5" x2="-1.5" y2="1.5" width="0.1" layer="51"/>
+<wire x1="-2.6" y1="2.595" x2="2.6" y2="2.595" width="0.1" layer="51"/>
+<wire x1="2.6" y1="2.595" x2="2.6" y2="-2.595" width="0.1" layer="51"/>
+<wire x1="2.6" y1="-2.595" x2="-2.6" y2="-2.595" width="0.1" layer="51"/>
+<wire x1="-2.6" y1="-2.595" x2="-2.6" y2="2.595" width="0.1" layer="51"/>
+<wire x1="-1.195" y1="-2.1" x2="-1.195" y2="-2.1" width="0.1" layer="21"/>
+<wire x1="-1.195" y1="-2.100" x2="-1.195" y2="-2.000" width="0.1" layer="21" curve="180.0"/>
+<wire x1="-1.195" y1="-2" x2="-1.195" y2="-2" width="0.1" layer="21"/>
+<wire x1="-1.195" y1="-2.000" x2="-1.195" y2="-2.100" width="0.1" layer="21" curve="180.0"/>
+</package>
+</packages>
+<symbols>
+<symbol name="AFII-TC-0015">
+<wire x1="5.08" y1="2.54" x2="27.94" y2="2.54" width="0.254" layer="94"/>
+<wire x1="27.94" y1="-7.62" x2="27.94" y2="2.54" width="0.254" layer="94"/>
+<wire x1="27.94" y1="-7.62" x2="5.08" y2="-7.62" width="0.254" layer="94"/>
+<wire x1="5.08" y1="2.54" x2="5.08" y2="-7.62" width="0.254" layer="94"/>
+<text x="29.21" y="7.62" align="center-left" size="1.778" layer="95">&gt;NAME</text>
+<text x="29.21" y="5.08" align="center-left" size="1.778" layer="96">&gt;VALUE</text>
+<pin name="GROUND" x="0" y="0" length="middle" direction="io" rot="R0"/>
+<pin name="INPUT" x="0" y="-2.54" length="middle" direction="io" rot="R0"/>
+<pin name="GND_1" x="0" y="-5.08" length="middle" direction="io" rot="R0"/>
+<pin name="GND_2" x="33.02" y="0" length="middle" direction="io" rot="R180"/>
+<pin name="OUT" x="33.02" y="-2.54" length="middle" direction="io" rot="R180"/>
+<pin name="GND_3" x="33.02" y="-5.08" length="middle" direction="io" rot="R180"/>
+</symbol>
+</symbols>
+<devicesets>
+<deviceset name="AFII-TC-0015" prefix="FL">
+<description>&lt;b&gt;Signal Conditioning 978 MHz Temperature Compensated SAW Filter&lt;/b&gt;&lt;p&gt;
+Source: &lt;a href="https://abracon.com/datasheets/AFII-TC-0015.pdf"&gt; Datasheet &lt;/a&gt;</description>
+<gates>
+<gate name="G$1" symbol="AFII-TC-0015" x="0" y="0"/>
+</gates>
+<devices>
+<device name="" package="AFIITC0015">
+<connects>
+<connect gate="G$1" pin="GROUND" pad="1"/>
+<connect gate="G$1" pin="INPUT" pad="2"/>
+<connect gate="G$1" pin="GND_1" pad="3"/>
+<connect gate="G$1" pin="GND_2" pad="4"/>
+<connect gate="G$1" pin="OUT" pad="5"/>
+<connect gate="G$1" pin="GND_3" pad="6"/>
+</connects>
+<technologies>
+<technology name="">
+<attribute name="Mouser_Part_Number" value="" constant="no"/>
+<attribute name="Mouser_Price-Stock" value="" constant="no"/>
+<attribute name="Manufacturer_Name" value="ABRACON" constant="no"/>
+<attribute name="Manufacturer_Part_Number" value="AFII-TC-0015" constant="no"/>
+<attribute name="Description" value="Signal Conditioning 978 MHz Temperature Compensated SAW Filter" constant="no"/>
+<attribute name="Height" value="1.4mm" constant="no"/>
+</technology>
+</technologies>
+</device>
+</devices>
+</deviceset>
+</devicesets>
+</library>
+</drawing>
+</eagle>

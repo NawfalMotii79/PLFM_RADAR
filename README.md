@@ -1,3 +1,9 @@
+[![GitHub stars](https://img.shields.io/github/stars/NawfalMotii79/PLFM_RADAR?style=social)](https://github.com/NawfalMotii79/PLFM_RADAR/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/NawfalMotii79/PLFM_RADAR?style=social)](https://github.com/NawfalMotii79/PLFM_RADAR/network/members)
+[![GitHub watchers](https://img.shields.io/github/watchers/NawfalMotii79/PLFM_RADAR?style=social)](https://github.com/NawfalMotii79/PLFM_RADAR/watchers)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Hardware: CERN-OHL-P](https://img.shields.io/badge/Hardware-CERN--OHL--P-blue.svg)](https://ohwr.org/cern_ohl_p_v2.txt)
+
 # AERIS-10: Open Source Pulse Linear Frequency Modulated Phased Array Radar
 
 [![Hardware: CERN-OHL-P](https://img.shields.io/badge/Hardware-CERN--OHL--P-blue.svg)](https://ohwr.org/cern_ohl_p_v2.txt)
@@ -232,3 +238,22 @@ I welcome serious inquiries from researchers, engineers, and potential collabora
 **Star ⭐ this repository if you're interested in open-source radar technology!**
 
 *Note: This is an active development project. Some features are still in progress. Check the issues page for known limitations and upcoming features.*
+
+## 19,000 stars – Thank you
+
+This project started in a small workshop in Morocco. Today, 19,000 engineers on GitHub have starred it.
+
+I am genuinely humbled.
+
+**What this tells me:**
+
+- Open source radar matters
+- Affordable sensing is needed
+- Engineers want to build, not just buy
+
+Thank you to everyone who starred, forked, opened issues, submitted PRs, and shared this project.
+
+The work continues.
+
+**Nawfal Motii**
+ABAC INDUSTRY
