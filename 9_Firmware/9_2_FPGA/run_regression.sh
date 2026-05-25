@@ -25,6 +25,19 @@ for arg in "$@"; do
     esac
 done
 
+# GNU timeout is not present on macOS by default. Prefer `gtimeout` from
+# `brew install coreutils` if available, otherwise fail fast with a clear
+# hint — silent fall-through previously made every vvp run look like
+# "UNKNOWN (no PASS/FAIL markers)".
+if command -v timeout >/dev/null 2>&1; then
+    TIMEOUT_CMD=timeout
+elif command -v gtimeout >/dev/null 2>&1; then
+    TIMEOUT_CMD=gtimeout
+else
+    echo "ERROR: GNU timeout not found. On macOS: brew install coreutils" >&2
+    exit 1
+fi
+
 PASS=0
 FAIL=0
 SKIP=0
@@ -286,7 +299,7 @@ run_test() {
 
     # Run
     local output
-    output=$(timeout 120 vvp "$vvp" 2>&1) || true
+    output=$("$TIMEOUT_CMD" 120 vvp "$vvp" 2>&1) || true
 
     # Count PASS/FAIL in output (testbenches use explicit [PASS]/[FAIL] markers)
     local test_pass test_fail
