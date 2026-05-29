@@ -85,6 +85,14 @@ public:
     // Apply the current gain to all 16 RX VGA channels via the Manager.
     void applyGain(ADAR1000Manager &mgr);
 
+    // Set configuration fields with validation.
+    // Returns false (no-op) if p_min_gain > p_max_gain.
+    // On success, all five fields are updated and agc_base_gain is clamped
+    // to the new [min_gain, max_gain] range.
+    bool configure(uint8_t p_min_gain, uint8_t p_max_gain,
+                   uint8_t p_step_down, uint8_t p_step_up,
+                   uint8_t p_holdoff_frames);
+
     // Reset runtime state (holdoff counter, saturation count) without
     // changing configuration.
     void resetState();

@@ -344,6 +344,63 @@ static void test_effective_gain_edge_cases()
 }
 
 // ---------------------------------------------------------------------------
+// Test 14: Saturation must never increase gain (issue #145 regression)
+// ---------------------------------------------------------------------------
+static void test_saturation_never_increases_gain()
+{
+    ADAR1000_AGC agc;
+    agc.enabled = true;
+    agc.agc_base_gain = 30;
+    agc.min_gain      = 40;  // misconfigured: min > current base
+    agc.gain_step_down = 4;
+
+    uint8_t before = agc.agc_base_gain;
+    agc.update(true);  // saturation event
+    assert(agc.agc_base_gain <= before);  // must not increase
+
+    // At-floor case: base == min
+    agc.agc_base_gain = 40;
+    agc.update(true);
+    assert(agc.agc_base_gain == 40);  // no movement at floor
+}
+
+// ---------------------------------------------------------------------------
+// Test 15: configure() validates min <= max and clamps agc_base_gain
+// ---------------------------------------------------------------------------
+static void test_configure_validation()
+{
+    ADAR1000_AGC agc;
+
+    // Valid config
+    assert(agc.configure(10, 120, 4, 1, 4) == true);
+    assert(agc.min_gain == 10);
+    assert(agc.max_gain == 120);
+    assert(agc.gain_step_down == 4);
+    assert(agc.gain_step_up == 1);
+    assert(agc.holdoff_frames == 4);
+
+    // Invalid: min > max — fields must be unchanged
+    assert(agc.configure(100, 50, 4, 1, 4) == false);
+    assert(agc.min_gain == 10);
+    assert(agc.max_gain == 120);
+
+    // agc_base_gain above new max is clamped down
+    agc.agc_base_gain = 200;
+    agc.configure(10, 120, 4, 1, 4);
+    assert(agc.agc_base_gain == 120);
+
+    // agc_base_gain below new min is clamped up
+    agc.agc_base_gain = 5;
+    agc.configure(10, 120, 4, 1, 4);
+    assert(agc.agc_base_gain == 10);
+
+    // agc_base_gain within range is left unchanged
+    agc.agc_base_gain = 60;
+    agc.configure(10, 120, 4, 1, 4);
+    assert(agc.agc_base_gain == 60);
+}
+
+// ---------------------------------------------------------------------------
 // main
 // ---------------------------------------------------------------------------
 int main()
@@ -363,6 +420,8 @@ int main()
     RUN_TEST(test_saturation_counter);
     RUN_TEST(test_mixed_sequence);
     RUN_TEST(test_effective_gain_edge_cases);
+    RUN_TEST(test_saturation_never_increases_gain);
+    RUN_TEST(test_configure_validation);
 
     printf("=== Results: %d/%d passed ===\n", tests_passed, tests_total);
     return (tests_passed == tests_total) ? 0 : 1;

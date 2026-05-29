@@ -43,10 +43,16 @@ void ADAR1000_AGC::update(bool fpga_saturation)
         saturation_event_count++;
         holdoff_counter = 0;
 
-        if (agc_base_gain >= gain_step_down + min_gain) {
-            agc_base_gain -= gain_step_down;
-        } else {
-            agc_base_gain = min_gain;
+        // Saturating subtract: gain must never increase on an attack step.
+        // If agc_base_gain <= min_gain already, do nothing — setting it to
+        // min_gain would increase gain when the field is misconfigured, which
+        // is unsafe for the LNA.
+        if (agc_base_gain > min_gain) {
+            if (agc_base_gain - min_gain >= gain_step_down) {
+                agc_base_gain -= gain_step_down;
+            } else {
+                agc_base_gain = min_gain;
+            }
         }
 
         DIAG("AGC", "SAT detected -- gain_base -> %u  (events=%lu)",
@@ -85,6 +91,28 @@ void ADAR1000_AGC::applyGain(ADAR1000Manager &mgr)
             mgr.adarSetRxVgaGain(dev, ch + 1, gain, BROADCAST_OFF);
         }
     }
+}
+
+// ---------------------------------------------------------------------------
+// configure -- validate and apply AGC configuration parameters
+// ---------------------------------------------------------------------------
+bool ADAR1000_AGC::configure(uint8_t p_min_gain, uint8_t p_max_gain,
+                              uint8_t p_step_down, uint8_t p_step_up,
+                              uint8_t p_holdoff_frames)
+{
+    if (p_min_gain > p_max_gain)
+        return false;
+
+    min_gain      = p_min_gain;
+    max_gain      = p_max_gain;
+    gain_step_down  = p_step_down;
+    gain_step_up    = p_step_up;
+    holdoff_frames  = p_holdoff_frames;
+
+    if (agc_base_gain < min_gain) agc_base_gain = min_gain;
+    if (agc_base_gain > max_gain) agc_base_gain = max_gain;
+
+    return true;
 }
 
 // ---------------------------------------------------------------------------
