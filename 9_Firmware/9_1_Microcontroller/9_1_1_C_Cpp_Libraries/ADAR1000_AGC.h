@@ -86,7 +86,7 @@ public:
     void applyGain(ADAR1000Manager &mgr);
 
     // Set configuration fields with validation.
-    // Returns false (no-op) if p_min_gain > p_max_gain.
+    // Returns false (no-op) if p_min_gain > p_max_gain or p_holdoff_frames == 0.
     // On success, all five fields are updated and agc_base_gain is clamped
     // to the new [min_gain, max_gain] range.
     bool configure(uint8_t p_min_gain, uint8_t p_max_gain,

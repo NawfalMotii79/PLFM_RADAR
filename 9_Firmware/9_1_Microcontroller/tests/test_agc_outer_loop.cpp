@@ -398,6 +398,11 @@ static void test_configure_validation()
     agc.agc_base_gain = 60;
     agc.configure(10, 120, 4, 1, 4);
     assert(agc.agc_base_gain == 60);
+
+    // holdoff_frames == 0 is invalid: recovery condition would be permanently
+    // true, causing gain-up on every non-saturated frame
+    assert(agc.configure(10, 120, 4, 1, 0) == false);
+    assert(agc.holdoff_frames == 4);  // unchanged
 }
 
 // ---------------------------------------------------------------------------

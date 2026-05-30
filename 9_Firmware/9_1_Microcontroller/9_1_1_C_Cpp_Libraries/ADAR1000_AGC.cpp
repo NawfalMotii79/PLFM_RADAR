@@ -100,8 +100,15 @@ bool ADAR1000_AGC::configure(uint8_t p_min_gain, uint8_t p_max_gain,
                               uint8_t p_step_down, uint8_t p_step_up,
                               uint8_t p_holdoff_frames)
 {
-    if (p_min_gain > p_max_gain)
+    if (p_min_gain > p_max_gain) {
+        DIAG_WARN("AGC", "configure() rejected: min_gain %u > max_gain %u",
+                  (unsigned)p_min_gain, (unsigned)p_max_gain);
         return false;
+    }
+    if (p_holdoff_frames == 0) {
+        DIAG_WARN("AGC", "configure() rejected: holdoff_frames must be >= 1");
+        return false;
+    }
 
     min_gain      = p_min_gain;
     max_gain      = p_max_gain;
