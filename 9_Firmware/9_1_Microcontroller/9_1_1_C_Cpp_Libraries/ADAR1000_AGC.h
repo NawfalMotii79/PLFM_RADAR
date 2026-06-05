@@ -86,7 +86,12 @@ public:
     void applyGain(ADAR1000Manager &mgr);
 
     // Set configuration fields with validation.
-    // Returns false (no-op) if p_min_gain > p_max_gain or p_holdoff_frames == 0.
+    // Returns false (no-op) if:
+    //   - p_max_gain > 127  (exceeds 7-bit ADAR1000 VGA register)
+    //   - p_min_gain > p_max_gain
+    //   - p_step_down == 0  (would silently disable AGC attack)
+    //   - p_step_up   == 0  (would silently disable AGC recovery)
+    //   - p_holdoff_frames == 0  (recovery throttle bypassed every frame)
     // On success, all five fields are updated and agc_base_gain is clamped
     // to the new [min_gain, max_gain] range.
     bool configure(uint8_t p_min_gain, uint8_t p_max_gain,

@@ -100,9 +100,22 @@ bool ADAR1000_AGC::configure(uint8_t p_min_gain, uint8_t p_max_gain,
                               uint8_t p_step_down, uint8_t p_step_up,
                               uint8_t p_holdoff_frames)
 {
+    if (p_max_gain > 127u) {
+        DIAG_WARN("AGC", "configure() rejected: max_gain %u exceeds ADAR1000 VGA limit 127",
+                  (unsigned)p_max_gain);
+        return false;
+    }
     if (p_min_gain > p_max_gain) {
         DIAG_WARN("AGC", "configure() rejected: min_gain %u > max_gain %u",
                   (unsigned)p_min_gain, (unsigned)p_max_gain);
+        return false;
+    }
+    if (p_step_down == 0) {
+        DIAG_WARN("AGC", "configure() rejected: gain_step_down == 0 silently disables attack");
+        return false;
+    }
+    if (p_step_up == 0) {
+        DIAG_WARN("AGC", "configure() rejected: gain_step_up == 0 silently disables recovery");
         return false;
     }
     if (p_holdoff_frames == 0) {

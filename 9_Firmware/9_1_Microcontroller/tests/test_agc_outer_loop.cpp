@@ -406,6 +406,49 @@ static void test_configure_validation()
 }
 
 // ---------------------------------------------------------------------------
+// Test 16: configure() rejects zero step_down (would silence AGC attack)
+// ---------------------------------------------------------------------------
+static void test_configure_rejects_zero_step_down()
+{
+    ADAR1000_AGC agc;
+    assert(agc.configure(10, 120, 4, 1, 4) == true);  // baseline
+
+    assert(agc.configure(10, 120, 0, 1, 4) == false);
+    assert(agc.gain_step_down == 4);  // unchanged
+    assert(agc.gain_step_up  == 1);   // unchanged
+}
+
+// ---------------------------------------------------------------------------
+// Test 17: configure() rejects zero step_up (would silence AGC recovery)
+// ---------------------------------------------------------------------------
+static void test_configure_rejects_zero_step_up()
+{
+    ADAR1000_AGC agc;
+    assert(agc.configure(10, 120, 4, 1, 4) == true);  // baseline
+
+    assert(agc.configure(10, 120, 4, 0, 4) == false);
+    assert(agc.gain_step_down == 4);  // unchanged
+    assert(agc.gain_step_up  == 1);   // unchanged
+}
+
+// ---------------------------------------------------------------------------
+// Test 18: configure() rejects max_gain > 127 (exceeds 7-bit VGA register)
+// ---------------------------------------------------------------------------
+static void test_configure_rejects_max_gain_out_of_range()
+{
+    ADAR1000_AGC agc;
+    assert(agc.configure(10, 120, 4, 1, 4) == true);  // baseline
+
+    assert(agc.configure(10, 200, 4, 1, 4) == false);
+    assert(agc.max_gain == 120);  // unchanged
+    assert(agc.min_gain == 10);   // unchanged
+
+    // Boundary: exactly 127 is valid
+    assert(agc.configure(10, 127, 4, 1, 4) == true);
+    assert(agc.max_gain == 127);
+}
+
+// ---------------------------------------------------------------------------
 // main
 // ---------------------------------------------------------------------------
 int main()
@@ -427,6 +470,9 @@ int main()
     RUN_TEST(test_effective_gain_edge_cases);
     RUN_TEST(test_saturation_never_increases_gain);
     RUN_TEST(test_configure_validation);
+    RUN_TEST(test_configure_rejects_zero_step_down);
+    RUN_TEST(test_configure_rejects_zero_step_up);
+    RUN_TEST(test_configure_rejects_max_gain_out_of_range);
 
     printf("=== Results: %d/%d passed ===\n", tests_passed, tests_total);
     return (tests_passed == tests_total) ? 0 : 1;
