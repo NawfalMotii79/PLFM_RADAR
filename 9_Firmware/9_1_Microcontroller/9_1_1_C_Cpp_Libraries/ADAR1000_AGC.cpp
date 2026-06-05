@@ -44,10 +44,16 @@ void ADAR1000_AGC::update(bool fpga_saturation)
         saturation_event_count++;
         holdoff_counter = 0;
 
-        if (agc_base_gain >= gain_step_down + min_gain) {
-            agc_base_gain -= gain_step_down;
-        } else {
-            agc_base_gain = min_gain;
+        // Saturating subtract: gain must never increase on an attack step.
+        // If agc_base_gain <= min_gain already, do nothing — setting it to
+        // min_gain would increase gain when the field is misconfigured, which
+        // is unsafe for the LNA.
+        if (agc_base_gain > min_gain) {
+            if (agc_base_gain - min_gain >= gain_step_down) {
+                agc_base_gain -= gain_step_down;
+            } else {
+                agc_base_gain = min_gain;
+            }
         }
 
         DIAG("AGC", "SAT detected -- gain_base -> %u  (events=%lu)",
@@ -86,6 +92,48 @@ void ADAR1000_AGC::applyGain(ADAR1000Manager &mgr)
             mgr.adarSetRxVgaGain(dev, ch + 1, gain, BROADCAST_OFF);
         }
     }
+}
+
+// ---------------------------------------------------------------------------
+// configure -- validate and apply AGC configuration parameters
+// ---------------------------------------------------------------------------
+bool ADAR1000_AGC::configure(uint8_t p_min_gain, uint8_t p_max_gain,
+                              uint8_t p_step_down, uint8_t p_step_up,
+                              uint8_t p_holdoff_frames)
+{
+    if (p_max_gain > 127u) {
+        DIAG_WARN("AGC", "configure() rejected: max_gain %u exceeds ADAR1000 VGA limit 127",
+                  (unsigned)p_max_gain);
+        return false;
+    }
+    if (p_min_gain > p_max_gain) {
+        DIAG_WARN("AGC", "configure() rejected: min_gain %u > max_gain %u",
+                  (unsigned)p_min_gain, (unsigned)p_max_gain);
+        return false;
+    }
+    if (p_step_down == 0) {
+        DIAG_WARN("AGC", "configure() rejected: gain_step_down == 0 silently disables attack");
+        return false;
+    }
+    if (p_step_up == 0) {
+        DIAG_WARN("AGC", "configure() rejected: gain_step_up == 0 silently disables recovery");
+        return false;
+    }
+    if (p_holdoff_frames == 0) {
+        DIAG_WARN("AGC", "configure() rejected: holdoff_frames must be >= 1");
+        return false;
+    }
+
+    min_gain      = p_min_gain;
+    max_gain      = p_max_gain;
+    gain_step_down  = p_step_down;
+    gain_step_up    = p_step_up;
+    holdoff_frames  = p_holdoff_frames;
+
+    if (agc_base_gain < min_gain) agc_base_gain = min_gain;
+    if (agc_base_gain > max_gain) agc_base_gain = max_gain;
+
+    return true;
 }
 
 // ---------------------------------------------------------------------------

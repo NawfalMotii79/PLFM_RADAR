@@ -1,0 +1,256 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE eagle SYSTEM "eagle.dtd">
+<eagle version="7.4.0">
+<drawing>
+<settings>
+<setting alwaysvectorfont="no"/>
+<setting verticaltext="up"/>
+</settings>
+<grid distance="0.1" unitdist="inch" unit="inch" style="lines" multiple="1" display="no" altdistance="0.01" altunitdist="inch" altunit="inch"/>
+<layers>
+<layer number="1" name="Top" color="4" fill="1" visible="yes" active="yes"/>
+<layer number="2" name="Route2" color="1" fill="3" visible="no" active="yes"/>
+<layer number="3" name="Route3" color="4" fill="3" visible="no" active="yes"/>
+<layer number="4" name="Route4" color="1" fill="4" visible="no" active="yes"/>
+<layer number="5" name="Route5" color="4" fill="4" visible="no" active="yes"/>
+<layer number="6" name="Route6" color="1" fill="8" visible="no" active="yes"/>
+<layer number="7" name="Route7" color="4" fill="8" visible="no" active="yes"/>
+<layer number="8" name="Route8" color="1" fill="2" visible="no" active="yes"/>
+<layer number="9" name="Route9" color="4" fill="2" visible="no" active="yes"/>
+<layer number="10" name="Route10" color="1" fill="7" visible="no" active="yes"/>
+<layer number="11" name="Route11" color="4" fill="7" visible="no" active="yes"/>
+<layer number="12" name="Route12" color="1" fill="5" visible="no" active="yes"/>
+<layer number="13" name="Route13" color="4" fill="5" visible="no" active="yes"/>
+<layer number="14" name="Route14" color="1" fill="6" visible="no" active="yes"/>
+<layer number="15" name="Route15" color="4" fill="6" visible="no" active="yes"/>
+<layer number="16" name="Bottom" color="1" fill="1" visible="yes" active="yes"/>
+<layer number="17" name="Pads" color="2" fill="1" visible="yes" active="yes"/>
+<layer number="18" name="Vias" color="2" fill="1" visible="yes" active="yes"/>
+<layer number="19" name="Unrouted" color="6" fill="1" visible="yes" active="yes"/>
+<layer number="20" name="Dimension" color="15" fill="1" visible="yes" active="yes"/>
+<layer number="21" name="tPlace" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="22" name="bPlace" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="23" name="tOrigins" color="15" fill="1" visible="yes" active="yes"/>
+<layer number="24" name="bOrigins" color="15" fill="1" visible="yes" active="yes"/>
+<layer number="25" name="tNames" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="26" name="bNames" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="27" name="tValues" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="28" name="bValues" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="29" name="tStop" color="7" fill="3" visible="no" active="yes"/>
+<layer number="30" name="bStop" color="7" fill="6" visible="no" active="yes"/>
+<layer number="31" name="tCream" color="7" fill="4" visible="no" active="yes"/>
+<layer number="32" name="bCream" color="7" fill="5" visible="no" active="yes"/>
+<layer number="33" name="tFinish" color="6" fill="3" visible="no" active="yes"/>
+<layer number="34" name="bFinish" color="6" fill="6" visible="no" active="yes"/>
+<layer number="35" name="tGlue" color="7" fill="4" visible="no" active="yes"/>
+<layer number="36" name="bGlue" color="7" fill="5" visible="no" active="yes"/>
+<layer number="37" name="tTest" color="7" fill="1" visible="no" active="yes"/>
+<layer number="38" name="bTest" color="7" fill="1" visible="no" active="yes"/>
+<layer number="39" name="tKeepout" color="4" fill="11" visible="yes" active="yes"/>
+<layer number="40" name="bKeepout" color="1" fill="11" visible="yes" active="yes"/>
+<layer number="41" name="tRestrict" color="4" fill="10" visible="yes" active="yes"/>
+<layer number="42" name="bRestrict" color="1" fill="10" visible="yes" active="yes"/>
+<layer number="43" name="vRestrict" color="2" fill="10" visible="yes" active="yes"/>
+<layer number="44" name="Drills" color="7" fill="1" visible="no" active="yes"/>
+<layer number="45" name="Holes" color="7" fill="1" visible="no" active="yes"/>
+<layer number="46" name="Milling" color="3" fill="1" visible="no" active="yes"/>
+<layer number="47" name="Measures" color="7" fill="1" visible="no" active="yes"/>
+<layer number="48" name="Document" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="49" name="Reference" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="51" name="tDocu" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="52" name="bDocu" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="90" name="Modules" color="5" fill="1" visible="yes" active="yes"/>
+<layer number="91" name="Nets" color="2" fill="1" visible="yes" active="yes"/>
+<layer number="92" name="Busses" color="1" fill="1" visible="yes" active="yes"/>
+<layer number="93" name="Pins" color="2" fill="1" visible="yes" active="yes"/>
+<layer number="94" name="Symbols" color="4" fill="1" visible="yes" active="yes"/>
+<layer number="95" name="Names" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="96" name="Values" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="97" name="Info" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="98" name="Guide" color="6" fill="1" visible="yes" active="yes"/>
+</layers>
+<library>
+<packages>
+<package name="QPA2811">
+<smd name="P$1" x="-3.35" y="2.75" dx="0.5" dy="0.25" layer="1"/>
+<wire x1="-3.8" y1="3.8" x2="3.8" y2="3.8" width="0.127" layer="51"/>
+<wire x1="3.8" y1="3.8" x2="3.8" y2="-3.8" width="0.127" layer="51"/>
+<wire x1="3.8" y1="-3.8" x2="-3.8" y2="-3.8" width="0.127" layer="51"/>
+<wire x1="-3.8" y1="-3.8" x2="-3.8" y2="3.8" width="0.127" layer="51"/>
+<smd name="P$2" x="-3.35" y="2.25" dx="0.5" dy="0.25" layer="1"/>
+<smd name="P$3" x="-3.35" y="1.75" dx="0.5" dy="0.25" layer="1"/>
+<smd name="P$4" x="-3.35" y="1.25" dx="0.5" dy="0.25" layer="1"/>
+<smd name="P$5" x="-3.35" y="0.75" dx="0.5" dy="0.25" layer="1"/>
+<smd name="P$6" x="-3.35" y="0.25" dx="0.5" dy="0.25" layer="1"/>
+<smd name="P$7" x="-3.35" y="-0.25" dx="0.5" dy="0.25" layer="1"/>
+<smd name="P$8" x="-3.35" y="-0.75" dx="0.5" dy="0.25" layer="1"/>
+<smd name="P$9" x="-3.35" y="-1.25" dx="0.5" dy="0.25" layer="1"/>
+<smd name="P$10" x="-3.35" y="-1.75" dx="0.5" dy="0.25" layer="1"/>
+<smd name="P$11" x="-3.35" y="-2.25" dx="0.5" dy="0.25" layer="1"/>
+<smd name="P$12" x="-3.35" y="-2.75" dx="0.5" dy="0.25" layer="1"/>
+<smd name="P$13" x="-2.75" y="-3.35" dx="0.25" dy="0.5" layer="1"/>
+<smd name="P$14" x="-2.25" y="-3.35" dx="0.25" dy="0.5" layer="1"/>
+<smd name="P$15" x="-1.75" y="-3.35" dx="0.25" dy="0.5" layer="1"/>
+<smd name="P$16" x="-1.25" y="-3.35" dx="0.25" dy="0.5" layer="1"/>
+<smd name="P$17" x="-0.75" y="-3.35" dx="0.25" dy="0.5" layer="1"/>
+<smd name="P$18" x="-0.25" y="-3.35" dx="0.25" dy="0.5" layer="1"/>
+<smd name="P$19" x="0.25" y="-3.35" dx="0.25" dy="0.5" layer="1"/>
+<smd name="P$20" x="0.75" y="-3.35" dx="0.25" dy="0.5" layer="1"/>
+<smd name="P$21" x="1.25" y="-3.35" dx="0.25" dy="0.5" layer="1"/>
+<smd name="P$22" x="1.75" y="-3.35" dx="0.25" dy="0.5" layer="1"/>
+<smd name="P$23" x="2.25" y="-3.35" dx="0.25" dy="0.5" layer="1"/>
+<smd name="P$24" x="2.75" y="-3.35" dx="0.25" dy="0.5" layer="1"/>
+<smd name="P$25" x="3.35" y="-2.75" dx="0.25" dy="0.5" layer="1" rot="R90"/>
+<smd name="P$26" x="3.35" y="-2.25" dx="0.25" dy="0.5" layer="1" rot="R90"/>
+<smd name="P$27" x="3.35" y="-1.75" dx="0.25" dy="0.5" layer="1" rot="R90"/>
+<smd name="P$28" x="3.35" y="-1.25" dx="0.25" dy="0.5" layer="1" rot="R90"/>
+<smd name="P$29" x="3.35" y="-0.75" dx="0.25" dy="0.5" layer="1" rot="R90"/>
+<smd name="P$30" x="3.35" y="-0.25" dx="0.25" dy="0.5" layer="1" rot="R90"/>
+<smd name="P$31" x="3.35" y="0.25" dx="0.25" dy="0.5" layer="1" rot="R90"/>
+<smd name="P$32" x="3.35" y="0.75" dx="0.25" dy="0.5" layer="1" rot="R90"/>
+<smd name="P$33" x="3.35" y="1.25" dx="0.25" dy="0.5" layer="1" rot="R90"/>
+<smd name="P$34" x="3.35" y="1.75" dx="0.25" dy="0.5" layer="1" rot="R90"/>
+<smd name="P$35" x="3.35" y="2.25" dx="0.25" dy="0.5" layer="1" rot="R90"/>
+<smd name="P$36" x="3.35" y="2.75" dx="0.25" dy="0.5" layer="1" rot="R90"/>
+<smd name="P$37" x="2.75" y="3.35" dx="0.25" dy="0.5" layer="1" rot="R180"/>
+<smd name="P$38" x="2.25" y="3.35" dx="0.25" dy="0.5" layer="1" rot="R180"/>
+<smd name="P$39" x="1.75" y="3.35" dx="0.25" dy="0.5" layer="1" rot="R180"/>
+<smd name="P$40" x="1.25" y="3.35" dx="0.25" dy="0.5" layer="1" rot="R180"/>
+<smd name="P$41" x="0.75" y="3.35" dx="0.25" dy="0.5" layer="1" rot="R180"/>
+<smd name="P$42" x="0.25" y="3.35" dx="0.25" dy="0.5" layer="1" rot="R180"/>
+<smd name="P$43" x="-0.25" y="3.35" dx="0.25" dy="0.5" layer="1" rot="R180"/>
+<smd name="P$44" x="-0.75" y="3.35" dx="0.25" dy="0.5" layer="1" rot="R180"/>
+<smd name="P$45" x="-1.25" y="3.35" dx="0.25" dy="0.5" layer="1" rot="R180"/>
+<smd name="P$46" x="-1.75" y="3.35" dx="0.25" dy="0.5" layer="1" rot="R180"/>
+<smd name="P$47" x="-2.25" y="3.35" dx="0.25" dy="0.5" layer="1" rot="R180"/>
+<smd name="P$48" x="-2.75" y="3.35" dx="0.25" dy="0.5" layer="1" rot="R180"/>
+<smd name="P$49" x="0" y="0" dx="5.6" dy="5.6" layer="1"/>
+<text x="-5.08" y="2.54" size="1.27" layer="51">*</text>
+</package>
+</packages>
+<symbols>
+<symbol name="QPA2811">
+<wire x1="-25.4" y1="22.86" x2="27.94" y2="22.86" width="0.254" layer="94"/>
+<wire x1="27.94" y1="22.86" x2="27.94" y2="-25.4" width="0.254" layer="94"/>
+<wire x1="27.94" y1="-25.4" x2="-25.4" y2="-25.4" width="0.254" layer="94"/>
+<wire x1="-25.4" y1="-25.4" x2="-25.4" y2="22.86" width="0.254" layer="94"/>
+<pin name="GND@1" x="-30.48" y="12.7" length="middle"/>
+<pin name="GND@2" x="-30.48" y="10.16" length="middle"/>
+<pin name="GND@3" x="-30.48" y="7.62" length="middle"/>
+<pin name="GND@4" x="-30.48" y="5.08" length="middle"/>
+<pin name="GND@5" x="-30.48" y="2.54" length="middle"/>
+<pin name="RFIN@1" x="-30.48" y="0" length="middle"/>
+<pin name="RFIN@2" x="-30.48" y="-2.54" length="middle"/>
+<pin name="GND@6" x="-30.48" y="-5.08" length="middle"/>
+<pin name="GND@7" x="-30.48" y="-7.62" length="middle"/>
+<pin name="GND@8" x="-30.48" y="-10.16" length="middle"/>
+<pin name="GND@9" x="-30.48" y="-12.7" length="middle"/>
+<pin name="GND@10" x="-30.48" y="-15.24" length="middle"/>
+<pin name="GND@11" x="-12.7" y="-30.48" length="middle" rot="R90"/>
+<pin name="VG1@1" x="-10.16" y="-30.48" length="middle" rot="R90"/>
+<pin name="VG1@2" x="-7.62" y="-30.48" length="middle" rot="R90"/>
+<pin name="VG1@3" x="-5.08" y="-30.48" length="middle" rot="R90"/>
+<pin name="VD1@1" x="-2.54" y="-30.48" length="middle" rot="R90"/>
+<pin name="VD1@2" x="0" y="-30.48" length="middle" rot="R90"/>
+<pin name="VD1@3" x="2.54" y="-30.48" length="middle" rot="R90"/>
+<pin name="VD1@4" x="5.08" y="-30.48" length="middle" rot="R90"/>
+<pin name="VD1@5" x="7.62" y="-30.48" length="middle" rot="R90"/>
+<pin name="VD1@6" x="10.16" y="-30.48" length="middle" rot="R90"/>
+<pin name="VD1@7" x="12.7" y="-30.48" length="middle" rot="R90"/>
+<pin name="GND@12" x="15.24" y="-30.48" length="middle" rot="R90"/>
+<pin name="GND@13" x="33.02" y="-15.24" length="middle" rot="R180"/>
+<pin name="GND@14" x="33.02" y="-12.7" length="middle" rot="R180"/>
+<pin name="GND@15" x="33.02" y="-10.16" length="middle" rot="R180"/>
+<pin name="GND@16" x="33.02" y="-7.62" length="middle" rot="R180"/>
+<pin name="GND@17" x="33.02" y="-5.08" length="middle" rot="R180"/>
+<pin name="RFOUT@1" x="33.02" y="-2.54" length="middle" rot="R180"/>
+<pin name="RFOUT@2" x="33.02" y="0" length="middle" rot="R180"/>
+<pin name="GND@18" x="33.02" y="2.54" length="middle" rot="R180"/>
+<pin name="GND@19" x="33.02" y="5.08" length="middle" rot="R180"/>
+<pin name="GND@20" x="33.02" y="7.62" length="middle" rot="R180"/>
+<pin name="GND@21" x="33.02" y="10.16" length="middle" rot="R180"/>
+<pin name="GND@22" x="33.02" y="12.7" length="middle" rot="R180"/>
+<pin name="GND@23" x="15.24" y="27.94" length="middle" rot="R270"/>
+<pin name="VD2@1" x="12.7" y="27.94" length="middle" rot="R270"/>
+<pin name="VD2@2" x="10.16" y="27.94" length="middle" rot="R270"/>
+<pin name="VD2@3" x="7.62" y="27.94" length="middle" rot="R270"/>
+<pin name="VD2@4" x="5.08" y="27.94" length="middle" rot="R270"/>
+<pin name="VD2@5" x="2.54" y="27.94" length="middle" rot="R270"/>
+<pin name="VD2@6" x="0" y="27.94" length="middle" rot="R270"/>
+<pin name="VD2@7" x="-2.54" y="27.94" length="middle" rot="R270"/>
+<pin name="VG2@1" x="-5.08" y="27.94" length="middle" rot="R270"/>
+<pin name="VG2@2" x="-7.62" y="27.94" length="middle" rot="R270"/>
+<pin name="VG2@3" x="-10.16" y="27.94" length="middle" rot="R270"/>
+<pin name="GND@24" x="-12.7" y="27.94" length="middle" rot="R270"/>
+<pin name="PAD" x="-20.32" y="27.94" length="middle" rot="R270"/>
+<text x="-5.08" y="5.08" size="1.778" layer="95">&gt;QPA2811</text>
+</symbol>
+</symbols>
+<devicesets>
+<deviceset name="QPA2811">
+<gates>
+<gate name="G$1" symbol="QPA2811" x="0" y="2.54"/>
+</gates>
+<devices>
+<device name="" package="QPA2811">
+<connects>
+<connect gate="G$1" pin="GND@1" pad="P$1"/>
+<connect gate="G$1" pin="GND@10" pad="P$12"/>
+<connect gate="G$1" pin="GND@11" pad="P$13"/>
+<connect gate="G$1" pin="GND@12" pad="P$24"/>
+<connect gate="G$1" pin="GND@13" pad="P$25"/>
+<connect gate="G$1" pin="GND@14" pad="P$26"/>
+<connect gate="G$1" pin="GND@15" pad="P$27"/>
+<connect gate="G$1" pin="GND@16" pad="P$28"/>
+<connect gate="G$1" pin="GND@17" pad="P$29"/>
+<connect gate="G$1" pin="GND@18" pad="P$32"/>
+<connect gate="G$1" pin="GND@19" pad="P$33"/>
+<connect gate="G$1" pin="GND@2" pad="P$2"/>
+<connect gate="G$1" pin="GND@20" pad="P$34"/>
+<connect gate="G$1" pin="GND@21" pad="P$35"/>
+<connect gate="G$1" pin="GND@22" pad="P$36"/>
+<connect gate="G$1" pin="GND@23" pad="P$37"/>
+<connect gate="G$1" pin="GND@24" pad="P$48"/>
+<connect gate="G$1" pin="GND@3" pad="P$3"/>
+<connect gate="G$1" pin="GND@4" pad="P$4"/>
+<connect gate="G$1" pin="GND@5" pad="P$5"/>
+<connect gate="G$1" pin="GND@6" pad="P$8"/>
+<connect gate="G$1" pin="GND@7" pad="P$9"/>
+<connect gate="G$1" pin="GND@8" pad="P$10"/>
+<connect gate="G$1" pin="GND@9" pad="P$11"/>
+<connect gate="G$1" pin="PAD" pad="P$49"/>
+<connect gate="G$1" pin="RFIN@1" pad="P$6"/>
+<connect gate="G$1" pin="RFIN@2" pad="P$7"/>
+<connect gate="G$1" pin="RFOUT@1" pad="P$30"/>
+<connect gate="G$1" pin="RFOUT@2" pad="P$31"/>
+<connect gate="G$1" pin="VD1@1" pad="P$17"/>
+<connect gate="G$1" pin="VD1@2" pad="P$18"/>
+<connect gate="G$1" pin="VD1@3" pad="P$19"/>
+<connect gate="G$1" pin="VD1@4" pad="P$20"/>
+<connect gate="G$1" pin="VD1@5" pad="P$21"/>
+<connect gate="G$1" pin="VD1@6" pad="P$22"/>
+<connect gate="G$1" pin="VD1@7" pad="P$23"/>
+<connect gate="G$1" pin="VD2@1" pad="P$38"/>
+<connect gate="G$1" pin="VD2@2" pad="P$39"/>
+<connect gate="G$1" pin="VD2@3" pad="P$40"/>
+<connect gate="G$1" pin="VD2@4" pad="P$41"/>
+<connect gate="G$1" pin="VD2@5" pad="P$42"/>
+<connect gate="G$1" pin="VD2@6" pad="P$43"/>
+<connect gate="G$1" pin="VD2@7" pad="P$44"/>
+<connect gate="G$1" pin="VG1@1" pad="P$14"/>
+<connect gate="G$1" pin="VG1@2" pad="P$15"/>
+<connect gate="G$1" pin="VG1@3" pad="P$16"/>
+<connect gate="G$1" pin="VG2@1" pad="P$45"/>
+<connect gate="G$1" pin="VG2@2" pad="P$46"/>
+<connect gate="G$1" pin="VG2@3" pad="P$47"/>
+</connects>
+<technologies>
+<technology name=""/>
+</technologies>
+</device>
+</devices>
+</deviceset>
+</devicesets>
+</library>
+</drawing>
+</eagle>

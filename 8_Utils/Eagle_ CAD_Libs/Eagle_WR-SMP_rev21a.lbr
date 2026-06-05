@@ -1,0 +1,2730 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE eagle SYSTEM "eagle.dtd">
+<eagle version="9.5.2">
+<drawing>
+<settings>
+<setting alwaysvectorfont="no"/>
+<setting verticaltext="up"/>
+</settings>
+<grid distance="0.1" unitdist="inch" unit="inch" style="lines" multiple="1" display="no" altdistance="0.01" altunitdist="inch" altunit="inch"/>
+<layers>
+<layer number="1" name="Top" color="4" fill="1" visible="yes" active="yes"/>
+<layer number="16" name="Bottom" color="1" fill="1" visible="yes" active="yes"/>
+<layer number="17" name="Pads" color="2" fill="1" visible="yes" active="yes"/>
+<layer number="18" name="Vias" color="2" fill="1" visible="yes" active="yes"/>
+<layer number="19" name="Unrouted" color="6" fill="1" visible="yes" active="yes"/>
+<layer number="20" name="Dimension" color="24" fill="1" visible="yes" active="yes"/>
+<layer number="21" name="tPlace" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="22" name="bPlace" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="23" name="tOrigins" color="15" fill="1" visible="yes" active="yes"/>
+<layer number="24" name="bOrigins" color="15" fill="1" visible="yes" active="yes"/>
+<layer number="25" name="tNames" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="26" name="bNames" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="27" name="tValues" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="28" name="bValues" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="29" name="tStop" color="7" fill="3" visible="yes" active="yes"/>
+<layer number="30" name="bStop" color="7" fill="6" visible="yes" active="yes"/>
+<layer number="31" name="tCream" color="7" fill="4" visible="yes" active="yes"/>
+<layer number="32" name="bCream" color="7" fill="5" visible="yes" active="yes"/>
+<layer number="33" name="tFinish" color="6" fill="3" visible="yes" active="yes"/>
+<layer number="34" name="bFinish" color="6" fill="6" visible="yes" active="yes"/>
+<layer number="35" name="tGlue" color="7" fill="4" visible="yes" active="yes"/>
+<layer number="36" name="bGlue" color="7" fill="5" visible="yes" active="yes"/>
+<layer number="37" name="tTest" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="38" name="bTest" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="39" name="tKeepout" color="4" fill="11" visible="yes" active="yes"/>
+<layer number="40" name="bKeepout" color="1" fill="11" visible="yes" active="yes"/>
+<layer number="41" name="tRestrict" color="4" fill="10" visible="yes" active="yes"/>
+<layer number="42" name="bRestrict" color="1" fill="10" visible="yes" active="yes"/>
+<layer number="43" name="vRestrict" color="2" fill="10" visible="yes" active="yes"/>
+<layer number="44" name="Drills" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="45" name="Holes" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="46" name="Milling" color="3" fill="1" visible="yes" active="yes"/>
+<layer number="47" name="Measures" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="48" name="Document" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="49" name="Reference" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="51" name="tDocu" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="52" name="bDocu" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="88" name="SimResults" color="9" fill="1" visible="yes" active="yes"/>
+<layer number="89" name="SimProbes" color="9" fill="1" visible="yes" active="yes"/>
+<layer number="90" name="Modules" color="5" fill="1" visible="yes" active="yes"/>
+<layer number="91" name="Nets" color="2" fill="1" visible="yes" active="yes"/>
+<layer number="92" name="Busses" color="1" fill="1" visible="yes" active="yes"/>
+<layer number="93" name="Pins" color="2" fill="1" visible="no" active="yes"/>
+<layer number="94" name="Symbols" color="4" fill="1" visible="yes" active="yes"/>
+<layer number="95" name="Names" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="96" name="Values" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="97" name="Info" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="98" name="Guide" color="6" fill="1" visible="yes" active="yes"/>
+</layers>
+<library>
+<description>&lt;BR&gt;Wurth Elektronik - Connectors - Coaxial Connectors - WR-SMP &lt;br&gt;&lt;Hr&gt;
+
+&lt;BR&gt;
+&lt;TABLE BORDER=0 CELLSPACING=0 CELLPADDING=0&gt;
+&lt;TR&gt;   
+&lt;TD BGCOLOR="#cccccc" ALIGN=CENTER&gt;&lt;FONT FACE=ARIAL SIZE=3&gt;&lt;BR&gt;&lt;br&gt;
+      &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp; &amp;nbsp;&lt;BR&gt;
+       &lt;BR&gt;
+       &lt;BR&gt;
+       &lt;BR&gt;&lt;BR&gt;&lt;/FONT&gt;
+    &lt;/TD&gt;
+&lt;TD BGCOLOR="#cccccc" ALIGN=CENTER&gt;&lt;FONT FACE=ARIAL SIZE=3&gt;&lt;br&gt;
+      -----&lt;BR&gt;
+      -----&lt;BR&gt;
+      -----&lt;BR&gt;
+      -----&lt;BR&gt;
+      -----&lt;BR&gt;&lt;BR&gt;&lt;/FONT&gt;
+    &lt;/TD&gt;
+    &lt;TD BGCOLOR="#cccccc" ALIGN=CENTER&gt; &lt;FONT FACE=ARIAL SIZE=3&gt;&lt;br&gt;
+      ---------------------------&lt;BR&gt;
+&lt;B&gt;&lt;I&gt;&lt;span style='font-size:26pt;
+  color:#FF6600;'&gt;WE &lt;/span&gt;&lt;/i&gt;&lt;/b&gt;
+&lt;BR&gt;
+      ---------------------------&lt;BR&gt;&lt;b&gt;Würth Elektronik&lt;/b&gt;&lt;/FONT&gt;
+    &lt;/TD&gt;
+    &lt;TD BGCOLOR="#cccccc" ALIGN=CENTER&gt;&lt;FONT FACE=ARIAL SIZE=3&gt;&lt;br&gt;
+      ---------O---&lt;BR&gt;
+      ----O--------&lt;BR&gt;
+      ---------O---&lt;BR&gt;
+      ----O--------&lt;BR&gt;
+      ---------O---&lt;BR&gt;&lt;BR&gt;&lt;/FONT&gt;
+    &lt;/TD&gt;
+   
+&lt;TD BGCOLOR="#cccccc" ALIGN=CENTER&gt;&lt;FONT FACE=ARIAL SIZE=3&gt;&lt;BR&gt;
+      &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp; &amp;nbsp;&lt;BR&gt;
+       &lt;BR&gt;
+       &lt;BR&gt;
+       &lt;BR&gt;
+       &lt;BR&gt;&lt;BR&gt;&lt;/FONT&gt;
+    &lt;/TD&gt;
+  &lt;/TR&gt;
+
+  &lt;TR&gt;
+    &lt;TD COLSPAN=7&gt;&amp;nbsp;
+    &lt;/TD&gt;
+  &lt;/TR&gt;
+  
+&lt;/TABLE&gt;
+&lt;B&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;More than you expect&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;&lt;/B&gt;
+
+&lt;HR&gt;&lt;BR&gt;
+&lt;b&gt;Würth Elektronik eiSos GmbH &amp; Co. KG&lt;/b&gt;&lt;br&gt;
+EMC &amp; Inductive Solutions&lt;br&gt;
+
+Max-Eyth-Str.1&lt;br&gt;
+D-74638 Waldenburg&lt;br&gt;
+&lt;br&gt;
+Tel: +49 (0)7942-945-0&lt;br&gt;
+Fax:+49 (0)7942-945-5000&lt;br&gt;
+&lt;br&gt;
+&lt;a href="http://www.we-online.com/web/en/electronic_components/produkte_pb/bauteilebibliotheken/eagle_4.php"&gt;www.we-online.com/eagle&lt;/a&gt;&lt;br&gt;
+&lt;a href="mailto:libraries@we-online.com"&gt;libraries@we-online.com&lt;/a&gt; &lt;BR&gt;&lt;BR&gt;
+&lt;br&gt;&lt;HR&gt;&lt;BR&gt;
+Neither Autodesk nor Würth Elektronik eiSos does warrant that this library is error-free or &lt;br&gt;
+that it meets your specific requirements.&lt;br&gt;&lt;BR&gt;
+Please contact us for more information.&lt;br&gt;
+&lt;HR&gt;
+&lt;br&gt;Eagle Version 9, Library Revision 2021a, 2021-04-14&lt;br&gt;
+&lt;HR&gt;
+Copyright: Würth Elektronik</description>
+<packages>
+<package name="60114602122404" urn="urn:adsk.eagle:footprint:18010846/4">
+<description>&lt;b&gt;WR-SMP Straight</description>
+<smd name="1" x="0" y="-2.985" dx="0.48" dy="1.15" layer="1"/>
+<polygon width="0.1" layer="39">
+<vertex x="-3.7" y="3.7"/>
+<vertex x="3.7" y="3.7"/>
+<vertex x="3.7" y="-3.75"/>
+<vertex x="-3.7" y="-3.75"/>
+</polygon>
+<polygon width="0.1" layer="1">
+<vertex x="1" y="-2.075"/>
+<vertex x="1" y="-3.2"/>
+<vertex x="1.925" y="-3.2"/>
+<vertex x="1.955" y="-3.225"/>
+<vertex x="2" y="-3.26"/>
+<vertex x="2.05" y="-3.295"/>
+<vertex x="2.1" y="-3.325"/>
+<vertex x="2.135" y="-3.345"/>
+<vertex x="2.205" y="-3.375"/>
+<vertex x="2.26" y="-3.395"/>
+<vertex x="2.31" y="-3.41"/>
+<vertex x="2.375" y="-3.425"/>
+<vertex x="2.445" y="-3.435"/>
+<vertex x="2.505" y="-3.44"/>
+<vertex x="2.54" y="-3.44" curve="90"/>
+<vertex x="3.44" y="-2.54"/>
+<vertex x="3.44" y="-2.52"/>
+<vertex x="3.44" y="-2.5"/>
+<vertex x="3.435" y="-2.45"/>
+<vertex x="3.43" y="-2.405"/>
+<vertex x="3.42" y="-2.35"/>
+<vertex x="3.405" y="-2.29"/>
+<vertex x="3.385" y="-2.23"/>
+<vertex x="3.365" y="-2.18"/>
+<vertex x="3.34" y="-2.13"/>
+<vertex x="3.32" y="-2.09"/>
+<vertex x="3.285" y="-2.035"/>
+<vertex x="3.24" y="-1.975"/>
+<vertex x="3.2" y="-1.925"/>
+<vertex x="3.2" y="1.925"/>
+<vertex x="3.22" y="1.95"/>
+<vertex x="3.25" y="1.985"/>
+<vertex x="3.285" y="2.035"/>
+<vertex x="3.32" y="2.09"/>
+<vertex x="3.35" y="2.15"/>
+<vertex x="3.38" y="2.215"/>
+<vertex x="3.405" y="2.29"/>
+<vertex x="3.42" y="2.35"/>
+<vertex x="3.43" y="2.405"/>
+<vertex x="3.435" y="2.445"/>
+<vertex x="3.44" y="2.51"/>
+<vertex x="3.44" y="2.54" curve="90"/>
+<vertex x="2.54" y="3.44"/>
+<vertex x="2.51" y="3.44"/>
+<vertex x="2.445" y="3.435"/>
+<vertex x="2.4" y="3.43"/>
+<vertex x="2.325" y="3.415"/>
+<vertex x="2.26" y="3.395"/>
+<vertex x="2.19" y="3.37"/>
+<vertex x="2.125" y="3.34"/>
+<vertex x="2.065" y="3.305"/>
+<vertex x="2.015" y="3.27"/>
+<vertex x="1.975" y="3.24"/>
+<vertex x="1.945" y="3.215"/>
+<vertex x="1.925" y="3.2"/>
+<vertex x="-1.925" y="3.2"/>
+<vertex x="-1.955" y="3.225"/>
+<vertex x="-2" y="3.26"/>
+<vertex x="-2.035" y="3.285"/>
+<vertex x="-2.1" y="3.325"/>
+<vertex x="-2.135" y="3.345"/>
+<vertex x="-2.19" y="3.37"/>
+<vertex x="-2.245" y="3.39"/>
+<vertex x="-2.29" y="3.405"/>
+<vertex x="-2.35" y="3.42"/>
+<vertex x="-2.4" y="3.43"/>
+<vertex x="-2.445" y="3.435"/>
+<vertex x="-2.5" y="3.44"/>
+<vertex x="-2.54" y="3.44" curve="90"/>
+<vertex x="-3.44" y="2.54"/>
+<vertex x="-3.44" y="2.51"/>
+<vertex x="-3.435" y="2.44"/>
+<vertex x="-3.43" y="2.4"/>
+<vertex x="-3.42" y="2.35"/>
+<vertex x="-3.405" y="2.29"/>
+<vertex x="-3.385" y="2.23"/>
+<vertex x="-3.365" y="2.18"/>
+<vertex x="-3.345" y="2.135"/>
+<vertex x="-3.325" y="2.1"/>
+<vertex x="-3.295" y="2.05"/>
+<vertex x="-3.26" y="2"/>
+<vertex x="-3.22" y="1.95"/>
+<vertex x="-3.2" y="1.925"/>
+<vertex x="-3.2" y="-1.925"/>
+<vertex x="-3.22" y="-1.95"/>
+<vertex x="-3.26" y="-2"/>
+<vertex x="-3.295" y="-2.05"/>
+<vertex x="-3.325" y="-2.1"/>
+<vertex x="-3.345" y="-2.135"/>
+<vertex x="-3.375" y="-2.205"/>
+<vertex x="-3.39" y="-2.245"/>
+<vertex x="-3.41" y="-2.305"/>
+<vertex x="-3.425" y="-2.375"/>
+<vertex x="-3.435" y="-2.44"/>
+<vertex x="-3.44" y="-2.505"/>
+<vertex x="-3.44" y="-2.54" curve="90"/>
+<vertex x="-2.54" y="-3.44"/>
+<vertex x="-2.515" y="-3.44"/>
+<vertex x="-2.445" y="-3.435"/>
+<vertex x="-2.4" y="-3.43"/>
+<vertex x="-2.35" y="-3.42"/>
+<vertex x="-2.305" y="-3.41"/>
+<vertex x="-2.245" y="-3.39"/>
+<vertex x="-2.19" y="-3.37"/>
+<vertex x="-2.135" y="-3.345"/>
+<vertex x="-2.08" y="-3.315"/>
+<vertex x="-2.035" y="-3.285"/>
+<vertex x="-1.98" y="-3.245"/>
+<vertex x="-1.925" y="-3.2"/>
+<vertex x="-1" y="-3.2"/>
+<vertex x="-1" y="-2.07"/>
+<vertex x="-1.035" y="-2.055"/>
+<vertex x="-1.1" y="-2.02"/>
+<vertex x="-1.18" y="-1.975"/>
+<vertex x="-1.245" y="-1.935"/>
+<vertex x="-1.325" y="-1.88"/>
+<vertex x="-1.395" y="-1.83"/>
+<vertex x="-1.475" y="-1.765"/>
+<vertex x="-1.545" y="-1.705"/>
+<vertex x="-1.57" y="-1.68"/>
+<vertex x="-1.625" y="-1.625"/>
+<vertex x="-1.675" y="-1.575"/>
+<vertex x="-1.73" y="-1.515"/>
+<vertex x="-1.77" y="-1.47"/>
+<vertex x="-1.805" y="-1.425"/>
+<vertex x="-1.855" y="-1.36"/>
+<vertex x="-1.89" y="-1.31"/>
+<vertex x="-1.925" y="-1.26"/>
+<vertex x="-1.965" y="-1.195"/>
+<vertex x="-2.015" y="-1.11"/>
+<vertex x="-2.05" y="-1.045"/>
+<vertex x="-2.095" y="-0.95"/>
+<vertex x="-2.14" y="-0.845"/>
+<vertex x="-2.165" y="-0.78"/>
+<vertex x="-2.195" y="-0.69"/>
+<vertex x="-2.215" y="-0.62"/>
+<vertex x="-2.24" y="-0.525"/>
+<vertex x="-2.26" y="-0.43"/>
+<vertex x="-2.275" y="-0.34"/>
+<vertex x="-2.285" y="-0.265"/>
+<vertex x="-2.29" y="-0.215"/>
+<vertex x="-2.295" y="-0.15"/>
+<vertex x="-2.3" y="-0.065"/>
+<vertex x="-2.3" y="0" curve="-90"/>
+<vertex x="0" y="2.3" curve="-90"/>
+<vertex x="2.3" y="0"/>
+<vertex x="2.3" y="-0.03"/>
+<vertex x="2.3" y="-0.045"/>
+<vertex x="2.295" y="-0.165"/>
+<vertex x="2.285" y="-0.265"/>
+<vertex x="2.265" y="-0.405"/>
+<vertex x="2.235" y="-0.545"/>
+<vertex x="2.205" y="-0.655"/>
+<vertex x="2.17" y="-0.765"/>
+<vertex x="2.13" y="-0.87"/>
+<vertex x="2.08" y="-0.985"/>
+<vertex x="2.02" y="-1.1"/>
+<vertex x="1.97" y="-1.19"/>
+<vertex x="1.925" y="-1.26"/>
+<vertex x="1.865" y="-1.345"/>
+<vertex x="1.81" y="-1.42"/>
+<vertex x="1.76" y="-1.48"/>
+<vertex x="1.7" y="-1.55"/>
+<vertex x="1.68" y="-1.57"/>
+<vertex x="1.625" y="-1.625"/>
+<vertex x="1.57" y="-1.68"/>
+<vertex x="1.48" y="-1.76"/>
+<vertex x="1.4" y="-1.825"/>
+<vertex x="1.34" y="-1.87"/>
+<vertex x="1.275" y="-1.915"/>
+<vertex x="1.195" y="-1.965"/>
+<vertex x="1.145" y="-1.995"/>
+<vertex x="1.075" y="-2.035"/>
+</polygon>
+<polygon width="0.1" layer="29">
+<vertex x="-0.9" y="-2.01"/>
+<vertex x="-0.9" y="-3.3"/>
+<vertex x="-1.89" y="-3.3"/>
+<vertex x="-1.915" y="-3.32"/>
+<vertex x="-1.96" y="-3.355"/>
+<vertex x="-2.03" y="-3.4"/>
+<vertex x="-2.095" y="-3.435"/>
+<vertex x="-2.135" y="-3.455"/>
+<vertex x="-2.2" y="-3.48"/>
+<vertex x="-2.245" y="-3.495"/>
+<vertex x="-2.295" y="-3.51"/>
+<vertex x="-2.365" y="-3.525"/>
+<vertex x="-2.44" y="-3.535"/>
+<vertex x="-2.515" y="-3.54"/>
+<vertex x="-2.54" y="-3.54" curve="-90"/>
+<vertex x="-3.54" y="-2.54"/>
+<vertex x="-3.54" y="-2.505"/>
+<vertex x="-3.535" y="-2.44"/>
+<vertex x="-3.525" y="-2.365"/>
+<vertex x="-3.51" y="-2.295"/>
+<vertex x="-3.49" y="-2.225"/>
+<vertex x="-3.46" y="-2.145"/>
+<vertex x="-3.42" y="-2.065"/>
+<vertex x="-3.37" y="-1.98"/>
+<vertex x="-3.325" y="-1.92"/>
+<vertex x="-3.3" y="-1.89"/>
+<vertex x="-3.3" y="1.89"/>
+<vertex x="-3.35" y="1.95"/>
+<vertex x="-3.415" y="2.055"/>
+<vertex x="-3.47" y="2.17"/>
+<vertex x="-3.5" y="2.255"/>
+<vertex x="-3.525" y="2.355"/>
+<vertex x="-3.535" y="2.43"/>
+<vertex x="-3.54" y="2.54" curve="-90"/>
+<vertex x="-2.54" y="3.54"/>
+<vertex x="-2.5" y="3.54"/>
+<vertex x="-2.435" y="3.535"/>
+<vertex x="-2.335" y="3.52"/>
+<vertex x="-2.26" y="3.5"/>
+<vertex x="-2.195" y="3.48"/>
+<vertex x="-2.125" y="3.45"/>
+<vertex x="-2.055" y="3.415"/>
+<vertex x="-1.99" y="3.375"/>
+<vertex x="-1.94" y="3.34"/>
+<vertex x="-1.89" y="3.3"/>
+<vertex x="1.89" y="3.3"/>
+<vertex x="1.92" y="3.325"/>
+<vertex x="1.975" y="3.365"/>
+<vertex x="2.035" y="3.405"/>
+<vertex x="2.095" y="3.435"/>
+<vertex x="2.145" y="3.46"/>
+<vertex x="2.225" y="3.49"/>
+<vertex x="2.295" y="3.51"/>
+<vertex x="2.36" y="3.525"/>
+<vertex x="2.435" y="3.535"/>
+<vertex x="2.5" y="3.54"/>
+<vertex x="2.54" y="3.54" curve="-90"/>
+<vertex x="3.54" y="2.54"/>
+<vertex x="3.54" y="2.515"/>
+<vertex x="3.54" y="2.495"/>
+<vertex x="3.535" y="2.435"/>
+<vertex x="3.525" y="2.365"/>
+<vertex x="3.515" y="2.315"/>
+<vertex x="3.495" y="2.24"/>
+<vertex x="3.47" y="2.17"/>
+<vertex x="3.445" y="2.115"/>
+<vertex x="3.415" y="2.055"/>
+<vertex x="3.385" y="2.005"/>
+<vertex x="3.34" y="1.94"/>
+<vertex x="3.3" y="1.89"/>
+<vertex x="3.3" y="-1.89"/>
+<vertex x="3.325" y="-1.92"/>
+<vertex x="3.39" y="-2.01"/>
+<vertex x="3.435" y="-2.095"/>
+<vertex x="3.47" y="-2.17"/>
+<vertex x="3.5" y="-2.26"/>
+<vertex x="3.525" y="-2.36"/>
+<vertex x="3.535" y="-2.435"/>
+<vertex x="3.54" y="-2.5"/>
+<vertex x="3.54" y="-2.54" curve="-90"/>
+<vertex x="2.54" y="-3.54"/>
+<vertex x="2.51" y="-3.54"/>
+<vertex x="2.495" y="-3.54"/>
+<vertex x="2.43" y="-3.535"/>
+<vertex x="2.37" y="-3.525"/>
+<vertex x="2.315" y="-3.515"/>
+<vertex x="2.26" y="-3.5"/>
+<vertex x="2.21" y="-3.485"/>
+<vertex x="2.125" y="-3.45"/>
+<vertex x="2.065" y="-3.42"/>
+<vertex x="1.995" y="-3.38"/>
+<vertex x="1.94" y="-3.34"/>
+<vertex x="1.89" y="-3.3"/>
+<vertex x="0.9" y="-3.3"/>
+<vertex x="0.9" y="-2.01"/>
+<vertex x="0.97" y="-1.975"/>
+<vertex x="1.055" y="-1.93"/>
+<vertex x="1.15" y="-1.875"/>
+<vertex x="1.245" y="-1.815"/>
+<vertex x="1.325" y="-1.755"/>
+<vertex x="1.415" y="-1.685"/>
+<vertex x="1.52" y="-1.59"/>
+<vertex x="1.615" y="-1.495"/>
+<vertex x="1.685" y="-1.415"/>
+<vertex x="1.76" y="-1.32"/>
+<vertex x="1.82" y="-1.235"/>
+<vertex x="1.88" y="-1.145"/>
+<vertex x="1.92" y="-1.075"/>
+<vertex x="1.96" y="-1"/>
+<vertex x="2.005" y="-0.905"/>
+<vertex x="2.05" y="-0.8"/>
+<vertex x="2.08" y="-0.72"/>
+<vertex x="2.115" y="-0.61"/>
+<vertex x="2.14" y="-0.515"/>
+<vertex x="2.16" y="-0.42"/>
+<vertex x="2.175" y="-0.33"/>
+<vertex x="2.185" y="-0.255"/>
+<vertex x="2.195" y="-0.155"/>
+<vertex x="2.2" y="-0.05"/>
+<vertex x="2.2" y="0" curve="90"/>
+<vertex x="0" y="2.2" curve="90"/>
+<vertex x="-2.2" y="0"/>
+<vertex x="-2.2" y="-0.04"/>
+<vertex x="-2.2" y="-0.07"/>
+<vertex x="-2.195" y="-0.14"/>
+<vertex x="-2.19" y="-0.215"/>
+<vertex x="-2.18" y="-0.305"/>
+<vertex x="-2.16" y="-0.415"/>
+<vertex x="-2.145" y="-0.49"/>
+<vertex x="-2.12" y="-0.59"/>
+<vertex x="-2.09" y="-0.69"/>
+<vertex x="-2.055" y="-0.785"/>
+<vertex x="-2.02" y="-0.875"/>
+<vertex x="-1.98" y="-0.96"/>
+<vertex x="-1.94" y="-1.04"/>
+<vertex x="-1.89" y="-1.125"/>
+<vertex x="-1.85" y="-1.19"/>
+<vertex x="-1.8" y="-1.265"/>
+<vertex x="-1.73" y="-1.36"/>
+<vertex x="-1.655" y="-1.45"/>
+<vertex x="-1.59" y="-1.52"/>
+<vertex x="-1.505" y="-1.605"/>
+<vertex x="-1.415" y="-1.685"/>
+<vertex x="-1.32" y="-1.76"/>
+<vertex x="-1.23" y="-1.825"/>
+<vertex x="-1.135" y="-1.885"/>
+<vertex x="-1.04" y="-1.94"/>
+<vertex x="-0.94" y="-1.99"/>
+</polygon>
+<polygon width="0.1" layer="31">
+<vertex x="1" y="-2.075"/>
+<vertex x="1" y="-3.2"/>
+<vertex x="1.925" y="-3.2"/>
+<vertex x="1.955" y="-3.225"/>
+<vertex x="2" y="-3.26"/>
+<vertex x="2.05" y="-3.295"/>
+<vertex x="2.1" y="-3.325"/>
+<vertex x="2.135" y="-3.345"/>
+<vertex x="2.205" y="-3.375"/>
+<vertex x="2.26" y="-3.395"/>
+<vertex x="2.31" y="-3.41"/>
+<vertex x="2.375" y="-3.425"/>
+<vertex x="2.445" y="-3.435"/>
+<vertex x="2.505" y="-3.44"/>
+<vertex x="2.54" y="-3.44" curve="90"/>
+<vertex x="3.44" y="-2.54"/>
+<vertex x="3.44" y="-2.52"/>
+<vertex x="3.44" y="-2.5"/>
+<vertex x="3.435" y="-2.45"/>
+<vertex x="3.43" y="-2.405"/>
+<vertex x="3.42" y="-2.35"/>
+<vertex x="3.405" y="-2.29"/>
+<vertex x="3.385" y="-2.23"/>
+<vertex x="3.365" y="-2.18"/>
+<vertex x="3.34" y="-2.13"/>
+<vertex x="3.32" y="-2.09"/>
+<vertex x="3.285" y="-2.035"/>
+<vertex x="3.24" y="-1.975"/>
+<vertex x="3.2" y="-1.925"/>
+<vertex x="3.2" y="1.925"/>
+<vertex x="3.22" y="1.95"/>
+<vertex x="3.25" y="1.985"/>
+<vertex x="3.285" y="2.035"/>
+<vertex x="3.32" y="2.09"/>
+<vertex x="3.35" y="2.15"/>
+<vertex x="3.38" y="2.215"/>
+<vertex x="3.405" y="2.29"/>
+<vertex x="3.42" y="2.35"/>
+<vertex x="3.43" y="2.405"/>
+<vertex x="3.435" y="2.445"/>
+<vertex x="3.44" y="2.51"/>
+<vertex x="3.44" y="2.54" curve="90"/>
+<vertex x="2.54" y="3.44"/>
+<vertex x="2.51" y="3.44"/>
+<vertex x="2.445" y="3.435"/>
+<vertex x="2.4" y="3.43"/>
+<vertex x="2.325" y="3.415"/>
+<vertex x="2.26" y="3.395"/>
+<vertex x="2.19" y="3.37"/>
+<vertex x="2.125" y="3.34"/>
+<vertex x="2.065" y="3.305"/>
+<vertex x="2.015" y="3.27"/>
+<vertex x="1.975" y="3.24"/>
+<vertex x="1.945" y="3.215"/>
+<vertex x="1.925" y="3.2"/>
+<vertex x="-1.925" y="3.2"/>
+<vertex x="-1.955" y="3.225"/>
+<vertex x="-2" y="3.26"/>
+<vertex x="-2.035" y="3.285"/>
+<vertex x="-2.1" y="3.325"/>
+<vertex x="-2.135" y="3.345"/>
+<vertex x="-2.19" y="3.37"/>
+<vertex x="-2.245" y="3.39"/>
+<vertex x="-2.29" y="3.405"/>
+<vertex x="-2.35" y="3.42"/>
+<vertex x="-2.4" y="3.43"/>
+<vertex x="-2.445" y="3.435"/>
+<vertex x="-2.5" y="3.44"/>
+<vertex x="-2.54" y="3.44" curve="90"/>
+<vertex x="-3.44" y="2.54"/>
+<vertex x="-3.44" y="2.51"/>
+<vertex x="-3.435" y="2.44"/>
+<vertex x="-3.43" y="2.4"/>
+<vertex x="-3.42" y="2.35"/>
+<vertex x="-3.405" y="2.29"/>
+<vertex x="-3.385" y="2.23"/>
+<vertex x="-3.365" y="2.18"/>
+<vertex x="-3.345" y="2.135"/>
+<vertex x="-3.325" y="2.1"/>
+<vertex x="-3.295" y="2.05"/>
+<vertex x="-3.26" y="2"/>
+<vertex x="-3.22" y="1.95"/>
+<vertex x="-3.2" y="1.925"/>
+<vertex x="-3.2" y="-1.925"/>
+<vertex x="-3.22" y="-1.95"/>
+<vertex x="-3.26" y="-2"/>
+<vertex x="-3.295" y="-2.05"/>
+<vertex x="-3.325" y="-2.1"/>
+<vertex x="-3.345" y="-2.135"/>
+<vertex x="-3.375" y="-2.205"/>
+<vertex x="-3.39" y="-2.245"/>
+<vertex x="-3.41" y="-2.305"/>
+<vertex x="-3.425" y="-2.375"/>
+<vertex x="-3.435" y="-2.44"/>
+<vertex x="-3.44" y="-2.505"/>
+<vertex x="-3.44" y="-2.54" curve="90"/>
+<vertex x="-2.54" y="-3.44"/>
+<vertex x="-2.515" y="-3.44"/>
+<vertex x="-2.445" y="-3.435"/>
+<vertex x="-2.4" y="-3.43"/>
+<vertex x="-2.35" y="-3.42"/>
+<vertex x="-2.305" y="-3.41"/>
+<vertex x="-2.245" y="-3.39"/>
+<vertex x="-2.19" y="-3.37"/>
+<vertex x="-2.135" y="-3.345"/>
+<vertex x="-2.08" y="-3.315"/>
+<vertex x="-2.035" y="-3.285"/>
+<vertex x="-1.98" y="-3.245"/>
+<vertex x="-1.925" y="-3.2"/>
+<vertex x="-1" y="-3.2"/>
+<vertex x="-1" y="-2.07"/>
+<vertex x="-1.035" y="-2.055"/>
+<vertex x="-1.1" y="-2.02"/>
+<vertex x="-1.18" y="-1.975"/>
+<vertex x="-1.245" y="-1.935"/>
+<vertex x="-1.325" y="-1.88"/>
+<vertex x="-1.395" y="-1.83"/>
+<vertex x="-1.475" y="-1.765"/>
+<vertex x="-1.545" y="-1.705"/>
+<vertex x="-1.57" y="-1.68"/>
+<vertex x="-1.625" y="-1.625"/>
+<vertex x="-1.675" y="-1.575"/>
+<vertex x="-1.73" y="-1.515"/>
+<vertex x="-1.77" y="-1.47"/>
+<vertex x="-1.805" y="-1.425"/>
+<vertex x="-1.855" y="-1.36"/>
+<vertex x="-1.89" y="-1.31"/>
+<vertex x="-1.925" y="-1.26"/>
+<vertex x="-1.965" y="-1.195"/>
+<vertex x="-2.015" y="-1.11"/>
+<vertex x="-2.05" y="-1.045"/>
+<vertex x="-2.095" y="-0.95"/>
+<vertex x="-2.14" y="-0.845"/>
+<vertex x="-2.165" y="-0.78"/>
+<vertex x="-2.195" y="-0.69"/>
+<vertex x="-2.215" y="-0.62"/>
+<vertex x="-2.24" y="-0.525"/>
+<vertex x="-2.26" y="-0.43"/>
+<vertex x="-2.275" y="-0.34"/>
+<vertex x="-2.285" y="-0.265"/>
+<vertex x="-2.29" y="-0.215"/>
+<vertex x="-2.295" y="-0.15"/>
+<vertex x="-2.3" y="-0.065"/>
+<vertex x="-2.3" y="0" curve="-90"/>
+<vertex x="0" y="2.3" curve="-90"/>
+<vertex x="2.3" y="0"/>
+<vertex x="2.3" y="-0.03"/>
+<vertex x="2.3" y="-0.045"/>
+<vertex x="2.295" y="-0.165"/>
+<vertex x="2.285" y="-0.265"/>
+<vertex x="2.265" y="-0.405"/>
+<vertex x="2.235" y="-0.545"/>
+<vertex x="2.205" y="-0.655"/>
+<vertex x="2.17" y="-0.765"/>
+<vertex x="2.13" y="-0.87"/>
+<vertex x="2.08" y="-0.985"/>
+<vertex x="2.02" y="-1.1"/>
+<vertex x="1.97" y="-1.19"/>
+<vertex x="1.925" y="-1.26"/>
+<vertex x="1.865" y="-1.345"/>
+<vertex x="1.81" y="-1.42"/>
+<vertex x="1.76" y="-1.48"/>
+<vertex x="1.7" y="-1.55"/>
+<vertex x="1.68" y="-1.57"/>
+<vertex x="1.625" y="-1.625"/>
+<vertex x="1.57" y="-1.68"/>
+<vertex x="1.48" y="-1.76"/>
+<vertex x="1.4" y="-1.825"/>
+<vertex x="1.34" y="-1.87"/>
+<vertex x="1.275" y="-1.915"/>
+<vertex x="1.195" y="-1.965"/>
+<vertex x="1.145" y="-1.995"/>
+<vertex x="1.075" y="-2.035"/>
+</polygon>
+<pad name="2" x="-2.54" y="2.54" drill="1.36" diameter="1.8"/>
+<pad name="3" x="2.54" y="2.54" drill="1.36" diameter="1.8"/>
+<pad name="4" x="2.54" y="-2.54" drill="1.36" diameter="1.8"/>
+<pad name="5" x="-2.54" y="-2.54" drill="1.36" diameter="1.8"/>
+<wire x1="-3" y1="3" x2="3" y2="3" width="0.1" layer="51"/>
+<wire x1="3" y1="3" x2="3" y2="-3" width="0.1" layer="51"/>
+<wire x1="3" y1="-3" x2="0.2" y2="-3" width="0.1" layer="51"/>
+<wire x1="-0.2" y1="-3" x2="-3" y2="-3" width="0.1" layer="51"/>
+<wire x1="-3" y1="-3" x2="-3" y2="3" width="0.1" layer="51"/>
+<wire x1="-0.2" y1="-3" x2="-0.2" y2="-3.3" width="0.1" layer="51"/>
+<wire x1="-0.2" y1="-3.3" x2="0.2" y2="-3.3" width="0.1" layer="51"/>
+<wire x1="0.2" y1="-3.3" x2="0.2" y2="-3" width="0.1" layer="51"/>
+<text x="0" y="4" size="1.27" layer="25" align="bottom-center">&gt;NAME</text>
+<text x="-3.5" y="-5.5" size="1.27" layer="25">&gt;VALUE</text>
+</package>
+<package name="60114102122403" urn="urn:adsk.eagle:footprint:18010848/4">
+<description>&lt;B&gt;WR-SMP Straight</description>
+<smd name="1" x="0" y="-2.9" dx="0.48" dy="1.4" layer="1"/>
+<smd name="3" x="0" y="2.45" dx="0.3" dy="2" layer="1" rot="R90" stop="no" cream="no"/>
+<smd name="2" x="-2.45" y="0.1" dx="0.3" dy="2" layer="1" rot="R180" stop="no" cream="no"/>
+<smd name="4" x="2.45" y="0.2" dx="0.3" dy="2" layer="1" rot="R180" stop="no" cream="no"/>
+<polygon width="0.1" layer="39">
+<vertex x="-2.8" y="2.8"/>
+<vertex x="2.8" y="2.8"/>
+<vertex x="2.8" y="-3.8"/>
+<vertex x="-2.8" y="-3.8"/>
+</polygon>
+<polygon width="0.1" layer="31">
+<vertex x="-1" y="-2.07"/>
+<vertex x="-1" y="-2.6"/>
+<vertex x="-2.6" y="-2.6"/>
+<vertex x="-2.6" y="2.6"/>
+<vertex x="2.6" y="2.6"/>
+<vertex x="2.6" y="-2.6"/>
+<vertex x="1" y="-2.6"/>
+<vertex x="1" y="-2.07"/>
+<vertex x="1.035" y="-2.055"/>
+<vertex x="1.1" y="-2.02"/>
+<vertex x="1.17" y="-1.98"/>
+<vertex x="1.235" y="-1.94"/>
+<vertex x="1.31" y="-1.89"/>
+<vertex x="1.375" y="-1.845"/>
+<vertex x="1.45" y="-1.785"/>
+<vertex x="1.515" y="-1.73"/>
+<vertex x="1.57" y="-1.68"/>
+<vertex x="1.6" y="-1.65"/>
+<vertex x="1.655" y="-1.595"/>
+<vertex x="1.695" y="-1.555"/>
+<vertex x="1.76" y="-1.48"/>
+<vertex x="1.79" y="-1.445"/>
+<vertex x="1.825" y="-1.4"/>
+<vertex x="1.88" y="-1.325"/>
+<vertex x="1.925" y="-1.26"/>
+<vertex x="1.98" y="-1.17"/>
+<vertex x="2.025" y="-1.09"/>
+<vertex x="2.065" y="-1.015"/>
+<vertex x="2.1" y="-0.94"/>
+<vertex x="2.13" y="-0.87"/>
+<vertex x="2.165" y="-0.78"/>
+<vertex x="2.195" y="-0.69"/>
+<vertex x="2.22" y="-0.6"/>
+<vertex x="2.24" y="-0.525"/>
+<vertex x="2.255" y="-0.455"/>
+<vertex x="2.27" y="-0.37"/>
+<vertex x="2.28" y="-0.305"/>
+<vertex x="2.29" y="-0.21"/>
+<vertex x="2.295" y="-0.145"/>
+<vertex x="2.3" y="-0.06"/>
+<vertex x="2.3" y="0" curve="90"/>
+<vertex x="0" y="2.3" curve="90"/>
+<vertex x="-2.3" y="0"/>
+<vertex x="-2.3" y="-0.05"/>
+<vertex x="-2.3" y="-0.07"/>
+<vertex x="-2.295" y="-0.155"/>
+<vertex x="-2.29" y="-0.21"/>
+<vertex x="-2.285" y="-0.265"/>
+<vertex x="-2.28" y="-0.305"/>
+<vertex x="-2.27" y="-0.37"/>
+<vertex x="-2.26" y="-0.43"/>
+<vertex x="-2.24" y="-0.525"/>
+<vertex x="-2.22" y="-0.605"/>
+<vertex x="-2.2" y="-0.675"/>
+<vertex x="-2.18" y="-0.735"/>
+<vertex x="-2.165" y="-0.78"/>
+<vertex x="-2.14" y="-0.845"/>
+<vertex x="-2.11" y="-0.92"/>
+<vertex x="-2.075" y="-0.995"/>
+<vertex x="-2.045" y="-1.055"/>
+<vertex x="-2.015" y="-1.11"/>
+<vertex x="-1.99" y="-1.155"/>
+<vertex x="-1.95" y="-1.22"/>
+<vertex x="-1.915" y="-1.275"/>
+<vertex x="-1.87" y="-1.34"/>
+<vertex x="-1.825" y="-1.4"/>
+<vertex x="-1.785" y="-1.45"/>
+<vertex x="-1.76" y="-1.48"/>
+<vertex x="-1.72" y="-1.525"/>
+<vertex x="-1.675" y="-1.575"/>
+<vertex x="-1.62" y="-1.63"/>
+<vertex x="-1.585" y="-1.665"/>
+<vertex x="-1.53" y="-1.715"/>
+<vertex x="-1.49" y="-1.75"/>
+<vertex x="-1.43" y="-1.8"/>
+<vertex x="-1.385" y="-1.835"/>
+<vertex x="-1.31" y="-1.89"/>
+<vertex x="-1.235" y="-1.94"/>
+<vertex x="-1.145" y="-1.995"/>
+<vertex x="-1.08" y="-2.03"/>
+<vertex x="-1.025" y="-2.06"/>
+</polygon>
+<polygon width="0.1" layer="29">
+<vertex x="-0.9" y="-2.01"/>
+<vertex x="-0.9" y="-2.7"/>
+<vertex x="-2.7" y="-2.7"/>
+<vertex x="-2.7" y="2.7"/>
+<vertex x="2.7" y="2.7"/>
+<vertex x="2.7" y="-2.7"/>
+<vertex x="0.9" y="-2.7"/>
+<vertex x="0.9" y="-2.01"/>
+<vertex x="0.97" y="-1.975"/>
+<vertex x="1.03" y="-1.945"/>
+<vertex x="1.095" y="-1.91"/>
+<vertex x="1.15" y="-1.875"/>
+<vertex x="1.215" y="-1.835"/>
+<vertex x="1.3" y="-1.775"/>
+<vertex x="1.365" y="-1.725"/>
+<vertex x="1.42" y="-1.68"/>
+<vertex x="1.465" y="-1.64"/>
+<vertex x="1.525" y="-1.585"/>
+<vertex x="1.585" y="-1.525"/>
+<vertex x="1.65" y="-1.455"/>
+<vertex x="1.715" y="-1.38"/>
+<vertex x="1.765" y="-1.315"/>
+<vertex x="1.82" y="-1.235"/>
+<vertex x="1.855" y="-1.185"/>
+<vertex x="1.895" y="-1.12"/>
+<vertex x="1.94" y="-1.04"/>
+<vertex x="1.985" y="-0.95"/>
+<vertex x="2.025" y="-0.86"/>
+<vertex x="2.06" y="-0.775"/>
+<vertex x="2.09" y="-0.69"/>
+<vertex x="2.125" y="-0.575"/>
+<vertex x="2.145" y="-0.49"/>
+<vertex x="2.165" y="-0.395"/>
+<vertex x="2.175" y="-0.335"/>
+<vertex x="2.185" y="-0.255"/>
+<vertex x="2.195" y="-0.155"/>
+<vertex x="2.2" y="-0.055"/>
+<vertex x="2.2" y="0" curve="90"/>
+<vertex x="0" y="2.2" curve="90"/>
+<vertex x="-2.2" y="0"/>
+<vertex x="-2.2" y="-0.055"/>
+<vertex x="-2.2" y="-0.07"/>
+<vertex x="-2.195" y="-0.145"/>
+<vertex x="-2.19" y="-0.21"/>
+<vertex x="-2.18" y="-0.295"/>
+<vertex x="-2.175" y="-0.335"/>
+<vertex x="-2.16" y="-0.42"/>
+<vertex x="-2.15" y="-0.465"/>
+<vertex x="-2.14" y="-0.515"/>
+<vertex x="-2.12" y="-0.59"/>
+<vertex x="-2.1" y="-0.66"/>
+<vertex x="-2.07" y="-0.75"/>
+<vertex x="-2.04" y="-0.825"/>
+<vertex x="-2" y="-0.92"/>
+<vertex x="-1.955" y="-1.01"/>
+<vertex x="-1.915" y="-1.085"/>
+<vertex x="-1.86" y="-1.175"/>
+<vertex x="-1.79" y="-1.28"/>
+<vertex x="-1.74" y="-1.345"/>
+<vertex x="-1.68" y="-1.42"/>
+<vertex x="-1.615" y="-1.495"/>
+<vertex x="-1.54" y="-1.57"/>
+<vertex x="-1.46" y="-1.645"/>
+<vertex x="-1.36" y="-1.73"/>
+<vertex x="-1.28" y="-1.79"/>
+<vertex x="-1.2" y="-1.845"/>
+<vertex x="-1.11" y="-1.9"/>
+<vertex x="-1" y="-1.96"/>
+</polygon>
+<polygon width="0.1" layer="1">
+<vertex x="-1" y="-2.07"/>
+<vertex x="-1" y="-2.6"/>
+<vertex x="-2.6" y="-2.6"/>
+<vertex x="-2.6" y="2.6"/>
+<vertex x="2.6" y="2.6"/>
+<vertex x="2.6" y="-2.6"/>
+<vertex x="1" y="-2.6"/>
+<vertex x="1" y="-2.07"/>
+<vertex x="1.035" y="-2.055"/>
+<vertex x="1.1" y="-2.02"/>
+<vertex x="1.17" y="-1.98"/>
+<vertex x="1.235" y="-1.94"/>
+<vertex x="1.31" y="-1.89"/>
+<vertex x="1.375" y="-1.845"/>
+<vertex x="1.45" y="-1.785"/>
+<vertex x="1.515" y="-1.73"/>
+<vertex x="1.57" y="-1.68"/>
+<vertex x="1.6" y="-1.65"/>
+<vertex x="1.655" y="-1.595"/>
+<vertex x="1.695" y="-1.555"/>
+<vertex x="1.76" y="-1.48"/>
+<vertex x="1.79" y="-1.445"/>
+<vertex x="1.825" y="-1.4"/>
+<vertex x="1.88" y="-1.325"/>
+<vertex x="1.925" y="-1.26"/>
+<vertex x="1.98" y="-1.17"/>
+<vertex x="2.025" y="-1.09"/>
+<vertex x="2.065" y="-1.015"/>
+<vertex x="2.1" y="-0.94"/>
+<vertex x="2.13" y="-0.87"/>
+<vertex x="2.165" y="-0.78"/>
+<vertex x="2.195" y="-0.69"/>
+<vertex x="2.22" y="-0.6"/>
+<vertex x="2.24" y="-0.525"/>
+<vertex x="2.255" y="-0.455"/>
+<vertex x="2.27" y="-0.37"/>
+<vertex x="2.28" y="-0.305"/>
+<vertex x="2.29" y="-0.21"/>
+<vertex x="2.295" y="-0.145"/>
+<vertex x="2.3" y="-0.06"/>
+<vertex x="2.3" y="0" curve="90"/>
+<vertex x="0" y="2.3" curve="90"/>
+<vertex x="-2.3" y="0"/>
+<vertex x="-2.3" y="-0.05"/>
+<vertex x="-2.3" y="-0.07"/>
+<vertex x="-2.295" y="-0.155"/>
+<vertex x="-2.29" y="-0.21"/>
+<vertex x="-2.285" y="-0.265"/>
+<vertex x="-2.28" y="-0.305"/>
+<vertex x="-2.27" y="-0.37"/>
+<vertex x="-2.26" y="-0.43"/>
+<vertex x="-2.24" y="-0.525"/>
+<vertex x="-2.22" y="-0.605"/>
+<vertex x="-2.2" y="-0.675"/>
+<vertex x="-2.18" y="-0.735"/>
+<vertex x="-2.165" y="-0.78"/>
+<vertex x="-2.14" y="-0.845"/>
+<vertex x="-2.11" y="-0.92"/>
+<vertex x="-2.075" y="-0.995"/>
+<vertex x="-2.045" y="-1.055"/>
+<vertex x="-2.015" y="-1.11"/>
+<vertex x="-1.99" y="-1.155"/>
+<vertex x="-1.95" y="-1.22"/>
+<vertex x="-1.915" y="-1.275"/>
+<vertex x="-1.87" y="-1.34"/>
+<vertex x="-1.825" y="-1.4"/>
+<vertex x="-1.785" y="-1.45"/>
+<vertex x="-1.76" y="-1.48"/>
+<vertex x="-1.72" y="-1.525"/>
+<vertex x="-1.675" y="-1.575"/>
+<vertex x="-1.62" y="-1.63"/>
+<vertex x="-1.585" y="-1.665"/>
+<vertex x="-1.53" y="-1.715"/>
+<vertex x="-1.49" y="-1.75"/>
+<vertex x="-1.43" y="-1.8"/>
+<vertex x="-1.385" y="-1.835"/>
+<vertex x="-1.31" y="-1.89"/>
+<vertex x="-1.235" y="-1.94"/>
+<vertex x="-1.145" y="-1.995"/>
+<vertex x="-1.08" y="-2.03"/>
+<vertex x="-1.025" y="-2.06"/>
+</polygon>
+<wire x1="-2.5" y1="2.5" x2="2.5" y2="2.5" width="0.1" layer="51"/>
+<wire x1="2.5" y1="2.5" x2="2.5" y2="-2.5" width="0.1" layer="51"/>
+<wire x1="2.5" y1="-2.5" x2="0.2" y2="-2.5" width="0.1" layer="51"/>
+<wire x1="0.2" y1="-2.5" x2="0.2" y2="-3.3" width="0.1" layer="51"/>
+<wire x1="0.2" y1="-3.3" x2="-0.2" y2="-3.3" width="0.1" layer="51"/>
+<wire x1="-0.2" y1="-3.3" x2="-0.2" y2="-2.5" width="0.1" layer="51"/>
+<wire x1="-0.2" y1="-2.5" x2="-2.5" y2="-2.5" width="0.1" layer="51"/>
+<wire x1="-2.5" y1="-2.5" x2="-2.5" y2="2.5" width="0.1" layer="51"/>
+<text x="0" y="3.3" size="1.27" layer="25" align="bottom-center">&gt;NAME</text>
+<text x="-3.5" y="-5.5" size="1.27" layer="27">&gt;VALUE</text>
+</package>
+<package name="60114202122305" urn="urn:adsk.eagle:footprint:18010845/3">
+<description>&lt;B&gt;WR-SMP SMT Edge Card Extended Solder Leg for PCB 1.6 mm Max.</description>
+<smd name="1" x="0" y="1.15" dx="0.48" dy="2.5" layer="1"/>
+<smd name="2" x="-1.95" y="1.25" dx="1" dy="2" layer="1" stop="no" cream="no"/>
+<smd name="3" x="1.95" y="1.25" dx="1" dy="2" layer="1" stop="no" cream="no"/>
+<wire x1="-1.4" y1="2.3" x2="-2.5" y2="2.3" width="0.1" layer="51"/>
+<wire x1="-2.5" y1="2.3" x2="-2.5" y2="-4.4" width="0.1" layer="51"/>
+<wire x1="-2.5" y1="-4.4" x2="2.5" y2="-4.4" width="0.1" layer="51"/>
+<wire x1="2.5" y1="-4.4" x2="2.5" y2="2.3" width="0.1" layer="51"/>
+<wire x1="2.5" y1="2.3" x2="1.4" y2="2.3" width="0.1" layer="51"/>
+<wire x1="1.4" y1="2.3" x2="1.4" y2="0" width="0.1" layer="51"/>
+<wire x1="1.4" y1="0" x2="0.19" y2="0" width="0.1" layer="51"/>
+<wire x1="0.19" y1="0" x2="0.19" y2="2.3" width="0.1" layer="51"/>
+<wire x1="0.19" y1="2.3" x2="-0.19" y2="2.3" width="0.1" layer="51"/>
+<wire x1="-0.19" y1="2.3" x2="-0.19" y2="0" width="0.1" layer="51"/>
+<wire x1="-0.19" y1="0" x2="-1.4" y2="0" width="0.1" layer="51"/>
+<wire x1="-1.4" y1="0" x2="-1.4" y2="2.3" width="0.1" layer="51"/>
+<wire x1="2.05" y1="-4.6" x2="-2.05" y2="-4.6" width="0.1" layer="46"/>
+<wire x1="-2.05" y1="-4.6" x2="-2.05" y2="-0.25" width="0.1" layer="46"/>
+<wire x1="-2.05" y1="-0.25" x2="-1.8" y2="0" width="0.1" layer="46" curve="-270"/>
+<wire x1="-1.8" y1="0" x2="1.8" y2="0" width="0.1" layer="46"/>
+<wire x1="1.8" y1="0" x2="2.05" y2="-0.25" width="0.1" layer="46" curve="-270"/>
+<wire x1="2.05" y1="-0.25" x2="2.05" y2="-4.6" width="0.1" layer="46"/>
+<polygon width="0.1" layer="1">
+<vertex x="-2.05" y="-4.6"/>
+<vertex x="-2.7" y="-4.6"/>
+<vertex x="-2.7" y="2.3"/>
+<vertex x="-1.2" y="2.3"/>
+<vertex x="-1.2" y="0"/>
+<vertex x="-1.8" y="0" curve="90"/>
+<vertex x="-2.05" y="0.25" curve="90"/>
+<vertex x="-2.3" y="0" curve="90"/>
+<vertex x="-2.05" y="-0.25"/>
+<vertex x="-2.05" y="-4.595"/>
+</polygon>
+<polygon width="0.1" layer="1">
+<vertex x="2.05" y="-4.6"/>
+<vertex x="2.7" y="-4.6"/>
+<vertex x="2.7" y="2.3"/>
+<vertex x="1.2" y="2.3"/>
+<vertex x="1.2" y="0"/>
+<vertex x="1.8" y="0" curve="-90"/>
+<vertex x="2.05" y="0.25" curve="-90"/>
+<vertex x="2.3" y="0" curve="-90"/>
+<vertex x="2.05" y="-0.25"/>
+<vertex x="2.05" y="-4.595"/>
+</polygon>
+<polygon width="0.1" layer="29">
+<vertex x="-1.1" y="0"/>
+<vertex x="-1.1" y="2.4"/>
+<vertex x="-2.8" y="2.4"/>
+<vertex x="-2.8" y="-4.7"/>
+<vertex x="-2.05" y="-4.7"/>
+<vertex x="-2.05" y="-0.25" curve="-90"/>
+<vertex x="-2.3" y="0" curve="-90"/>
+<vertex x="-2.05" y="0.25" curve="-90"/>
+<vertex x="-1.8" y="0"/>
+</polygon>
+<polygon width="0.1" layer="29">
+<vertex x="1.1" y="0"/>
+<vertex x="1.1" y="2.4"/>
+<vertex x="2.8" y="2.4"/>
+<vertex x="2.8" y="-4.7"/>
+<vertex x="2.05" y="-4.7"/>
+<vertex x="2.05" y="-0.25" curve="90"/>
+<vertex x="2.3" y="0" curve="90"/>
+<vertex x="2.05" y="0.25" curve="90"/>
+<vertex x="1.8" y="0"/>
+</polygon>
+<polygon width="0.1" layer="31">
+<vertex x="-2.05" y="-4.6"/>
+<vertex x="-2.7" y="-4.6"/>
+<vertex x="-2.7" y="2.3"/>
+<vertex x="-1.2" y="2.3"/>
+<vertex x="-1.2" y="0"/>
+<vertex x="-1.8" y="0" curve="90"/>
+<vertex x="-2.05" y="0.25" curve="90"/>
+<vertex x="-2.3" y="0" curve="90"/>
+<vertex x="-2.05" y="-0.25"/>
+<vertex x="-2.05" y="-4.595"/>
+</polygon>
+<polygon width="0.1" layer="31">
+<vertex x="2.05" y="-4.6"/>
+<vertex x="2.7" y="-4.6"/>
+<vertex x="2.7" y="2.3"/>
+<vertex x="1.2" y="2.3"/>
+<vertex x="1.2" y="0"/>
+<vertex x="1.8" y="0" curve="-90"/>
+<vertex x="2.05" y="0.25" curve="-90"/>
+<vertex x="2.3" y="0" curve="-90"/>
+<vertex x="2.05" y="-0.25"/>
+<vertex x="2.05" y="-4.595"/>
+</polygon>
+<polygon width="0.1" layer="39">
+<vertex x="-2.9" y="2.6"/>
+<vertex x="2.9" y="2.6"/>
+<vertex x="2.9" y="-4.8"/>
+<vertex x="-2.9" y="-4.8"/>
+</polygon>
+<text x="-1.6" y="-2" size="0.3048" layer="48">PCB Cutout Area</text>
+<text x="-1.6" y="-2" size="0.3048" layer="46">PCB Cutout Area</text>
+<text x="-1.8" y="-2.7" size="0.2" layer="48">PCB Thickness: 1.6 mm MAX</text>
+<text x="0" y="3" size="1.27" layer="25" align="bottom-center">&gt;NAME</text>
+<text x="-3.5" y="-6.4" size="1.27" layer="27">&gt;VALUE</text>
+</package>
+<package name="60114002122502" urn="urn:adsk.eagle:footprint:18010850/2">
+<description>&lt;b&gt;WR-SMP Straight</description>
+<pad name="1" x="0" y="0" drill="1"/>
+<pad name="2" x="-2.6" y="2.6" drill="1.3"/>
+<pad name="3" x="2.6" y="2.6" drill="1.3"/>
+<pad name="4" x="2.6" y="-2.6" drill="1.3"/>
+<pad name="5" x="-2.6" y="-2.6" drill="1.3"/>
+<wire x1="-3" y1="3" x2="3" y2="3" width="0.1" layer="51"/>
+<wire x1="3" y1="3" x2="3" y2="-3" width="0.1" layer="51"/>
+<wire x1="3" y1="-3" x2="-3" y2="-3" width="0.1" layer="51"/>
+<wire x1="-3" y1="-3" x2="-3" y2="3" width="0.1" layer="51"/>
+<wire x1="-1.3" y1="3.1" x2="1.3" y2="3.1" width="0.2" layer="21"/>
+<wire x1="3.1" y1="1.3" x2="3.1" y2="-1.3" width="0.2" layer="21"/>
+<wire x1="-3.1" y1="-1.3" x2="-3.1" y2="1.3" width="0.2" layer="21"/>
+<wire x1="1.3" y1="-3.1" x2="-1.3" y2="-3.1" width="0.2" layer="21"/>
+<polygon width="0.1" layer="39">
+<vertex x="-3.8" y="3.8"/>
+<vertex x="3.8" y="3.8"/>
+<vertex x="3.7" y="-3.8"/>
+<vertex x="-3.8" y="-3.8"/>
+</polygon>
+<text x="0" y="4.5" size="1.27" layer="25" align="bottom-center">&gt;NAME</text>
+<text x="-3.5" y="-5.5" size="1.27" layer="27">&gt;VALUE</text>
+</package>
+<package name="60123002122501" urn="urn:adsk.eagle:footprint:18010851/3">
+<description>&lt;B&gt;WR-SMP Right Angle</description>
+<pad name="1" x="0" y="0" drill="1"/>
+<pad name="2" x="-2.6" y="2.6" drill="1.3"/>
+<pad name="3" x="2.6" y="2.6" drill="1.3"/>
+<pad name="4" x="2.6" y="-2.6" drill="1.3"/>
+<pad name="5" x="-2.6" y="-2.6" drill="1.3"/>
+<wire x1="-3" y1="3" x2="3" y2="3" width="0.1" layer="51"/>
+<wire x1="3" y1="3" x2="3" y2="-3" width="0.1" layer="51"/>
+<wire x1="3" y1="-3" x2="2.25" y2="-3" width="0.1" layer="51"/>
+<wire x1="2.25" y1="-3" x2="-2.25" y2="-3" width="0.1" layer="51"/>
+<wire x1="-2.25" y1="-3" x2="-3" y2="-3" width="0.1" layer="51"/>
+<wire x1="-3" y1="-3" x2="-3" y2="3" width="0.1" layer="51"/>
+<wire x1="-1.3" y1="3.1" x2="1.3" y2="3.1" width="0.2" layer="21"/>
+<wire x1="3.1" y1="1.3" x2="3.1" y2="-1.3" width="0.2" layer="21"/>
+<wire x1="-3.1" y1="-1.3" x2="-3.1" y2="1.3" width="0.2" layer="21"/>
+<wire x1="1.3" y1="-3.1" x2="-1.3" y2="-3.1" width="0.2" layer="21"/>
+<wire x1="-2.25" y1="-3" x2="-2.25" y2="-5.4" width="0.1" layer="51" style="shortdash"/>
+<wire x1="-2.25" y1="-5.4" x2="2.25" y2="-5.4" width="0.1" layer="51" style="shortdash"/>
+<wire x1="2.25" y1="-5.4" x2="2.25" y2="-3" width="0.1" layer="51" style="shortdash"/>
+<polygon width="0.1" layer="39">
+<vertex x="-3.8" y="3.8"/>
+<vertex x="3.8" y="3.8"/>
+<vertex x="3.7" y="-3.8"/>
+<vertex x="-3.8" y="-3.8"/>
+</polygon>
+<text x="4.5" y="1.3" size="1.27" layer="25">&gt;NAME</text>
+<text x="4.5" y="-0.4" size="1.27" layer="27">&gt;VALUE</text>
+</package>
+<package name="60124202122305" urn="urn:adsk.eagle:footprint:18010843/3">
+<description>&lt;B&gt;WR-SMP SMT Edge Card Extended Solder Leg for PCB 1.6 mm Max.</description>
+<smd name="1" x="0" y="1.15" dx="0.48" dy="2.5" layer="1"/>
+<smd name="2" x="-1.95" y="1.25" dx="1" dy="2" layer="1" stop="no" cream="no"/>
+<smd name="3" x="1.95" y="1.25" dx="1" dy="2" layer="1" stop="no" cream="no"/>
+<wire x1="-2.05" y1="-4.6" x2="2.05" y2="-4.6" width="0.1" layer="46"/>
+<wire x1="2.05" y1="-4.6" x2="2.05" y2="-0.25" width="0.1" layer="46"/>
+<wire x1="1.8" y1="0" x2="-1.8" y2="0" width="0.1" layer="46"/>
+<wire x1="-2.05" y1="-0.25" x2="-2.05" y2="-4.6" width="0.1" layer="46"/>
+<wire x1="-1.8" y1="0" x2="-2.05" y2="-0.25" width="0.1" layer="46" curve="270"/>
+<wire x1="1.8" y1="0" x2="2.05" y2="-0.25" width="0.1" layer="46" curve="-270"/>
+<wire x1="-1.4" y1="2.3" x2="-2.5" y2="2.3" width="0.1" layer="51"/>
+<wire x1="-2.5" y1="2.3" x2="-2.5" y2="-4.4" width="0.1" layer="51"/>
+<wire x1="-2.5" y1="-4.4" x2="2.5" y2="-4.4" width="0.1" layer="51"/>
+<wire x1="2.5" y1="-4.4" x2="2.5" y2="2.3" width="0.1" layer="51"/>
+<wire x1="2.5" y1="2.3" x2="1.4" y2="2.3" width="0.1" layer="51"/>
+<wire x1="1.4" y1="2.3" x2="1.4" y2="0" width="0.1" layer="51"/>
+<wire x1="1.4" y1="0" x2="0.19" y2="0" width="0.1" layer="51"/>
+<wire x1="0.19" y1="0" x2="0.19" y2="2.3" width="0.1" layer="51"/>
+<wire x1="0.19" y1="2.3" x2="-0.19" y2="2.3" width="0.1" layer="51"/>
+<wire x1="-0.19" y1="2.3" x2="-0.19" y2="0" width="0.1" layer="51"/>
+<wire x1="-0.19" y1="0" x2="-1.4" y2="0" width="0.1" layer="51"/>
+<wire x1="-1.4" y1="0" x2="-1.4" y2="2.3" width="0.1" layer="51"/>
+<polygon width="0.1" layer="1">
+<vertex x="-2.05" y="-4.6"/>
+<vertex x="-2.7" y="-4.6"/>
+<vertex x="-2.7" y="2.3"/>
+<vertex x="-1.2" y="2.3"/>
+<vertex x="-1.2" y="0"/>
+<vertex x="-1.8" y="0" curve="90"/>
+<vertex x="-2.05" y="0.25" curve="90"/>
+<vertex x="-2.3" y="0" curve="90"/>
+<vertex x="-2.05" y="-0.25"/>
+<vertex x="-2.05" y="-4.595"/>
+</polygon>
+<polygon width="0.1" layer="1">
+<vertex x="2.05" y="-4.6"/>
+<vertex x="2.7" y="-4.6"/>
+<vertex x="2.7" y="2.3"/>
+<vertex x="1.2" y="2.3"/>
+<vertex x="1.2" y="0"/>
+<vertex x="1.8" y="0" curve="-90"/>
+<vertex x="2.05" y="0.25" curve="-90"/>
+<vertex x="2.3" y="0" curve="-90"/>
+<vertex x="2.05" y="-0.25"/>
+<vertex x="2.05" y="-4.595"/>
+</polygon>
+<polygon width="0.1" layer="29">
+<vertex x="-1.1" y="0"/>
+<vertex x="-1.1" y="2.4"/>
+<vertex x="-2.8" y="2.4"/>
+<vertex x="-2.8" y="-4.7"/>
+<vertex x="-2.05" y="-4.7"/>
+<vertex x="-2.05" y="-0.25" curve="-90"/>
+<vertex x="-2.3" y="0" curve="-90"/>
+<vertex x="-2.05" y="0.25" curve="-90"/>
+<vertex x="-1.8" y="0"/>
+</polygon>
+<polygon width="0.1" layer="29">
+<vertex x="1.1" y="0"/>
+<vertex x="1.1" y="2.4"/>
+<vertex x="2.8" y="2.4"/>
+<vertex x="2.8" y="-4.7"/>
+<vertex x="2.05" y="-4.7"/>
+<vertex x="2.05" y="-0.25" curve="90"/>
+<vertex x="2.3" y="0" curve="90"/>
+<vertex x="2.05" y="0.25" curve="90"/>
+<vertex x="1.8" y="0"/>
+</polygon>
+<polygon width="0.1" layer="31">
+<vertex x="-2.05" y="-4.6"/>
+<vertex x="-2.7" y="-4.6"/>
+<vertex x="-2.7" y="2.3"/>
+<vertex x="-1.2" y="2.3"/>
+<vertex x="-1.2" y="0"/>
+<vertex x="-1.8" y="0" curve="90"/>
+<vertex x="-2.05" y="0.25" curve="90"/>
+<vertex x="-2.3" y="0" curve="90"/>
+<vertex x="-2.05" y="-0.25"/>
+<vertex x="-2.05" y="-4.595"/>
+</polygon>
+<polygon width="0.1" layer="31">
+<vertex x="2.05" y="-4.6"/>
+<vertex x="2.7" y="-4.6"/>
+<vertex x="2.7" y="2.3"/>
+<vertex x="1.2" y="2.3"/>
+<vertex x="1.2" y="0"/>
+<vertex x="1.8" y="0" curve="-90"/>
+<vertex x="2.05" y="0.25" curve="-90"/>
+<vertex x="2.3" y="0" curve="-90"/>
+<vertex x="2.05" y="-0.25"/>
+<vertex x="2.05" y="-4.595"/>
+</polygon>
+<polygon width="0.1" layer="39">
+<vertex x="-2.9" y="2.6"/>
+<vertex x="2.9" y="2.6"/>
+<vertex x="2.9" y="-4.8"/>
+<vertex x="-2.9" y="-4.8"/>
+</polygon>
+<text x="-1.6" y="-2" size="0.3048" layer="48">PCB Cutout Area</text>
+<text x="-1.6" y="-2" size="0.3048" layer="46">PCB Cutout Area</text>
+<text x="-1.8" y="-2.7" size="0.2" layer="48">PCB Thickness: 1.6 mm MAX</text>
+<text x="0" y="3" size="1.27" layer="25" align="bottom-center">&gt;NAME</text>
+<text x="-3.5" y="-6.4" size="1.27" layer="27">&gt;VALUE</text>
+</package>
+<package name="60124102122403" urn="urn:adsk.eagle:footprint:18010847/4">
+<description>&lt;B&gt;WR-SMP Straight</description>
+<smd name="1" x="0" y="-2.9" dx="0.48" dy="1.4" layer="1"/>
+<smd name="3" x="0" y="2.45" dx="0.3" dy="4" layer="1" rot="R90" stop="no" cream="no"/>
+<smd name="2" x="-2.45" y="0.1" dx="0.3" dy="4" layer="1" rot="R180" stop="no" cream="no"/>
+<smd name="4" x="2.45" y="0.2" dx="0.3" dy="4" layer="1" rot="R180" stop="no" cream="no"/>
+<polygon width="0.1" layer="39">
+<vertex x="-2.8" y="2.8"/>
+<vertex x="2.8" y="2.8"/>
+<vertex x="2.8" y="-3.8"/>
+<vertex x="-2.8" y="-3.8"/>
+</polygon>
+<polygon width="0.1" layer="31">
+<vertex x="-1" y="-2.07"/>
+<vertex x="-1" y="-2.6"/>
+<vertex x="-2.6" y="-2.6"/>
+<vertex x="-2.6" y="2.6"/>
+<vertex x="2.6" y="2.6"/>
+<vertex x="2.6" y="-2.6"/>
+<vertex x="1" y="-2.6"/>
+<vertex x="1" y="-2.07"/>
+<vertex x="1.035" y="-2.055"/>
+<vertex x="1.1" y="-2.02"/>
+<vertex x="1.17" y="-1.98"/>
+<vertex x="1.235" y="-1.94"/>
+<vertex x="1.31" y="-1.89"/>
+<vertex x="1.375" y="-1.845"/>
+<vertex x="1.45" y="-1.785"/>
+<vertex x="1.515" y="-1.73"/>
+<vertex x="1.57" y="-1.68"/>
+<vertex x="1.6" y="-1.65"/>
+<vertex x="1.655" y="-1.595"/>
+<vertex x="1.695" y="-1.555"/>
+<vertex x="1.76" y="-1.48"/>
+<vertex x="1.79" y="-1.445"/>
+<vertex x="1.825" y="-1.4"/>
+<vertex x="1.88" y="-1.325"/>
+<vertex x="1.925" y="-1.26"/>
+<vertex x="1.98" y="-1.17"/>
+<vertex x="2.025" y="-1.09"/>
+<vertex x="2.065" y="-1.015"/>
+<vertex x="2.1" y="-0.94"/>
+<vertex x="2.13" y="-0.87"/>
+<vertex x="2.165" y="-0.78"/>
+<vertex x="2.195" y="-0.69"/>
+<vertex x="2.22" y="-0.6"/>
+<vertex x="2.24" y="-0.525"/>
+<vertex x="2.255" y="-0.455"/>
+<vertex x="2.27" y="-0.37"/>
+<vertex x="2.28" y="-0.305"/>
+<vertex x="2.29" y="-0.21"/>
+<vertex x="2.295" y="-0.145"/>
+<vertex x="2.3" y="-0.06"/>
+<vertex x="2.3" y="0" curve="90"/>
+<vertex x="0" y="2.3" curve="90"/>
+<vertex x="-2.3" y="0"/>
+<vertex x="-2.3" y="-0.05"/>
+<vertex x="-2.3" y="-0.07"/>
+<vertex x="-2.295" y="-0.155"/>
+<vertex x="-2.29" y="-0.21"/>
+<vertex x="-2.285" y="-0.265"/>
+<vertex x="-2.28" y="-0.305"/>
+<vertex x="-2.27" y="-0.37"/>
+<vertex x="-2.26" y="-0.43"/>
+<vertex x="-2.24" y="-0.525"/>
+<vertex x="-2.22" y="-0.605"/>
+<vertex x="-2.2" y="-0.675"/>
+<vertex x="-2.18" y="-0.735"/>
+<vertex x="-2.165" y="-0.78"/>
+<vertex x="-2.14" y="-0.845"/>
+<vertex x="-2.11" y="-0.92"/>
+<vertex x="-2.075" y="-0.995"/>
+<vertex x="-2.045" y="-1.055"/>
+<vertex x="-2.015" y="-1.11"/>
+<vertex x="-1.99" y="-1.155"/>
+<vertex x="-1.95" y="-1.22"/>
+<vertex x="-1.915" y="-1.275"/>
+<vertex x="-1.87" y="-1.34"/>
+<vertex x="-1.825" y="-1.4"/>
+<vertex x="-1.785" y="-1.45"/>
+<vertex x="-1.76" y="-1.48"/>
+<vertex x="-1.72" y="-1.525"/>
+<vertex x="-1.675" y="-1.575"/>
+<vertex x="-1.62" y="-1.63"/>
+<vertex x="-1.585" y="-1.665"/>
+<vertex x="-1.53" y="-1.715"/>
+<vertex x="-1.49" y="-1.75"/>
+<vertex x="-1.43" y="-1.8"/>
+<vertex x="-1.385" y="-1.835"/>
+<vertex x="-1.31" y="-1.89"/>
+<vertex x="-1.235" y="-1.94"/>
+<vertex x="-1.145" y="-1.995"/>
+<vertex x="-1.08" y="-2.03"/>
+<vertex x="-1.025" y="-2.06"/>
+</polygon>
+<polygon width="0.1" layer="29">
+<vertex x="-0.9" y="-2.01"/>
+<vertex x="-0.9" y="-2.7"/>
+<vertex x="-2.7" y="-2.7"/>
+<vertex x="-2.7" y="2.7"/>
+<vertex x="2.7" y="2.7"/>
+<vertex x="2.7" y="-2.7"/>
+<vertex x="0.9" y="-2.7"/>
+<vertex x="0.9" y="-2.01"/>
+<vertex x="0.97" y="-1.975"/>
+<vertex x="1.03" y="-1.945"/>
+<vertex x="1.095" y="-1.91"/>
+<vertex x="1.15" y="-1.875"/>
+<vertex x="1.215" y="-1.835"/>
+<vertex x="1.3" y="-1.775"/>
+<vertex x="1.365" y="-1.725"/>
+<vertex x="1.42" y="-1.68"/>
+<vertex x="1.465" y="-1.64"/>
+<vertex x="1.525" y="-1.585"/>
+<vertex x="1.585" y="-1.525"/>
+<vertex x="1.65" y="-1.455"/>
+<vertex x="1.715" y="-1.38"/>
+<vertex x="1.765" y="-1.315"/>
+<vertex x="1.82" y="-1.235"/>
+<vertex x="1.855" y="-1.185"/>
+<vertex x="1.895" y="-1.12"/>
+<vertex x="1.94" y="-1.04"/>
+<vertex x="1.985" y="-0.95"/>
+<vertex x="2.025" y="-0.86"/>
+<vertex x="2.06" y="-0.775"/>
+<vertex x="2.09" y="-0.69"/>
+<vertex x="2.125" y="-0.575"/>
+<vertex x="2.145" y="-0.49"/>
+<vertex x="2.165" y="-0.395"/>
+<vertex x="2.175" y="-0.335"/>
+<vertex x="2.185" y="-0.255"/>
+<vertex x="2.195" y="-0.155"/>
+<vertex x="2.2" y="-0.055"/>
+<vertex x="2.2" y="0" curve="90"/>
+<vertex x="0" y="2.2" curve="90"/>
+<vertex x="-2.2" y="0"/>
+<vertex x="-2.2" y="-0.055"/>
+<vertex x="-2.2" y="-0.07"/>
+<vertex x="-2.195" y="-0.145"/>
+<vertex x="-2.19" y="-0.21"/>
+<vertex x="-2.18" y="-0.295"/>
+<vertex x="-2.175" y="-0.335"/>
+<vertex x="-2.16" y="-0.42"/>
+<vertex x="-2.15" y="-0.465"/>
+<vertex x="-2.14" y="-0.515"/>
+<vertex x="-2.12" y="-0.59"/>
+<vertex x="-2.1" y="-0.66"/>
+<vertex x="-2.07" y="-0.75"/>
+<vertex x="-2.04" y="-0.825"/>
+<vertex x="-2" y="-0.92"/>
+<vertex x="-1.955" y="-1.01"/>
+<vertex x="-1.915" y="-1.085"/>
+<vertex x="-1.86" y="-1.175"/>
+<vertex x="-1.79" y="-1.28"/>
+<vertex x="-1.74" y="-1.345"/>
+<vertex x="-1.68" y="-1.42"/>
+<vertex x="-1.615" y="-1.495"/>
+<vertex x="-1.54" y="-1.57"/>
+<vertex x="-1.46" y="-1.645"/>
+<vertex x="-1.36" y="-1.73"/>
+<vertex x="-1.28" y="-1.79"/>
+<vertex x="-1.2" y="-1.845"/>
+<vertex x="-1.11" y="-1.9"/>
+<vertex x="-1" y="-1.96"/>
+</polygon>
+<polygon width="0.1" layer="1">
+<vertex x="-1" y="-2.07"/>
+<vertex x="-1" y="-2.6"/>
+<vertex x="-2.6" y="-2.6"/>
+<vertex x="-2.6" y="2.6"/>
+<vertex x="2.6" y="2.6"/>
+<vertex x="2.6" y="-2.6"/>
+<vertex x="1" y="-2.6"/>
+<vertex x="1" y="-2.07"/>
+<vertex x="1.035" y="-2.055"/>
+<vertex x="1.1" y="-2.02"/>
+<vertex x="1.17" y="-1.98"/>
+<vertex x="1.235" y="-1.94"/>
+<vertex x="1.31" y="-1.89"/>
+<vertex x="1.375" y="-1.845"/>
+<vertex x="1.45" y="-1.785"/>
+<vertex x="1.515" y="-1.73"/>
+<vertex x="1.57" y="-1.68"/>
+<vertex x="1.6" y="-1.65"/>
+<vertex x="1.655" y="-1.595"/>
+<vertex x="1.695" y="-1.555"/>
+<vertex x="1.76" y="-1.48"/>
+<vertex x="1.79" y="-1.445"/>
+<vertex x="1.825" y="-1.4"/>
+<vertex x="1.88" y="-1.325"/>
+<vertex x="1.925" y="-1.26"/>
+<vertex x="1.98" y="-1.17"/>
+<vertex x="2.025" y="-1.09"/>
+<vertex x="2.065" y="-1.015"/>
+<vertex x="2.1" y="-0.94"/>
+<vertex x="2.13" y="-0.87"/>
+<vertex x="2.165" y="-0.78"/>
+<vertex x="2.195" y="-0.69"/>
+<vertex x="2.22" y="-0.6"/>
+<vertex x="2.24" y="-0.525"/>
+<vertex x="2.255" y="-0.455"/>
+<vertex x="2.27" y="-0.37"/>
+<vertex x="2.28" y="-0.305"/>
+<vertex x="2.29" y="-0.21"/>
+<vertex x="2.295" y="-0.145"/>
+<vertex x="2.3" y="-0.06"/>
+<vertex x="2.3" y="0" curve="90"/>
+<vertex x="0" y="2.3" curve="90"/>
+<vertex x="-2.3" y="0"/>
+<vertex x="-2.3" y="-0.05"/>
+<vertex x="-2.3" y="-0.07"/>
+<vertex x="-2.295" y="-0.155"/>
+<vertex x="-2.29" y="-0.21"/>
+<vertex x="-2.285" y="-0.265"/>
+<vertex x="-2.28" y="-0.305"/>
+<vertex x="-2.27" y="-0.37"/>
+<vertex x="-2.26" y="-0.43"/>
+<vertex x="-2.24" y="-0.525"/>
+<vertex x="-2.22" y="-0.605"/>
+<vertex x="-2.2" y="-0.675"/>
+<vertex x="-2.18" y="-0.735"/>
+<vertex x="-2.165" y="-0.78"/>
+<vertex x="-2.14" y="-0.845"/>
+<vertex x="-2.11" y="-0.92"/>
+<vertex x="-2.075" y="-0.995"/>
+<vertex x="-2.045" y="-1.055"/>
+<vertex x="-2.015" y="-1.11"/>
+<vertex x="-1.99" y="-1.155"/>
+<vertex x="-1.95" y="-1.22"/>
+<vertex x="-1.915" y="-1.275"/>
+<vertex x="-1.87" y="-1.34"/>
+<vertex x="-1.825" y="-1.4"/>
+<vertex x="-1.785" y="-1.45"/>
+<vertex x="-1.76" y="-1.48"/>
+<vertex x="-1.72" y="-1.525"/>
+<vertex x="-1.675" y="-1.575"/>
+<vertex x="-1.62" y="-1.63"/>
+<vertex x="-1.585" y="-1.665"/>
+<vertex x="-1.53" y="-1.715"/>
+<vertex x="-1.49" y="-1.75"/>
+<vertex x="-1.43" y="-1.8"/>
+<vertex x="-1.385" y="-1.835"/>
+<vertex x="-1.31" y="-1.89"/>
+<vertex x="-1.235" y="-1.94"/>
+<vertex x="-1.145" y="-1.995"/>
+<vertex x="-1.08" y="-2.03"/>
+<vertex x="-1.025" y="-2.06"/>
+</polygon>
+<wire x1="-2.5" y1="2.5" x2="2.5" y2="2.5" width="0.1" layer="51"/>
+<wire x1="2.5" y1="2.5" x2="2.5" y2="-2.5" width="0.1" layer="51"/>
+<wire x1="2.5" y1="-2.5" x2="0.2" y2="-2.5" width="0.1" layer="51"/>
+<wire x1="0.2" y1="-2.5" x2="0.2" y2="-3.3" width="0.1" layer="51"/>
+<wire x1="0.2" y1="-3.3" x2="-0.2" y2="-3.3" width="0.1" layer="51"/>
+<wire x1="-0.2" y1="-3.3" x2="-0.2" y2="-2.5" width="0.1" layer="51"/>
+<wire x1="-0.2" y1="-2.5" x2="-2.5" y2="-2.5" width="0.1" layer="51"/>
+<wire x1="-2.5" y1="-2.5" x2="-2.5" y2="2.5" width="0.1" layer="51"/>
+<text x="0" y="3.3" size="1.27" layer="25" align="bottom-center">&gt;NAME</text>
+<text x="-3.5" y="-5.5" size="1.27" layer="27">&gt;VALUE</text>
+</package>
+<package name="60124002122502" urn="urn:adsk.eagle:footprint:18010849/2">
+<description>&lt;B&gt;WR-SMP Straight</description>
+<pad name="1" x="0" y="0" drill="1"/>
+<pad name="2" x="-2.6" y="2.6" drill="1.3"/>
+<pad name="3" x="2.6" y="2.6" drill="1.3"/>
+<pad name="4" x="2.6" y="-2.6" drill="1.3"/>
+<pad name="5" x="-2.6" y="-2.6" drill="1.3"/>
+<wire x1="-3" y1="3" x2="3" y2="3" width="0.1" layer="51"/>
+<wire x1="3" y1="3" x2="3" y2="-3" width="0.1" layer="51"/>
+<wire x1="3" y1="-3" x2="-3" y2="-3" width="0.1" layer="51"/>
+<wire x1="-3" y1="-3" x2="-3" y2="3" width="0.1" layer="51"/>
+<wire x1="-1.3" y1="3.1" x2="1.3" y2="3.1" width="0.2" layer="21"/>
+<wire x1="3.1" y1="1.3" x2="3.1" y2="-1.3" width="0.2" layer="21"/>
+<wire x1="-3.1" y1="-1.3" x2="-3.1" y2="1.3" width="0.2" layer="21"/>
+<wire x1="1.3" y1="-3.1" x2="-1.3" y2="-3.1" width="0.2" layer="21"/>
+<polygon width="0.1" layer="39">
+<vertex x="-3.8" y="3.8"/>
+<vertex x="3.8" y="3.8"/>
+<vertex x="3.7" y="-3.8"/>
+<vertex x="-3.8" y="-3.8"/>
+</polygon>
+<text x="0" y="4.5" size="1.27" layer="25" align="bottom-center">&gt;NAME</text>
+<text x="-3.5" y="-5.5" size="1.27" layer="27">&gt;VALUE</text>
+</package>
+<package name="60124602122404" urn="urn:adsk.eagle:footprint:18010844/4">
+<description>&lt;b&gt;WR-SMP Straight</description>
+<smd name="1" x="0" y="-2.985" dx="0.48" dy="1.15" layer="1"/>
+<pad name="2" x="-2.54" y="2.54" drill="1.36" diameter="1.8"/>
+<pad name="3" x="2.54" y="2.54" drill="1.36" diameter="1.8"/>
+<pad name="4" x="2.54" y="-2.54" drill="1.36" diameter="1.8"/>
+<pad name="5" x="-2.54" y="-2.54" drill="1.36" diameter="1.8"/>
+<polygon width="0.1" layer="39">
+<vertex x="-3.7" y="3.7"/>
+<vertex x="3.7" y="3.7"/>
+<vertex x="3.7" y="-3.75"/>
+<vertex x="-3.7" y="-3.75"/>
+</polygon>
+<polygon width="0.1" layer="1">
+<vertex x="1" y="-2.075"/>
+<vertex x="1" y="-3.2"/>
+<vertex x="1.925" y="-3.2"/>
+<vertex x="1.955" y="-3.225"/>
+<vertex x="2" y="-3.26"/>
+<vertex x="2.05" y="-3.295"/>
+<vertex x="2.1" y="-3.325"/>
+<vertex x="2.135" y="-3.345"/>
+<vertex x="2.205" y="-3.375"/>
+<vertex x="2.26" y="-3.395"/>
+<vertex x="2.31" y="-3.41"/>
+<vertex x="2.375" y="-3.425"/>
+<vertex x="2.445" y="-3.435"/>
+<vertex x="2.505" y="-3.44"/>
+<vertex x="2.54" y="-3.44" curve="90"/>
+<vertex x="3.44" y="-2.54"/>
+<vertex x="3.44" y="-2.52"/>
+<vertex x="3.44" y="-2.5"/>
+<vertex x="3.435" y="-2.45"/>
+<vertex x="3.43" y="-2.405"/>
+<vertex x="3.42" y="-2.35"/>
+<vertex x="3.405" y="-2.29"/>
+<vertex x="3.385" y="-2.23"/>
+<vertex x="3.365" y="-2.18"/>
+<vertex x="3.34" y="-2.13"/>
+<vertex x="3.32" y="-2.09"/>
+<vertex x="3.285" y="-2.035"/>
+<vertex x="3.24" y="-1.975"/>
+<vertex x="3.2" y="-1.925"/>
+<vertex x="3.2" y="1.925"/>
+<vertex x="3.22" y="1.95"/>
+<vertex x="3.25" y="1.985"/>
+<vertex x="3.285" y="2.035"/>
+<vertex x="3.32" y="2.09"/>
+<vertex x="3.35" y="2.15"/>
+<vertex x="3.38" y="2.215"/>
+<vertex x="3.405" y="2.29"/>
+<vertex x="3.42" y="2.35"/>
+<vertex x="3.43" y="2.405"/>
+<vertex x="3.435" y="2.445"/>
+<vertex x="3.44" y="2.51"/>
+<vertex x="3.44" y="2.54" curve="90"/>
+<vertex x="2.54" y="3.44"/>
+<vertex x="2.51" y="3.44"/>
+<vertex x="2.445" y="3.435"/>
+<vertex x="2.4" y="3.43"/>
+<vertex x="2.325" y="3.415"/>
+<vertex x="2.26" y="3.395"/>
+<vertex x="2.19" y="3.37"/>
+<vertex x="2.125" y="3.34"/>
+<vertex x="2.065" y="3.305"/>
+<vertex x="2.015" y="3.27"/>
+<vertex x="1.975" y="3.24"/>
+<vertex x="1.945" y="3.215"/>
+<vertex x="1.925" y="3.2"/>
+<vertex x="-1.925" y="3.2"/>
+<vertex x="-1.955" y="3.225"/>
+<vertex x="-2" y="3.26"/>
+<vertex x="-2.035" y="3.285"/>
+<vertex x="-2.1" y="3.325"/>
+<vertex x="-2.135" y="3.345"/>
+<vertex x="-2.19" y="3.37"/>
+<vertex x="-2.245" y="3.39"/>
+<vertex x="-2.29" y="3.405"/>
+<vertex x="-2.35" y="3.42"/>
+<vertex x="-2.4" y="3.43"/>
+<vertex x="-2.445" y="3.435"/>
+<vertex x="-2.5" y="3.44"/>
+<vertex x="-2.54" y="3.44" curve="90"/>
+<vertex x="-3.44" y="2.54"/>
+<vertex x="-3.44" y="2.51"/>
+<vertex x="-3.435" y="2.44"/>
+<vertex x="-3.43" y="2.4"/>
+<vertex x="-3.42" y="2.35"/>
+<vertex x="-3.405" y="2.29"/>
+<vertex x="-3.385" y="2.23"/>
+<vertex x="-3.365" y="2.18"/>
+<vertex x="-3.345" y="2.135"/>
+<vertex x="-3.325" y="2.1"/>
+<vertex x="-3.295" y="2.05"/>
+<vertex x="-3.26" y="2"/>
+<vertex x="-3.22" y="1.95"/>
+<vertex x="-3.2" y="1.925"/>
+<vertex x="-3.2" y="-1.925"/>
+<vertex x="-3.22" y="-1.95"/>
+<vertex x="-3.26" y="-2"/>
+<vertex x="-3.295" y="-2.05"/>
+<vertex x="-3.325" y="-2.1"/>
+<vertex x="-3.345" y="-2.135"/>
+<vertex x="-3.375" y="-2.205"/>
+<vertex x="-3.39" y="-2.245"/>
+<vertex x="-3.41" y="-2.305"/>
+<vertex x="-3.425" y="-2.375"/>
+<vertex x="-3.435" y="-2.44"/>
+<vertex x="-3.44" y="-2.505"/>
+<vertex x="-3.44" y="-2.54" curve="90"/>
+<vertex x="-2.54" y="-3.44"/>
+<vertex x="-2.515" y="-3.44"/>
+<vertex x="-2.445" y="-3.435"/>
+<vertex x="-2.4" y="-3.43"/>
+<vertex x="-2.35" y="-3.42"/>
+<vertex x="-2.305" y="-3.41"/>
+<vertex x="-2.245" y="-3.39"/>
+<vertex x="-2.19" y="-3.37"/>
+<vertex x="-2.135" y="-3.345"/>
+<vertex x="-2.08" y="-3.315"/>
+<vertex x="-2.035" y="-3.285"/>
+<vertex x="-1.98" y="-3.245"/>
+<vertex x="-1.925" y="-3.2"/>
+<vertex x="-1" y="-3.2"/>
+<vertex x="-1" y="-2.07"/>
+<vertex x="-1.035" y="-2.055"/>
+<vertex x="-1.1" y="-2.02"/>
+<vertex x="-1.18" y="-1.975"/>
+<vertex x="-1.245" y="-1.935"/>
+<vertex x="-1.325" y="-1.88"/>
+<vertex x="-1.395" y="-1.83"/>
+<vertex x="-1.475" y="-1.765"/>
+<vertex x="-1.545" y="-1.705"/>
+<vertex x="-1.57" y="-1.68"/>
+<vertex x="-1.625" y="-1.625"/>
+<vertex x="-1.675" y="-1.575"/>
+<vertex x="-1.73" y="-1.515"/>
+<vertex x="-1.77" y="-1.47"/>
+<vertex x="-1.805" y="-1.425"/>
+<vertex x="-1.855" y="-1.36"/>
+<vertex x="-1.89" y="-1.31"/>
+<vertex x="-1.925" y="-1.26"/>
+<vertex x="-1.965" y="-1.195"/>
+<vertex x="-2.015" y="-1.11"/>
+<vertex x="-2.05" y="-1.045"/>
+<vertex x="-2.095" y="-0.95"/>
+<vertex x="-2.14" y="-0.845"/>
+<vertex x="-2.165" y="-0.78"/>
+<vertex x="-2.195" y="-0.69"/>
+<vertex x="-2.215" y="-0.62"/>
+<vertex x="-2.24" y="-0.525"/>
+<vertex x="-2.26" y="-0.43"/>
+<vertex x="-2.275" y="-0.34"/>
+<vertex x="-2.285" y="-0.265"/>
+<vertex x="-2.29" y="-0.215"/>
+<vertex x="-2.295" y="-0.15"/>
+<vertex x="-2.3" y="-0.065"/>
+<vertex x="-2.3" y="0" curve="-90"/>
+<vertex x="0" y="2.3" curve="-90"/>
+<vertex x="2.3" y="0"/>
+<vertex x="2.3" y="-0.03"/>
+<vertex x="2.3" y="-0.045"/>
+<vertex x="2.295" y="-0.165"/>
+<vertex x="2.285" y="-0.265"/>
+<vertex x="2.265" y="-0.405"/>
+<vertex x="2.235" y="-0.545"/>
+<vertex x="2.205" y="-0.655"/>
+<vertex x="2.17" y="-0.765"/>
+<vertex x="2.13" y="-0.87"/>
+<vertex x="2.08" y="-0.985"/>
+<vertex x="2.02" y="-1.1"/>
+<vertex x="1.97" y="-1.19"/>
+<vertex x="1.925" y="-1.26"/>
+<vertex x="1.865" y="-1.345"/>
+<vertex x="1.81" y="-1.42"/>
+<vertex x="1.76" y="-1.48"/>
+<vertex x="1.7" y="-1.55"/>
+<vertex x="1.68" y="-1.57"/>
+<vertex x="1.625" y="-1.625"/>
+<vertex x="1.57" y="-1.68"/>
+<vertex x="1.48" y="-1.76"/>
+<vertex x="1.4" y="-1.825"/>
+<vertex x="1.34" y="-1.87"/>
+<vertex x="1.275" y="-1.915"/>
+<vertex x="1.195" y="-1.965"/>
+<vertex x="1.145" y="-1.995"/>
+<vertex x="1.075" y="-2.035"/>
+</polygon>
+<polygon width="0.1" layer="29">
+<vertex x="-0.9" y="-2.01"/>
+<vertex x="-0.9" y="-3.3"/>
+<vertex x="-1.89" y="-3.3"/>
+<vertex x="-1.915" y="-3.32"/>
+<vertex x="-1.96" y="-3.355"/>
+<vertex x="-2.03" y="-3.4"/>
+<vertex x="-2.095" y="-3.435"/>
+<vertex x="-2.135" y="-3.455"/>
+<vertex x="-2.2" y="-3.48"/>
+<vertex x="-2.245" y="-3.495"/>
+<vertex x="-2.295" y="-3.51"/>
+<vertex x="-2.365" y="-3.525"/>
+<vertex x="-2.44" y="-3.535"/>
+<vertex x="-2.515" y="-3.54"/>
+<vertex x="-2.54" y="-3.54" curve="-90"/>
+<vertex x="-3.54" y="-2.54"/>
+<vertex x="-3.54" y="-2.505"/>
+<vertex x="-3.535" y="-2.44"/>
+<vertex x="-3.525" y="-2.365"/>
+<vertex x="-3.51" y="-2.295"/>
+<vertex x="-3.49" y="-2.225"/>
+<vertex x="-3.46" y="-2.145"/>
+<vertex x="-3.42" y="-2.065"/>
+<vertex x="-3.37" y="-1.98"/>
+<vertex x="-3.325" y="-1.92"/>
+<vertex x="-3.3" y="-1.89"/>
+<vertex x="-3.3" y="1.89"/>
+<vertex x="-3.35" y="1.95"/>
+<vertex x="-3.415" y="2.055"/>
+<vertex x="-3.47" y="2.17"/>
+<vertex x="-3.5" y="2.255"/>
+<vertex x="-3.525" y="2.355"/>
+<vertex x="-3.535" y="2.43"/>
+<vertex x="-3.54" y="2.54" curve="-90"/>
+<vertex x="-2.54" y="3.54"/>
+<vertex x="-2.5" y="3.54"/>
+<vertex x="-2.435" y="3.535"/>
+<vertex x="-2.335" y="3.52"/>
+<vertex x="-2.26" y="3.5"/>
+<vertex x="-2.195" y="3.48"/>
+<vertex x="-2.125" y="3.45"/>
+<vertex x="-2.055" y="3.415"/>
+<vertex x="-1.99" y="3.375"/>
+<vertex x="-1.94" y="3.34"/>
+<vertex x="-1.89" y="3.3"/>
+<vertex x="1.89" y="3.3"/>
+<vertex x="1.92" y="3.325"/>
+<vertex x="1.975" y="3.365"/>
+<vertex x="2.035" y="3.405"/>
+<vertex x="2.095" y="3.435"/>
+<vertex x="2.145" y="3.46"/>
+<vertex x="2.225" y="3.49"/>
+<vertex x="2.295" y="3.51"/>
+<vertex x="2.36" y="3.525"/>
+<vertex x="2.435" y="3.535"/>
+<vertex x="2.5" y="3.54"/>
+<vertex x="2.54" y="3.54" curve="-90"/>
+<vertex x="3.54" y="2.54"/>
+<vertex x="3.54" y="2.515"/>
+<vertex x="3.54" y="2.495"/>
+<vertex x="3.535" y="2.435"/>
+<vertex x="3.525" y="2.365"/>
+<vertex x="3.515" y="2.315"/>
+<vertex x="3.495" y="2.24"/>
+<vertex x="3.47" y="2.17"/>
+<vertex x="3.445" y="2.115"/>
+<vertex x="3.415" y="2.055"/>
+<vertex x="3.385" y="2.005"/>
+<vertex x="3.34" y="1.94"/>
+<vertex x="3.3" y="1.89"/>
+<vertex x="3.3" y="-1.89"/>
+<vertex x="3.325" y="-1.92"/>
+<vertex x="3.39" y="-2.01"/>
+<vertex x="3.435" y="-2.095"/>
+<vertex x="3.47" y="-2.17"/>
+<vertex x="3.5" y="-2.26"/>
+<vertex x="3.525" y="-2.36"/>
+<vertex x="3.535" y="-2.435"/>
+<vertex x="3.54" y="-2.5"/>
+<vertex x="3.54" y="-2.54" curve="-90"/>
+<vertex x="2.54" y="-3.54"/>
+<vertex x="2.51" y="-3.54"/>
+<vertex x="2.495" y="-3.54"/>
+<vertex x="2.43" y="-3.535"/>
+<vertex x="2.37" y="-3.525"/>
+<vertex x="2.315" y="-3.515"/>
+<vertex x="2.26" y="-3.5"/>
+<vertex x="2.21" y="-3.485"/>
+<vertex x="2.125" y="-3.45"/>
+<vertex x="2.065" y="-3.42"/>
+<vertex x="1.995" y="-3.38"/>
+<vertex x="1.94" y="-3.34"/>
+<vertex x="1.89" y="-3.3"/>
+<vertex x="0.9" y="-3.3"/>
+<vertex x="0.9" y="-2.01"/>
+<vertex x="0.97" y="-1.975"/>
+<vertex x="1.055" y="-1.93"/>
+<vertex x="1.15" y="-1.875"/>
+<vertex x="1.245" y="-1.815"/>
+<vertex x="1.325" y="-1.755"/>
+<vertex x="1.415" y="-1.685"/>
+<vertex x="1.52" y="-1.59"/>
+<vertex x="1.615" y="-1.495"/>
+<vertex x="1.685" y="-1.415"/>
+<vertex x="1.76" y="-1.32"/>
+<vertex x="1.82" y="-1.235"/>
+<vertex x="1.88" y="-1.145"/>
+<vertex x="1.92" y="-1.075"/>
+<vertex x="1.96" y="-1"/>
+<vertex x="2.005" y="-0.905"/>
+<vertex x="2.05" y="-0.8"/>
+<vertex x="2.08" y="-0.72"/>
+<vertex x="2.115" y="-0.61"/>
+<vertex x="2.14" y="-0.515"/>
+<vertex x="2.16" y="-0.42"/>
+<vertex x="2.175" y="-0.33"/>
+<vertex x="2.185" y="-0.255"/>
+<vertex x="2.195" y="-0.155"/>
+<vertex x="2.2" y="-0.05"/>
+<vertex x="2.2" y="0" curve="90"/>
+<vertex x="0" y="2.2" curve="90"/>
+<vertex x="-2.2" y="0"/>
+<vertex x="-2.2" y="-0.04"/>
+<vertex x="-2.2" y="-0.07"/>
+<vertex x="-2.195" y="-0.14"/>
+<vertex x="-2.19" y="-0.215"/>
+<vertex x="-2.18" y="-0.305"/>
+<vertex x="-2.16" y="-0.415"/>
+<vertex x="-2.145" y="-0.49"/>
+<vertex x="-2.12" y="-0.59"/>
+<vertex x="-2.09" y="-0.69"/>
+<vertex x="-2.055" y="-0.785"/>
+<vertex x="-2.02" y="-0.875"/>
+<vertex x="-1.98" y="-0.96"/>
+<vertex x="-1.94" y="-1.04"/>
+<vertex x="-1.89" y="-1.125"/>
+<vertex x="-1.85" y="-1.19"/>
+<vertex x="-1.8" y="-1.265"/>
+<vertex x="-1.73" y="-1.36"/>
+<vertex x="-1.655" y="-1.45"/>
+<vertex x="-1.59" y="-1.52"/>
+<vertex x="-1.505" y="-1.605"/>
+<vertex x="-1.415" y="-1.685"/>
+<vertex x="-1.32" y="-1.76"/>
+<vertex x="-1.23" y="-1.825"/>
+<vertex x="-1.135" y="-1.885"/>
+<vertex x="-1.04" y="-1.94"/>
+<vertex x="-0.94" y="-1.99"/>
+</polygon>
+<polygon width="0.1" layer="31">
+<vertex x="1" y="-2.075"/>
+<vertex x="1" y="-3.2"/>
+<vertex x="1.925" y="-3.2"/>
+<vertex x="1.955" y="-3.225"/>
+<vertex x="2" y="-3.26"/>
+<vertex x="2.05" y="-3.295"/>
+<vertex x="2.1" y="-3.325"/>
+<vertex x="2.135" y="-3.345"/>
+<vertex x="2.205" y="-3.375"/>
+<vertex x="2.26" y="-3.395"/>
+<vertex x="2.31" y="-3.41"/>
+<vertex x="2.375" y="-3.425"/>
+<vertex x="2.445" y="-3.435"/>
+<vertex x="2.505" y="-3.44"/>
+<vertex x="2.54" y="-3.44" curve="90"/>
+<vertex x="3.44" y="-2.54"/>
+<vertex x="3.44" y="-2.52"/>
+<vertex x="3.44" y="-2.5"/>
+<vertex x="3.435" y="-2.45"/>
+<vertex x="3.43" y="-2.405"/>
+<vertex x="3.42" y="-2.35"/>
+<vertex x="3.405" y="-2.29"/>
+<vertex x="3.385" y="-2.23"/>
+<vertex x="3.365" y="-2.18"/>
+<vertex x="3.34" y="-2.13"/>
+<vertex x="3.32" y="-2.09"/>
+<vertex x="3.285" y="-2.035"/>
+<vertex x="3.24" y="-1.975"/>
+<vertex x="3.2" y="-1.925"/>
+<vertex x="3.2" y="1.925"/>
+<vertex x="3.22" y="1.95"/>
+<vertex x="3.25" y="1.985"/>
+<vertex x="3.285" y="2.035"/>
+<vertex x="3.32" y="2.09"/>
+<vertex x="3.35" y="2.15"/>
+<vertex x="3.38" y="2.215"/>
+<vertex x="3.405" y="2.29"/>
+<vertex x="3.42" y="2.35"/>
+<vertex x="3.43" y="2.405"/>
+<vertex x="3.435" y="2.445"/>
+<vertex x="3.44" y="2.51"/>
+<vertex x="3.44" y="2.54" curve="90"/>
+<vertex x="2.54" y="3.44"/>
+<vertex x="2.51" y="3.44"/>
+<vertex x="2.445" y="3.435"/>
+<vertex x="2.4" y="3.43"/>
+<vertex x="2.325" y="3.415"/>
+<vertex x="2.26" y="3.395"/>
+<vertex x="2.19" y="3.37"/>
+<vertex x="2.125" y="3.34"/>
+<vertex x="2.065" y="3.305"/>
+<vertex x="2.015" y="3.27"/>
+<vertex x="1.975" y="3.24"/>
+<vertex x="1.945" y="3.215"/>
+<vertex x="1.925" y="3.2"/>
+<vertex x="-1.925" y="3.2"/>
+<vertex x="-1.955" y="3.225"/>
+<vertex x="-2" y="3.26"/>
+<vertex x="-2.035" y="3.285"/>
+<vertex x="-2.1" y="3.325"/>
+<vertex x="-2.135" y="3.345"/>
+<vertex x="-2.19" y="3.37"/>
+<vertex x="-2.245" y="3.39"/>
+<vertex x="-2.29" y="3.405"/>
+<vertex x="-2.35" y="3.42"/>
+<vertex x="-2.4" y="3.43"/>
+<vertex x="-2.445" y="3.435"/>
+<vertex x="-2.5" y="3.44"/>
+<vertex x="-2.54" y="3.44" curve="90"/>
+<vertex x="-3.44" y="2.54"/>
+<vertex x="-3.44" y="2.51"/>
+<vertex x="-3.435" y="2.44"/>
+<vertex x="-3.43" y="2.4"/>
+<vertex x="-3.42" y="2.35"/>
+<vertex x="-3.405" y="2.29"/>
+<vertex x="-3.385" y="2.23"/>
+<vertex x="-3.365" y="2.18"/>
+<vertex x="-3.345" y="2.135"/>
+<vertex x="-3.325" y="2.1"/>
+<vertex x="-3.295" y="2.05"/>
+<vertex x="-3.26" y="2"/>
+<vertex x="-3.22" y="1.95"/>
+<vertex x="-3.2" y="1.925"/>
+<vertex x="-3.2" y="-1.925"/>
+<vertex x="-3.22" y="-1.95"/>
+<vertex x="-3.26" y="-2"/>
+<vertex x="-3.295" y="-2.05"/>
+<vertex x="-3.325" y="-2.1"/>
+<vertex x="-3.345" y="-2.135"/>
+<vertex x="-3.375" y="-2.205"/>
+<vertex x="-3.39" y="-2.245"/>
+<vertex x="-3.41" y="-2.305"/>
+<vertex x="-3.425" y="-2.375"/>
+<vertex x="-3.435" y="-2.44"/>
+<vertex x="-3.44" y="-2.505"/>
+<vertex x="-3.44" y="-2.54" curve="90"/>
+<vertex x="-2.54" y="-3.44"/>
+<vertex x="-2.515" y="-3.44"/>
+<vertex x="-2.445" y="-3.435"/>
+<vertex x="-2.4" y="-3.43"/>
+<vertex x="-2.35" y="-3.42"/>
+<vertex x="-2.305" y="-3.41"/>
+<vertex x="-2.245" y="-3.39"/>
+<vertex x="-2.19" y="-3.37"/>
+<vertex x="-2.135" y="-3.345"/>
+<vertex x="-2.08" y="-3.315"/>
+<vertex x="-2.035" y="-3.285"/>
+<vertex x="-1.98" y="-3.245"/>
+<vertex x="-1.925" y="-3.2"/>
+<vertex x="-1" y="-3.2"/>
+<vertex x="-1" y="-2.07"/>
+<vertex x="-1.035" y="-2.055"/>
+<vertex x="-1.1" y="-2.02"/>
+<vertex x="-1.18" y="-1.975"/>
+<vertex x="-1.245" y="-1.935"/>
+<vertex x="-1.325" y="-1.88"/>
+<vertex x="-1.395" y="-1.83"/>
+<vertex x="-1.475" y="-1.765"/>
+<vertex x="-1.545" y="-1.705"/>
+<vertex x="-1.57" y="-1.68"/>
+<vertex x="-1.625" y="-1.625"/>
+<vertex x="-1.675" y="-1.575"/>
+<vertex x="-1.73" y="-1.515"/>
+<vertex x="-1.77" y="-1.47"/>
+<vertex x="-1.805" y="-1.425"/>
+<vertex x="-1.855" y="-1.36"/>
+<vertex x="-1.89" y="-1.31"/>
+<vertex x="-1.925" y="-1.26"/>
+<vertex x="-1.965" y="-1.195"/>
+<vertex x="-2.015" y="-1.11"/>
+<vertex x="-2.05" y="-1.045"/>
+<vertex x="-2.095" y="-0.95"/>
+<vertex x="-2.14" y="-0.845"/>
+<vertex x="-2.165" y="-0.78"/>
+<vertex x="-2.195" y="-0.69"/>
+<vertex x="-2.215" y="-0.62"/>
+<vertex x="-2.24" y="-0.525"/>
+<vertex x="-2.26" y="-0.43"/>
+<vertex x="-2.275" y="-0.34"/>
+<vertex x="-2.285" y="-0.265"/>
+<vertex x="-2.29" y="-0.215"/>
+<vertex x="-2.295" y="-0.15"/>
+<vertex x="-2.3" y="-0.065"/>
+<vertex x="-2.3" y="0" curve="-90"/>
+<vertex x="0" y="2.3" curve="-90"/>
+<vertex x="2.3" y="0"/>
+<vertex x="2.3" y="-0.03"/>
+<vertex x="2.3" y="-0.045"/>
+<vertex x="2.295" y="-0.165"/>
+<vertex x="2.285" y="-0.265"/>
+<vertex x="2.265" y="-0.405"/>
+<vertex x="2.235" y="-0.545"/>
+<vertex x="2.205" y="-0.655"/>
+<vertex x="2.17" y="-0.765"/>
+<vertex x="2.13" y="-0.87"/>
+<vertex x="2.08" y="-0.985"/>
+<vertex x="2.02" y="-1.1"/>
+<vertex x="1.97" y="-1.19"/>
+<vertex x="1.925" y="-1.26"/>
+<vertex x="1.865" y="-1.345"/>
+<vertex x="1.81" y="-1.42"/>
+<vertex x="1.76" y="-1.48"/>
+<vertex x="1.7" y="-1.55"/>
+<vertex x="1.68" y="-1.57"/>
+<vertex x="1.625" y="-1.625"/>
+<vertex x="1.57" y="-1.68"/>
+<vertex x="1.48" y="-1.76"/>
+<vertex x="1.4" y="-1.825"/>
+<vertex x="1.34" y="-1.87"/>
+<vertex x="1.275" y="-1.915"/>
+<vertex x="1.195" y="-1.965"/>
+<vertex x="1.145" y="-1.995"/>
+<vertex x="1.075" y="-2.035"/>
+</polygon>
+<wire x1="-3" y1="3" x2="3" y2="3" width="0.1" layer="51"/>
+<wire x1="3" y1="3" x2="3" y2="-3" width="0.1" layer="51"/>
+<wire x1="3" y1="-3" x2="0.2" y2="-3" width="0.1" layer="51"/>
+<wire x1="-0.2" y1="-3" x2="-3" y2="-3" width="0.1" layer="51"/>
+<wire x1="-3" y1="-3" x2="-3" y2="3" width="0.1" layer="51"/>
+<wire x1="-0.2" y1="-3" x2="-0.2" y2="-3.3" width="0.1" layer="51"/>
+<wire x1="-0.2" y1="-3.3" x2="0.2" y2="-3.3" width="0.1" layer="51"/>
+<wire x1="0.2" y1="-3.3" x2="0.2" y2="-3" width="0.1" layer="51"/>
+<text x="0" y="4" size="1.27" layer="25" align="bottom-center">&gt;NAME</text>
+<text x="-3.5" y="-5.5" size="1.27" layer="25">&gt;VALUE</text>
+</package>
+</packages>
+<packages3d>
+<package3d name="60114102122403" urn="urn:adsk.eagle:package:18010859/6" type="model">
+<description>&lt;B&gt;WR-SMP Straight</description>
+<packageinstances>
+<packageinstance name="60114102122403"/>
+</packageinstances>
+</package3d>
+<package3d name="60114602122404" urn="urn:adsk.eagle:package:18010857/5" type="model">
+<description>&lt;b&gt;WR-SMP Straight</description>
+<packageinstances>
+<packageinstance name="60114602122404"/>
+</packageinstances>
+</package3d>
+<package3d name="60114202122305" urn="urn:adsk.eagle:package:18010856/4" type="model">
+<description>&lt;B&gt;WR-SMP SMT Edge Card Extended Solder Leg for PCB 1.6 mm Max.</description>
+<packageinstances>
+<packageinstance name="60114202122305"/>
+</packageinstances>
+</package3d>
+<package3d name="60114002122502" urn="urn:adsk.eagle:package:18010861/3" type="model">
+<description>&lt;b&gt;WR-SMP Straight</description>
+<packageinstances>
+<packageinstance name="60114002122502"/>
+</packageinstances>
+</package3d>
+<package3d name="60123002122501" urn="urn:adsk.eagle:package:18010862/4" type="model">
+<description>&lt;B&gt;WR-SMP Right Angle</description>
+<packageinstances>
+<packageinstance name="60123002122501"/>
+</packageinstances>
+</package3d>
+<package3d name="60124002122502" urn="urn:adsk.eagle:package:18010860/3" type="model">
+<description>&lt;B&gt;WR-SMP Straight</description>
+<packageinstances>
+<packageinstance name="60124002122502"/>
+</packageinstances>
+</package3d>
+<package3d name="60124202122305" urn="urn:adsk.eagle:package:18010854/4" type="model">
+<description>&lt;B&gt;WR-SMP SMT Edge Card Extended Solder Leg for PCB 1.6 mm Max.</description>
+<packageinstances>
+<packageinstance name="60124202122305"/>
+</packageinstances>
+</package3d>
+<package3d name="60124102122403" urn="urn:adsk.eagle:package:18010858/6" type="model">
+<description>&lt;B&gt;WR-SMP Straight</description>
+<packageinstances>
+<packageinstance name="60124102122403"/>
+</packageinstances>
+</package3d>
+<package3d name="60124602122404" urn="urn:adsk.eagle:package:18010855/5" type="model">
+<description>&lt;b&gt;WR-SMP Straight</description>
+<packageinstances>
+<packageinstance name="60124602122404"/>
+</packageinstances>
+</package3d>
+</packages3d>
+<symbols>
+<symbol name="PLUG">
+<circle x="0" y="0" radius="2.54" width="0.2" layer="94"/>
+<circle x="0" y="0" radius="0.254" width="0.508" layer="94"/>
+<pin name="1" x="7.62" y="0" visible="pad" length="short" direction="pas" rot="R180"/>
+<pin name="2" x="7.62" y="-5.08" visible="pad" length="short" direction="pas" rot="R180"/>
+<text x="0" y="3.54" size="1.778" layer="95" align="bottom-center">&gt;NAME</text>
+<text x="-5.08" y="-8.08" size="1.778" layer="96">&gt;VALUE</text>
+<wire x1="0" y1="-2.54" x2="0" y2="-5.08" width="0.254" layer="94"/>
+<wire x1="0" y1="-5.08" x2="5.08" y2="-5.08" width="0.254" layer="94"/>
+<wire x1="5.08" y1="0" x2="0.54" y2="0" width="0.254" layer="94"/>
+</symbol>
+</symbols>
+<devicesets>
+<deviceset name="60114102122403" prefix="J">
+<description>&lt;b&gt; WR-SMP Straight&lt;/b&gt;
+&lt;b&gt;&lt;br&gt;&lt;br&gt;
+MATERIAL PROPERTIES 
+&lt;br&gt;&lt;br&gt;
+&lt;/b&gt;Insulator Material LCP 
+&lt;br&gt;Center Contact Material Brass 
+&lt;br&gt;Center Contact Plating Gold, min. 0.127 μm over Nickel 
+&lt;br&gt;Body Material Brass 
+&lt;br&gt;Body Plating Gold, min. 0.127 μm over Nickel 
+&lt;br&gt;
+&lt;br&gt;
+&lt;b&gt;KIND PROPERTIES 
+&lt;br&gt;&lt;br&gt;
+&lt;/b&gt;Interface MIL-STD-348 
+&lt;br&gt;Connector Type SMP 
+&lt;br&gt;Gender Plug 
+&lt;br&gt;Orientation Type Straight 
+&lt;br&gt;
+&lt;br&gt;
+&lt;b&gt;GENERAL INFORMATION 
+&lt;br&gt;&lt;br&gt;
+&lt;/b&gt;Operating Temperature -65 up to +165 °C  
+&lt;br&gt;
+&lt;br&gt;
+&lt;b&gt;ELECTRICAL PROPERTIES 
+&lt;br&gt;&lt;br&gt;
+&lt;/b&gt;f DC~12 GHz 
+&lt;br&gt;
+&lt;br&gt;
+&lt;b&gt;MECHANICAL PROPERTIES 
+&lt;br&gt;&lt;br&gt;
+&lt;/b&gt;Mating Cycle 500 Cycles; 1000 Cycles 
+&lt;br&gt;
+&lt;br&gt;
+&lt;b&gt;PACKAGING PROPERTIES 
+&lt;br&gt;&lt;br&gt;
+&lt;/b&gt;Packaging Tray 
+&lt;br&gt;
+ &lt;br&gt;
+
+&lt;br&gt;&lt;a href="https://www.we-online.com/catalog/media/o176648v209%20Family_WR-SMP_60114102122403.jpg" title="Enlarge picture"&gt;
+&lt;img src="https://www.we-online.com/catalog/media/o176648v209%20Family_WR-SMP_60114102122403.jpg"  width="320"&gt;&lt;/a&gt;&lt;p&gt;
+Details see: &lt;a href="https://www.we-online.com/catalog/en/SMP_SMT_STRAIGHT/"&gt;https://www.we-online.com/catalog/en/SMP_SMT_STRAIGHT/&lt;/a&gt;&lt;p&gt;
+Updated by Ella Wu 2020-05-29&lt;br&gt;
+2020(C) Würth Elektronik</description>
+<gates>
+<gate name="G$1" symbol="PLUG" x="0" y="0"/>
+</gates>
+<devices>
+<device name="" package="60114102122403">
+<connects>
+<connect gate="G$1" pin="1" pad="1"/>
+<connect gate="G$1" pin="2" pad="2 3 4" route="any"/>
+</connects>
+<package3dinstances>
+<package3dinstance package3d_urn="urn:adsk.eagle:package:18010859/6"/>
+</package3dinstances>
+<technologies>
+<technology name="">
+<attribute name="DATASHEET-URL" value="https://www.we-online.com/catalog/datasheet/60114102122403.pdf"/>
+<attribute name="GENDER" value="Plug"/>
+<attribute name="INTERFACE" value="MIL-STD-348"/>
+<attribute name="MOUNT" value="SMT"/>
+<attribute name="ORIENTATION-TYPE" value="Straight"/>
+<attribute name="PART-NUMBER" value="60114102122403"/>
+<attribute name="VALUE" value="60114102122403"/>
+<attribute name="Z" value="50Ohm"/>
+</technology>
+</technologies>
+</device>
+</devices>
+</deviceset>
+<deviceset name="60114602122404" prefix="J">
+<description>&lt;b&gt; WR-SMP Straight&lt;/b&gt;
+&lt;b&gt;&lt;br&gt;&lt;br&gt;
+MATERIAL PROPERTIES 
+&lt;br&gt;&lt;br&gt;
+&lt;/b&gt;Insulator Material LCP 
+&lt;br&gt;Center Contact Material Brass 
+&lt;br&gt;Center Contact Plating Gold, min. 0.127 μm over Nickel 
+&lt;br&gt;Body Material Brass 
+&lt;br&gt;Body Plating Gold, min. 0.127 μm over Nickel 
+&lt;br&gt;
+&lt;br&gt;
+&lt;b&gt;KIND PROPERTIES 
+&lt;br&gt;&lt;br&gt;
+&lt;/b&gt;Interface MIL-STD-348 
+&lt;br&gt;Connector Type SMP 
+&lt;br&gt;Gender Plug 
+&lt;br&gt;Orientation Type Straight 
+&lt;br&gt;
+&lt;br&gt;
+&lt;b&gt;GENERAL INFORMATION 
+&lt;br&gt;&lt;br&gt;
+&lt;/b&gt;Operating Temperature -65 up to +165 °C  
+&lt;br&gt;
+&lt;br&gt;
+&lt;b&gt;ELECTRICAL PROPERTIES 
+&lt;br&gt;&lt;br&gt;
+&lt;/b&gt;f DC~12 GHz 
+&lt;br&gt;
+&lt;br&gt;
+&lt;b&gt;MECHANICAL PROPERTIES 
+&lt;br&gt;&lt;br&gt;
+&lt;/b&gt;Mating Cycle 500 Cycles; 1000 Cycles 
+&lt;br&gt;
+&lt;br&gt;
+&lt;b&gt;PACKAGING PROPERTIES 
+&lt;br&gt;&lt;br&gt;
+&lt;/b&gt;Packaging Tray 
+&lt;br&gt;
+ &lt;br&gt;
+
+&lt;br&gt;&lt;a href="https://www.we-online.com/catalog/media/o176649v209%20Family_WR-SMP_60114602122404.jpg" title="Enlarge picture"&gt;
+&lt;img src="https://www.we-online.com/catalog/media/o176649v209%20Family_WR-SMP_60114602122404.jpg"  width="320"&gt;&lt;/a&gt;&lt;p&gt;
+Details see: &lt;a href="https://www.we-online.com/catalog/en/SMP_THR_STRAIGHT/"&gt;https://www.we-online.com/catalog/en/SMP_THR_STRAIGHT/&lt;/a&gt;&lt;p&gt;
+Updated by Ella Wu 2021-04-14&lt;br&gt;
+2021(C) Würth Elektronik</description>
+<gates>
+<gate name="G$1" symbol="PLUG" x="0" y="0"/>
+</gates>
+<devices>
+<device name="" package="60114602122404">
+<connects>
+<connect gate="G$1" pin="1" pad="1"/>
+<connect gate="G$1" pin="2" pad="2 3 4 5" route="any"/>
+</connects>
+<package3dinstances>
+<package3dinstance package3d_urn="urn:adsk.eagle:package:18010857/5"/>
+</package3dinstances>
+<technologies>
+<technology name="">
+<attribute name="DATASHEET-URL" value="https://www.we-online.com/catalog/datasheet/60114602122404.pdf"/>
+<attribute name="GENDER" value="Plug"/>
+<attribute name="INTERFACE" value="MIL-STD-348"/>
+<attribute name="MOUNT" value="THR"/>
+<attribute name="ORIENTATION-TYPE" value="Straight"/>
+<attribute name="PART-NUMBER" value="60114602122404"/>
+<attribute name="VALUE" value="60114602122404"/>
+<attribute name="Z" value="50Ohm"/>
+</technology>
+</technologies>
+</device>
+</devices>
+</deviceset>
+<deviceset name="60114202122305" prefix="J">
+<description>&lt;b&gt; WR-SMP SMT Edge Card Extended Solder Leg for PCB 1.6 mm Max.  &lt;/b&gt;
+&lt;b&gt;&lt;br&gt;&lt;br&gt;
+MATERIAL PROPERTIES 
+&lt;br&gt;&lt;br&gt;
+&lt;/b&gt;Insulator Material PTFE 
+&lt;br&gt;Center Contact Material Brass 
+&lt;br&gt;Center Contact Plating Gold, min. 0.127 μm over Nickel 
+&lt;br&gt;Body Material Brass 
+&lt;br&gt;Body Plating Gold, min. 0.127 μm over Nickel 
+&lt;br&gt;
+&lt;br&gt;
+&lt;b&gt;KIND PROPERTIES 
+&lt;br&gt;&lt;br&gt;
+&lt;/b&gt;Interface MIL-STD-348 
+&lt;br&gt;Connector Type SMP 
+&lt;br&gt;Gender Plug 
+&lt;br&gt;Orientation Type Straight 
+&lt;br&gt;
+&lt;br&gt;
+&lt;b&gt;GENERAL INFORMATION 
+&lt;br&gt;&lt;br&gt;
+&lt;/b&gt;Operating Temperature -65 up to +165 °C  
+&lt;br&gt;
+&lt;br&gt;
+&lt;b&gt;ELECTRICAL PROPERTIES 
+&lt;br&gt;&lt;br&gt;
+&lt;/b&gt;f DC~12 GHz 
+&lt;br&gt;
+&lt;br&gt;
+&lt;b&gt;MECHANICAL PROPERTIES 
+&lt;br&gt;&lt;br&gt;
+&lt;/b&gt;Mating Cycle 500 Cycles; 1000 Cycles 
+&lt;br&gt;
+&lt;br&gt;
+&lt;b&gt;PACKAGING PROPERTIES 
+&lt;br&gt;&lt;br&gt;
+&lt;/b&gt;Packaging Tray 
+&lt;br&gt;
+ &lt;br&gt;
+
+&lt;br&gt;&lt;a href="https://www.we-online.com/catalog/media/o176650v209%20Family_WR-SMP_60114202122305.jpg" title="Enlarge picture"&gt;
+&lt;img src="https://www.we-online.com/catalog/media/o176650v209%20Family_WR-SMP_60114202122305.jpg"  width="320"&gt;&lt;/a&gt;&lt;p&gt;
+Details see: &lt;a href="https://www.we-online.com/catalog/en/SMP_END_LAUNCH_EDGE_CARD/"&gt;hhttps://www.we-online.com/catalog/en/SMP_END_LAUNCH_EDGE_CARD/&lt;/a&gt;&lt;p&gt;
+
+Updated by Ella Wu 2021-04-14&lt;br&gt;
+2021(C) Würth Elektronik</description>
+<gates>
+<gate name="G$1" symbol="PLUG" x="0" y="0"/>
+</gates>
+<devices>
+<device name="" package="60114202122305">
+<connects>
+<connect gate="G$1" pin="1" pad="1"/>
+<connect gate="G$1" pin="2" pad="2 3"/>
+</connects>
+<package3dinstances>
+<package3dinstance package3d_urn="urn:adsk.eagle:package:18010856/4"/>
+</package3dinstances>
+<technologies>
+<technology name="">
+<attribute name="DATASHEET-URL" value="https://www.we-online.com/catalog/datasheet/60114202122305 .pdf"/>
+<attribute name="GENDER" value="Plug"/>
+<attribute name="INTERFACE" value="MIL-STD-348"/>
+<attribute name="MOUNT" value="SMT"/>
+<attribute name="ORIENTATION-TYPE" value="Straight"/>
+<attribute name="PART-NUMBER" value="60114202122305 "/>
+<attribute name="VALUE" value="60114202122305 "/>
+<attribute name="Z" value="50Ohm"/>
+</technology>
+</technologies>
+</device>
+</devices>
+</deviceset>
+<deviceset name="60123002122501" prefix="J">
+<description>&lt;b&gt; WR-SMP Right Angle&lt;/b&gt;
+&lt;b&gt;&lt;br&gt;&lt;br&gt;
+MATERIAL PROPERTIES 
+&lt;br&gt;&lt;br&gt;
+&lt;/b&gt;Insulator Material PTFE 
+&lt;br&gt;Center Contact Material Brass 
+&lt;br&gt;Center Contact Plating Gold, min. 0.127 μm over Nickel 
+&lt;br&gt;Body Material Brass 
+&lt;br&gt;Body Plating Gold, min. 0.127 μm over Nickel 
+&lt;br&gt;
+&lt;br&gt;
+&lt;b&gt;KIND PROPERTIES 
+&lt;br&gt;&lt;br&gt;
+&lt;/b&gt;Interface MIL-STD-348 
+&lt;br&gt;Connector Type SMP 
+&lt;br&gt;Gender Plug 
+&lt;br&gt;Orientation Type Right Angle 
+&lt;br&gt;
+&lt;br&gt;
+&lt;b&gt;GENERAL INFORMATION 
+&lt;br&gt;&lt;br&gt;
+&lt;/b&gt;Operating Temperature -65 up to +165 °C  
+&lt;br&gt;
+&lt;br&gt;
+&lt;b&gt;ELECTRICAL PROPERTIES 
+&lt;br&gt;&lt;br&gt;
+&lt;/b&gt;f DC~12 GHz 
+&lt;br&gt;
+&lt;br&gt;
+&lt;b&gt;MECHANICAL PROPERTIES 
+&lt;br&gt;&lt;br&gt;
+&lt;/b&gt;Mating Cycle 500 Cycles
+&lt;br&gt;
+&lt;br&gt;
+&lt;b&gt;PACKAGING PROPERTIES 
+&lt;br&gt;&lt;br&gt;
+&lt;/b&gt;Packaging Tray 
+&lt;br&gt;
+ &lt;br&gt;
+
+&lt;br&gt;&lt;a href="https://www.we-online.com/catalog/media/o176646v209%20Family_WR-SMP_60123002122501.jpg" title="Enlarge picture"&gt;
+&lt;img src="https://www.we-online.com/catalog/media/o176646v209%20Family_WR-SMP_60123002122501.jpg"  width="320"&gt;&lt;/a&gt;&lt;p&gt;
+Details see: &lt;a href="https://www.we-online.com/catalog/en/SMP_PCB_RIGHT_ANGLE/"&gt;https://www.we-online.com/catalog/en/SMP_PCB_RIGHT_ANGLE/&lt;/a&gt;&lt;p&gt;
+Updated by Ella Wu 2020-05-29&lt;br&gt;
+2020(C) Würth Elektronik</description>
+<gates>
+<gate name="G$1" symbol="PLUG" x="0" y="0"/>
+</gates>
+<devices>
+<device name="" package="60123002122501">
+<connects>
+<connect gate="G$1" pin="1" pad="1"/>
+<connect gate="G$1" pin="2" pad="2 3 4 5"/>
+</connects>
+<package3dinstances>
+<package3dinstance package3d_urn="urn:adsk.eagle:package:18010862/4"/>
+</package3dinstances>
+<technologies>
+<technology name="">
+<attribute name="DATASHEET-URL" value="https://www.we-online.com/catalog/datasheet/60123002122501.pdf"/>
+<attribute name="GENDER" value="Plug"/>
+<attribute name="INTERFACE" value="MIL-STD-348"/>
+<attribute name="MOUNT" value="THT"/>
+<attribute name="ORIENTATION-TYPE" value="Right Angle"/>
+<attribute name="PART-NUMBER" value="60123002122501"/>
+<attribute name="VALUE" value="60123002122501"/>
+<attribute name="Z" value="50Ohm"/>
+</technology>
+</technologies>
+</device>
+</devices>
+</deviceset>
+<deviceset name="60114002122502" prefix="J">
+<description>&lt;b&gt; WR-SMP Straight&lt;/b&gt;
+&lt;b&gt;&lt;br&gt;&lt;br&gt;
+MATERIAL PROPERTIES 
+&lt;br&gt;&lt;br&gt;
+&lt;/b&gt;Insulator Material PTFE 
+&lt;br&gt;Center Contact Material Brass 
+&lt;br&gt;Center Contact Plating Gold, min. 0.127 μm over Nickel 
+&lt;br&gt;Body Material Brass 
+&lt;br&gt;Body Plating Gold, min. 0.127 μm over Nickel 
+&lt;br&gt;
+&lt;br&gt;
+&lt;b&gt;KIND PROPERTIES 
+&lt;br&gt;&lt;br&gt;
+&lt;/b&gt;Interface MIL-STD-348 
+&lt;br&gt;Connector Type SMP 
+&lt;br&gt;Gender Plug 
+&lt;br&gt;Orientation Type Straight 
+&lt;br&gt;
+&lt;br&gt;
+&lt;b&gt;GENERAL INFORMATION 
+&lt;br&gt;&lt;br&gt;
+&lt;/b&gt;Operating Temperature -65 up to +165 °C  
+&lt;br&gt;
+&lt;br&gt;
+&lt;b&gt;ELECTRICAL PROPERTIES 
+&lt;br&gt;&lt;br&gt;
+&lt;/b&gt;f DC~12 GHz 
+&lt;br&gt;
+&lt;br&gt;
+&lt;b&gt;MECHANICAL PROPERTIES 
+&lt;br&gt;&lt;br&gt;
+&lt;/b&gt;Mating Cycle 500 Cycles; 1000 Cycles 
+&lt;br&gt;
+&lt;br&gt;
+&lt;b&gt;PACKAGING PROPERTIES 
+&lt;br&gt;&lt;br&gt;
+&lt;/b&gt;Packaging Tray 
+&lt;br&gt;
+ &lt;br&gt;
+
+&lt;br&gt;&lt;a href="https://www.we-online.com/catalog/media/o176647v209%20Family_WR-SMP_60114002122502.jpg" title="Enlarge picture"&gt;
+&lt;img src="https://www.we-online.com/catalog/media/o176647v209%20Family_WR-SMP_60114002122502.jpg"  width="320"&gt;&lt;/a&gt;&lt;p&gt;
+Details see: &lt;a href="https://www.we-online.com/catalog/en/SMP_PCB_STRAIGHT/"&gt;https://www.we-online.com/catalog/en/SMP_PCB_STRAIGHT/&lt;/a&gt;&lt;p&gt;
+Updated by Ella Wu 2020-05-29&lt;br&gt;
+2020(C) Würth Elektronik</description>
+<gates>
+<gate name="G$1" symbol="PLUG" x="0" y="0"/>
+</gates>
+<devices>
+<device name="" package="60114002122502">
+<connects>
+<connect gate="G$1" pin="1" pad="1"/>
+<connect gate="G$1" pin="2" pad="2 3 4 5"/>
+</connects>
+<package3dinstances>
+<package3dinstance package3d_urn="urn:adsk.eagle:package:18010861/3"/>
+</package3dinstances>
+<technologies>
+<technology name="">
+<attribute name="DATASHEET-URL" value="https://www.we-online.com/catalog/datasheet/60114002122502.pdf"/>
+<attribute name="GENDER" value="Plug"/>
+<attribute name="INTERFACE" value="MIL-STD-348"/>
+<attribute name="MOUNT" value="THT"/>
+<attribute name="ORIENTATION-TYPE" value="Straight"/>
+<attribute name="PART-NUMBER" value="60114002122502"/>
+<attribute name="VALUE" value="60114002122502"/>
+<attribute name="Z" value="50Ohm"/>
+</technology>
+</technologies>
+</device>
+</devices>
+</deviceset>
+<deviceset name="60124202122305" prefix="J">
+<description>&lt;b&gt; WR-SMP SMT Edge Card Extended Solder Leg for PCB 1.6 mm Max.  &lt;/b&gt;
+&lt;b&gt;&lt;br&gt;&lt;br&gt;
+MATERIAL PROPERTIES 
+&lt;br&gt;&lt;br&gt;
+&lt;/b&gt;Insulator Material PTFE 
+&lt;br&gt;Center Contact Material Brass 
+&lt;br&gt;Center Contact Plating Gold, min. 0.127 μm over Nickel 
+&lt;br&gt;Body Material Brass 
+&lt;br&gt;Body Plating Gold, min. 0.127 μm over Nickel 
+&lt;br&gt;
+&lt;br&gt;
+&lt;b&gt;KIND PROPERTIES 
+&lt;br&gt;&lt;br&gt;
+&lt;/b&gt;Interface MIL-STD-348 
+&lt;br&gt;Connector Type SMP 
+&lt;br&gt;Gender Plug 
+&lt;br&gt;Orientation Type Straight 
+&lt;br&gt;
+&lt;br&gt;
+&lt;b&gt;GENERAL INFORMATION 
+&lt;br&gt;&lt;br&gt;
+&lt;/b&gt;Operating Temperature -65 up to +165 °C  
+&lt;br&gt;
+&lt;br&gt;
+&lt;b&gt;ELECTRICAL PROPERTIES 
+&lt;br&gt;&lt;br&gt;
+&lt;/b&gt;f DC~12 GHz 
+&lt;br&gt;
+&lt;br&gt;
+&lt;b&gt;MECHANICAL PROPERTIES 
+&lt;br&gt;&lt;br&gt;
+&lt;/b&gt;Mating Cycle 500 Cycles; 1000 Cycles 
+&lt;br&gt;
+&lt;br&gt;
+&lt;b&gt;PACKAGING PROPERTIES 
+&lt;br&gt;&lt;br&gt;
+&lt;/b&gt;Packaging Tray 
+&lt;br&gt;
+ &lt;br&gt;
+
+&lt;br&gt;&lt;a href="https://www.we-online.com/catalog/media/o176650v209%20Family_WR-SMP_60114202122305.jpg" title="Enlarge picture"&gt;
+&lt;img src="https://www.we-online.com/catalog/media/o176650v209%20Family_WR-SMP_60114202122305.jpg"  width="320"&gt;&lt;/a&gt;&lt;p&gt;
+Details see: &lt;a href="https://www.we-online.com/catalog/en/SMP_END_LAUNCH_EDGE_CARD/"&gt;hhttps://www.we-online.com/catalog/en/SMP_END_LAUNCH_EDGE_CARD/&lt;/a&gt;&lt;p&gt;
+
+Updated by Ella Wu 2021-04-14&lt;br&gt;
+2021(C) Würth Elektronik</description>
+<gates>
+<gate name="G$1" symbol="PLUG" x="0" y="0"/>
+</gates>
+<devices>
+<device name="" package="60124202122305">
+<connects>
+<connect gate="G$1" pin="1" pad="1"/>
+<connect gate="G$1" pin="2" pad="2 3"/>
+</connects>
+<package3dinstances>
+<package3dinstance package3d_urn="urn:adsk.eagle:package:18010854/4"/>
+</package3dinstances>
+<technologies>
+<technology name="">
+<attribute name="DATASHEET-URL" value="https://www.we-online.com/catalog/datasheet/60124202122305.pdf"/>
+<attribute name="GENDER" value="Plug"/>
+<attribute name="INTERFACE" value="MIL-STD-348"/>
+<attribute name="MOUNT" value="SMT"/>
+<attribute name="ORIENTATION-TYPE" value="Straight"/>
+<attribute name="PART-NUMBER" value="60124202122305"/>
+<attribute name="VALUE" value="60124202122305"/>
+<attribute name="Z" value="50Ohm"/>
+</technology>
+</technologies>
+</device>
+</devices>
+</deviceset>
+<deviceset name="60124102122403" prefix="J">
+<description>&lt;b&gt; WR-SMP Straight&lt;/b&gt;
+&lt;b&gt;&lt;br&gt;&lt;br&gt;
+MATERIAL PROPERTIES 
+&lt;br&gt;&lt;br&gt;
+&lt;/b&gt;Insulator Material LCP 
+&lt;br&gt;Center Contact Material Brass 
+&lt;br&gt;Center Contact Plating Gold, min. 0.127 μm over Nickel 
+&lt;br&gt;Body Material Brass 
+&lt;br&gt;Body Plating Gold, min. 0.127 μm over Nickel 
+&lt;br&gt;
+&lt;br&gt;
+&lt;b&gt;KIND PROPERTIES 
+&lt;br&gt;&lt;br&gt;
+&lt;/b&gt;Interface MIL-STD-348 
+&lt;br&gt;Connector Type SMP 
+&lt;br&gt;Gender Plug 
+&lt;br&gt;Orientation Type Straight 
+&lt;br&gt;
+&lt;br&gt;
+&lt;b&gt;GENERAL INFORMATION 
+&lt;br&gt;&lt;br&gt;
+&lt;/b&gt;Operating Temperature -65 up to +165 °C  
+&lt;br&gt;
+&lt;br&gt;
+&lt;b&gt;ELECTRICAL PROPERTIES 
+&lt;br&gt;&lt;br&gt;
+&lt;/b&gt;f DC~12 GHz 
+&lt;br&gt;
+&lt;br&gt;
+&lt;b&gt;MECHANICAL PROPERTIES 
+&lt;br&gt;&lt;br&gt;
+&lt;/b&gt;Mating Cycle 500 Cycles; 1000 Cycles 
+&lt;br&gt;
+&lt;br&gt;
+&lt;b&gt;PACKAGING PROPERTIES 
+&lt;br&gt;&lt;br&gt;
+&lt;/b&gt;Packaging Tray 
+&lt;br&gt;
+ &lt;br&gt;
+
+&lt;br&gt;&lt;a href="https://www.we-online.com/catalog/media/o176648v209%20Family_WR-SMP_60114102122403.jpg" title="Enlarge picture"&gt;
+&lt;img src="https://www.we-online.com/catalog/media/o176648v209%20Family_WR-SMP_60114102122403.jpg"  width="320"&gt;&lt;/a&gt;&lt;p&gt;
+Details see: &lt;a href="https://www.we-online.com/catalog/en/SMP_SMT_STRAIGHT/"&gt;https://www.we-online.com/catalog/en/SMP_SMT_STRAIGHT/&lt;/a&gt;&lt;p&gt;
+Updated by Ella Wu 2020-05-29&lt;br&gt;
+2020(C) Würth Elektronik</description>
+<gates>
+<gate name="G$1" symbol="PLUG" x="0" y="0"/>
+</gates>
+<devices>
+<device name="" package="60124102122403">
+<connects>
+<connect gate="G$1" pin="1" pad="1"/>
+<connect gate="G$1" pin="2" pad="2 3 4" route="any"/>
+</connects>
+<package3dinstances>
+<package3dinstance package3d_urn="urn:adsk.eagle:package:18010858/6"/>
+</package3dinstances>
+<technologies>
+<technology name="">
+<attribute name="DATASHEET-URL" value="https://www.we-online.com/catalog/datasheet/60124102122403.pdf"/>
+<attribute name="GENDER" value="Plug"/>
+<attribute name="INTERFACE" value="MIL-STD-348"/>
+<attribute name="MOUNT" value="SMT"/>
+<attribute name="ORIENTATION-TYPE" value="Straight"/>
+<attribute name="PART-NUMBER" value="60124102122403"/>
+<attribute name="VALUE" value="60124102122403"/>
+<attribute name="Z" value="50Ohm"/>
+</technology>
+</technologies>
+</device>
+</devices>
+</deviceset>
+<deviceset name="60124002122502" prefix="J">
+<description>&lt;b&gt; WR-SMP Straight&lt;/b&gt;
+&lt;b&gt;&lt;br&gt;&lt;br&gt;
+MATERIAL PROPERTIES 
+&lt;br&gt;&lt;br&gt;
+&lt;/b&gt;Insulator Material PTFE 
+&lt;br&gt;Center Contact Material Brass 
+&lt;br&gt;Center Contact Plating Gold, min. 0.127 μm over Nickel 
+&lt;br&gt;Body Material Brass 
+&lt;br&gt;Body Plating Gold, min. 0.127 μm over Nickel 
+&lt;br&gt;
+&lt;br&gt;
+&lt;b&gt;KIND PROPERTIES 
+&lt;br&gt;&lt;br&gt;
+&lt;/b&gt;Interface MIL-STD-348 
+&lt;br&gt;Connector Type SMP 
+&lt;br&gt;Gender Plug 
+&lt;br&gt;Orientation Type Straight 
+&lt;br&gt;
+&lt;br&gt;
+&lt;b&gt;GENERAL INFORMATION 
+&lt;br&gt;&lt;br&gt;
+&lt;/b&gt;Operating Temperature -65 up to +165 °C  
+&lt;br&gt;
+&lt;br&gt;
+&lt;b&gt;ELECTRICAL PROPERTIES 
+&lt;br&gt;&lt;br&gt;
+&lt;/b&gt;f DC~12 GHz 
+&lt;br&gt;
+&lt;br&gt;
+&lt;b&gt;MECHANICAL PROPERTIES 
+&lt;br&gt;&lt;br&gt;
+&lt;/b&gt;Mating Cycle 500 Cycles; 1000 Cycles 
+&lt;br&gt;
+&lt;br&gt;
+&lt;b&gt;PACKAGING PROPERTIES 
+&lt;br&gt;&lt;br&gt;
+&lt;/b&gt;Packaging Tray 
+&lt;br&gt;
+ &lt;br&gt;
+
+&lt;br&gt;&lt;a href="https://www.we-online.com/catalog/media/o176647v209%20Family_WR-SMP_60114002122502.jpg" title="Enlarge picture"&gt;
+&lt;img src="https://www.we-online.com/catalog/media/o176647v209%20Family_WR-SMP_60114002122502.jpg"  width="320"&gt;&lt;/a&gt;&lt;p&gt;
+Details see: &lt;a href="https://www.we-online.com/catalog/en/SMP_PCB_STRAIGHT/"&gt;https://www.we-online.com/catalog/en/SMP_PCB_STRAIGHT/&lt;/a&gt;&lt;p&gt;
+Updated by Ella Wu 2020-05-29&lt;br&gt;
+2020(C) Würth Elektronik</description>
+<gates>
+<gate name="G$1" symbol="PLUG" x="0" y="0"/>
+</gates>
+<devices>
+<device name="" package="60124002122502">
+<connects>
+<connect gate="G$1" pin="1" pad="1"/>
+<connect gate="G$1" pin="2" pad="2 3 4 5"/>
+</connects>
+<package3dinstances>
+<package3dinstance package3d_urn="urn:adsk.eagle:package:18010860/3"/>
+</package3dinstances>
+<technologies>
+<technology name="">
+<attribute name="DATASHEET-URL" value="https://www.we-online.com/catalog/datasheet/60124002122502.pdf"/>
+<attribute name="GENDER" value="Plug"/>
+<attribute name="INTERFACE" value="MIL-STD-348"/>
+<attribute name="MOUNT" value="THT"/>
+<attribute name="ORIENTATION-TYPE" value="Straight"/>
+<attribute name="PART-NUMBER" value="60124002122502"/>
+<attribute name="VALUE" value="60124002122502"/>
+<attribute name="Z" value="50Ohm"/>
+</technology>
+</technologies>
+</device>
+</devices>
+</deviceset>
+<deviceset name="60124602122404" prefix="J">
+<description>&lt;b&gt; WR-SMP Straight&lt;/b&gt;
+&lt;b&gt;&lt;br&gt;&lt;br&gt;
+MATERIAL PROPERTIES 
+&lt;br&gt;&lt;br&gt;
+&lt;/b&gt;Insulator Material LCP 
+&lt;br&gt;Center Contact Material Brass 
+&lt;br&gt;Center Contact Plating Gold, min. 0.127 μm over Nickel 
+&lt;br&gt;Body Material Brass 
+&lt;br&gt;Body Plating Gold, min. 0.127 μm over Nickel 
+&lt;br&gt;
+&lt;br&gt;
+&lt;b&gt;KIND PROPERTIES 
+&lt;br&gt;&lt;br&gt;
+&lt;/b&gt;Interface MIL-STD-348 
+&lt;br&gt;Connector Type SMP 
+&lt;br&gt;Gender Plug 
+&lt;br&gt;Orientation Type Straight 
+&lt;br&gt;
+&lt;br&gt;
+&lt;b&gt;GENERAL INFORMATION 
+&lt;br&gt;&lt;br&gt;
+&lt;/b&gt;Operating Temperature -65 up to +165 °C  
+&lt;br&gt;
+&lt;br&gt;
+&lt;b&gt;ELECTRICAL PROPERTIES 
+&lt;br&gt;&lt;br&gt;
+&lt;/b&gt;f DC~12 GHz 
+&lt;br&gt;
+&lt;br&gt;
+&lt;b&gt;MECHANICAL PROPERTIES 
+&lt;br&gt;&lt;br&gt;
+&lt;/b&gt;Mating Cycle 500 Cycles; 1000 Cycles 
+&lt;br&gt;
+&lt;br&gt;
+&lt;b&gt;PACKAGING PROPERTIES 
+&lt;br&gt;&lt;br&gt;
+&lt;/b&gt;Packaging Tray 
+&lt;br&gt;
+ &lt;br&gt;
+
+&lt;br&gt;&lt;a href="https://www.we-online.com/catalog/media/o176649v209%20Family_WR-SMP_60114602122404.jpg" title="Enlarge picture"&gt;
+&lt;img src="https://www.we-online.com/catalog/media/o176649v209%20Family_WR-SMP_60114602122404.jpg"  width="320"&gt;&lt;/a&gt;&lt;p&gt;
+Details see: &lt;a href="https://www.we-online.com/catalog/en/SMP_THR_STRAIGHT/"&gt;https://www.we-online.com/catalog/en/SMP_THR_STRAIGHT/&lt;/a&gt;&lt;p&gt;
+Updated by Ella Wu 2021-04-14&lt;br&gt;
+2021(C) Würth Elektronik</description>
+<gates>
+<gate name="G$1" symbol="PLUG" x="0" y="0"/>
+</gates>
+<devices>
+<device name="" package="60124602122404">
+<connects>
+<connect gate="G$1" pin="1" pad="1"/>
+<connect gate="G$1" pin="2" pad="2 3 4 5" route="any"/>
+</connects>
+<package3dinstances>
+<package3dinstance package3d_urn="urn:adsk.eagle:package:18010855/5"/>
+</package3dinstances>
+<technologies>
+<technology name="">
+<attribute name="DATASHEET-URL" value="https://www.we-online.com/catalog/datasheet/60124602122404 .pdf"/>
+<attribute name="GENDER" value="Plug"/>
+<attribute name="INTERFACE" value="MIL-STD-348"/>
+<attribute name="MOUNT" value="THR"/>
+<attribute name="ORIENTATION-TYPE" value="Straight"/>
+<attribute name="PART-NUMBER" value="60124602122404 "/>
+<attribute name="VALUE" value="60124602122404 "/>
+<attribute name="Z" value="50Ohm"/>
+</technology>
+</technologies>
+</device>
+</devices>
+</deviceset>
+</devicesets>
+</library>
+</drawing>
+<compatibility>
+<note version="8.3" severity="warning">
+Since Version 8.3, EAGLE supports URNs for individual library
+assets (packages, symbols, and devices). The URNs of those assets
+will not be understood (or retained) with this version.
+</note>
+<note version="8.3" severity="warning">
+Since Version 8.3, EAGLE supports the association of 3D packages
+with devices in libraries, schematics, and board files. Those 3D
+packages will not be understood (or retained) with this version.
+</note>
+</compatibility>
+</eagle>

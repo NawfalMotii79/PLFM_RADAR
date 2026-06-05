@@ -344,6 +344,111 @@ static void test_effective_gain_edge_cases()
 }
 
 // ---------------------------------------------------------------------------
+// Test 14: Saturation must never increase gain (issue #145 regression)
+// ---------------------------------------------------------------------------
+static void test_saturation_never_increases_gain()
+{
+    ADAR1000_AGC agc;
+    agc.enabled = true;
+    agc.agc_base_gain = 30;
+    agc.min_gain      = 40;  // misconfigured: min > current base
+    agc.gain_step_down = 4;
+
+    uint8_t before = agc.agc_base_gain;
+    agc.update(true);  // saturation event
+    assert(agc.agc_base_gain <= before);  // must not increase
+
+    // At-floor case: base == min
+    agc.agc_base_gain = 40;
+    agc.update(true);
+    assert(agc.agc_base_gain == 40);  // no movement at floor
+}
+
+// ---------------------------------------------------------------------------
+// Test 15: configure() validates min <= max and clamps agc_base_gain
+// ---------------------------------------------------------------------------
+static void test_configure_validation()
+{
+    ADAR1000_AGC agc;
+
+    // Valid config
+    assert(agc.configure(10, 120, 4, 1, 4) == true);
+    assert(agc.min_gain == 10);
+    assert(agc.max_gain == 120);
+    assert(agc.gain_step_down == 4);
+    assert(agc.gain_step_up == 1);
+    assert(agc.holdoff_frames == 4);
+
+    // Invalid: min > max — fields must be unchanged
+    assert(agc.configure(100, 50, 4, 1, 4) == false);
+    assert(agc.min_gain == 10);
+    assert(agc.max_gain == 120);
+
+    // agc_base_gain above new max is clamped down
+    agc.agc_base_gain = 200;
+    agc.configure(10, 120, 4, 1, 4);
+    assert(agc.agc_base_gain == 120);
+
+    // agc_base_gain below new min is clamped up
+    agc.agc_base_gain = 5;
+    agc.configure(10, 120, 4, 1, 4);
+    assert(agc.agc_base_gain == 10);
+
+    // agc_base_gain within range is left unchanged
+    agc.agc_base_gain = 60;
+    agc.configure(10, 120, 4, 1, 4);
+    assert(agc.agc_base_gain == 60);
+
+    // holdoff_frames == 0 is invalid: recovery condition would be permanently
+    // true, causing gain-up on every non-saturated frame
+    assert(agc.configure(10, 120, 4, 1, 0) == false);
+    assert(agc.holdoff_frames == 4);  // unchanged
+}
+
+// ---------------------------------------------------------------------------
+// Test 16: configure() rejects zero step_down (would silence AGC attack)
+// ---------------------------------------------------------------------------
+static void test_configure_rejects_zero_step_down()
+{
+    ADAR1000_AGC agc;
+    assert(agc.configure(10, 120, 4, 1, 4) == true);  // baseline
+
+    assert(agc.configure(10, 120, 0, 1, 4) == false);
+    assert(agc.gain_step_down == 4);  // unchanged
+    assert(agc.gain_step_up  == 1);   // unchanged
+}
+
+// ---------------------------------------------------------------------------
+// Test 17: configure() rejects zero step_up (would silence AGC recovery)
+// ---------------------------------------------------------------------------
+static void test_configure_rejects_zero_step_up()
+{
+    ADAR1000_AGC agc;
+    assert(agc.configure(10, 120, 4, 1, 4) == true);  // baseline
+
+    assert(agc.configure(10, 120, 4, 0, 4) == false);
+    assert(agc.gain_step_down == 4);  // unchanged
+    assert(agc.gain_step_up  == 1);   // unchanged
+}
+
+// ---------------------------------------------------------------------------
+// Test 18: configure() rejects max_gain > 127 (exceeds 7-bit VGA register)
+// ---------------------------------------------------------------------------
+static void test_configure_rejects_max_gain_out_of_range()
+{
+    ADAR1000_AGC agc;
+    assert(agc.configure(10, 120, 4, 1, 4) == true);  // baseline
+
+    assert(agc.configure(10, 200, 4, 1, 4) == false);
+    assert(agc.max_gain == 120);  // unchanged
+    assert(agc.min_gain == 10);   // unchanged
+
+    // Boundary: exactly 127 is valid
+    assert(agc.configure(10, 127, 4, 1, 4) == true);
+    assert(agc.max_gain == 127);
+}
+
+// ---------------------------------------------------------------------------
 // main
 // ---------------------------------------------------------------------------
 int main()
@@ -363,6 +468,11 @@ int main()
     RUN_TEST(test_saturation_counter);
     RUN_TEST(test_mixed_sequence);
     RUN_TEST(test_effective_gain_edge_cases);
+    RUN_TEST(test_saturation_never_increases_gain);
+    RUN_TEST(test_configure_validation);
+    RUN_TEST(test_configure_rejects_zero_step_down);
+    RUN_TEST(test_configure_rejects_zero_step_up);
+    RUN_TEST(test_configure_rejects_max_gain_out_of_range);
 
     printf("=== Results: %d/%d passed ===\n", tests_passed, tests_total);
     return (tests_passed == tests_total) ? 0 : 1;
