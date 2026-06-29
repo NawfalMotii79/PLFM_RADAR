@@ -44,7 +44,7 @@ void ADAR1000_AGC::update(bool fpga_saturation)
         saturation_event_count++;
         holdoff_counter = 0;
 
-        if (agc_base_gain >= gain_step_down + min_gain) {
+        if ((uint16_t)agc_base_gain >= (uint16_t)gain_step_down + (uint16_t)min_gain) {
             agc_base_gain -= gain_step_down;
         } else {
             agc_base_gain = min_gain;
@@ -60,7 +60,7 @@ void ADAR1000_AGC::update(bool fpga_saturation)
         if (holdoff_counter >= holdoff_frames) {
             holdoff_counter = 0;
 
-            if (agc_base_gain + gain_step_up <= max_gain) {
+            if ((uint16_t)agc_base_gain + (uint16_t)gain_step_up <= (uint16_t)max_gain) {
                 agc_base_gain += gain_step_up;
             } else {
                 agc_base_gain = max_gain;
