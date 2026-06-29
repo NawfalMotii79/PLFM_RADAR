@@ -319,6 +319,42 @@ static void test_mixed_sequence()
 }
 
 // ---------------------------------------------------------------------------
+// Regression: attack-path uint8_t overflow (issue #145)
+static void test_attack_path_no_uint8_overflow()
+{
+    ADAR1000_AGC agc;
+    agc.enabled = true;
+    // Force min_gain + gain_step_down > 255 to trigger wrap
+    agc.min_gain = 200;
+    agc.gain_step_down = 100;
+    agc.agc_base_gain = 250;
+
+    agc.update(true); // saturation
+
+    // Without cast: 250 >= (100+200) & 0xFF = 44 --> true (wrong), gain steps down
+    // With cast:    250 >= 300 --> false (correct), gain clamped to min_gain
+    assert(agc.agc_base_gain == agc.min_gain);
+    assert(agc.saturation_event_count == 1);
+}
+
+// Regression: recovery-path uint8_t overflow
+static void test_recovery_path_no_uint8_overflow()
+{
+    ADAR1000_AGC agc;
+    agc.enabled = true;
+    agc.holdoff_frames = 1;
+    // Force agc_base_gain + gain_step_up > 255 to trigger wrap
+    agc.agc_base_gain = 250;
+    agc.gain_step_up = 50;
+    agc.max_gain = 200;
+
+    agc.update(false); // recovery step
+
+    // Without cast: (250+50) & 0xFF = 44 <= 200 --> true (wrong), gain increases past max
+    // With cast:    300 <= 200 --> false (correct), gain clamped to max_gain
+    assert(agc.agc_base_gain == agc.max_gain);
+}
+
 // Test 13: Effective gain with edge-case base_gain values
 // ---------------------------------------------------------------------------
 static void test_effective_gain_edge_cases()
@@ -362,6 +398,8 @@ int main()
     RUN_TEST(test_reset_preserves_config);
     RUN_TEST(test_saturation_counter);
     RUN_TEST(test_mixed_sequence);
+    RUN_TEST(test_attack_path_no_uint8_overflow);
+    RUN_TEST(test_recovery_path_no_uint8_overflow);
     RUN_TEST(test_effective_gain_edge_cases);
 
     printf("=== Results: %d/%d passed ===\n", tests_passed, tests_total);
