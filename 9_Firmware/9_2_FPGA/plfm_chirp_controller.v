@@ -322,6 +322,13 @@ always @(posedge clk_120m or negedge reset_n) begin
             DONE: begin
                 chirp_done <= 1'b1;
                 chirp_data <= 8'd128;
+                // RELIABILITY FIX: reset chirp_counter at burst end.
+                // Without this, the counter stayed at CHIRP_MAX after DONE and
+                // every subsequent burst ran 48+ long chirps before reaching
+                // the (CHIRP_MAX/2)-1 GUARD transition (6-bit wrap). With the
+                // MCU triggering one burst per beam block, each burst must
+                // start from chirp_counter=0: 16 long + 16 short, exactly.
+                chirp_counter <= 6'd0;
             end
             
             default: begin
