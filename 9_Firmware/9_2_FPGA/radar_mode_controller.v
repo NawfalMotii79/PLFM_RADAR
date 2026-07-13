@@ -23,7 +23,8 @@
  * Modes of operation:
  *   mode[1:0]:
  *     2'b00 = STM32-driven (pass through stm32 toggle signals)
- *     2'b01 = Free-running auto-scan (internal timing)
+ *     2'b01 = Gated auto-scan (internal timing, frame started by frame_gate;
+ *             RX frames lock 1:1 to the MCU-triggered TX bursts)
  *     2'b10 = Single-chirp (fire one chirp per trigger, for debug)
  *     2'b11 = Reserved
  *
@@ -52,6 +53,13 @@ module radar_mode_controller #(
 
     // Mode selection
     input wire [1:0] mode,          // 00=STM32, 01=auto, 10=single, 11=rsvd
+
+    // Frame gate (mode 01): 1-cycle pulse that starts a receiver frame.
+    // Driven by the transmitter's new_chirp_frame so the RX frame starts
+    // exactly when the MCU-triggered TX burst starts (hardware-aligned chirp
+    // windows). In production the MCU fires one burst per beam block, so the
+    // RX must not free-run between bursts — it waits in S_IDLE for the gate.
+    input wire frame_gate,
 
     // STM32 pass-through inputs (active in mode 00)
     input wire stm32_new_chirp,
@@ -221,18 +229,23 @@ always @(posedge clk or negedge reset_n) begin
         2'b01: begin
             case (scan_state)
             S_IDLE: begin
-                // Start first chirp immediately
-                scan_state     <= S_LONG_CHIRP;
-                timer          <= 18'd0;
-                use_long_chirp <= 1'b1;
-                mc_new_chirp   <= ~mc_new_chirp;  // Toggle to start chirp
-                chirp_count    <= 6'd0;
-                elevation_count <= 6'd0;
-                azimuth_count  <= 6'd0;
+                // Gated start: wait for the transmitter burst (frame_gate).
+                // Prevents RX drift when the MCU gates TX bursts with gaps
+                // (beam-pattern SPI writes between bursts).
+                if (frame_gate) begin
+                    scan_state     <= S_LONG_CHIRP;
+                    timer          <= 18'd0;
+                    use_long_chirp <= 1'b1;
+                    mc_new_chirp   <= ~mc_new_chirp;  // Toggle to start chirp
+                    chirp_count    <= 6'd0;
+                    // NOTE: elevation_count/azimuth_count are NOT reset here —
+                    // they accumulate across gated frames (full-scan wrap
+                    // tracking happens in S_ADVANCE).
 
-                `ifdef SIMULATION
-                $display("[MODE_CTRL] Auto-scan starting");
-                `endif
+                    `ifdef SIMULATION
+                    $display("[MODE_CTRL] Auto-scan frame started (gated)");
+                    `endif
+                end
             end
 
             S_LONG_CHIRP: begin
@@ -293,41 +306,40 @@ always @(posedge clk or negedge reset_n) begin
                     scan_state   <= S_LONG_CHIRP;
                     use_long_chirp <= 1'b1;
                 end else begin
+                    // Frame complete = cfg_chirps_per_elev chirps = one TX
+                    // burst. Return to S_IDLE and wait for the next
+                    // frame_gate so RX stays locked to the MCU-gated bursts.
+                    // No mc_new_chirp toggle here — the next frame's first
+                    // chirp toggles on the gate in S_IDLE.
                     chirp_count <= 6'd0;
 
                     if (elevation_count < ELEVATIONS_PER_AZIMUTH - 1) begin
-                        // Next elevation
+                        // Next elevation (cosmetic scan tracking)
                         elevation_count  <= elevation_count + 1;
-                        mc_new_chirp     <= ~mc_new_chirp;
                         mc_new_elevation <= ~mc_new_elevation;
-                        scan_state       <= S_LONG_CHIRP;
-                        use_long_chirp   <= 1'b1;
                     end else begin
                         elevation_count <= 6'd0;
 
                         if (azimuth_count < AZIMUTHS_PER_SCAN - 1) begin
-                            // Next azimuth
+                            // Next azimuth (cosmetic scan tracking)
                             azimuth_count    <= azimuth_count + 1;
-                            mc_new_chirp     <= ~mc_new_chirp;
                             mc_new_elevation <= ~mc_new_elevation;
                             mc_new_azimuth   <= ~mc_new_azimuth;
-                            scan_state       <= S_LONG_CHIRP;
-                            use_long_chirp   <= 1'b1;
                         end else begin
-                            // Full scan complete — restart
+                            // Full scan complete — restart next frame
                             azimuth_count   <= 6'd0;
                             scan_done_pulse <= 1'b1;
-                            mc_new_chirp    <= ~mc_new_chirp;
                             mc_new_elevation <= ~mc_new_elevation;
                             mc_new_azimuth  <= ~mc_new_azimuth;
-                            scan_state      <= S_LONG_CHIRP;
-                            use_long_chirp  <= 1'b1;
 
                             `ifdef SIMULATION
-                            $display("[MODE_CTRL] Full scan complete, restarting");
+                            $display("[MODE_CTRL] Full scan complete, waiting for gate");
                             `endif
                         end
                     end
+
+                    scan_state     <= S_IDLE;
+                    use_long_chirp <= 1'b1;
                 end
             end
 

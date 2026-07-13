@@ -61,6 +61,7 @@ module fv_radar_mode_controller (
     // DUT inputs — solver-driven each cycle
     // ================================================================
     (* anyseq *) wire [1:0] mode;
+    (* anyseq *) wire       frame_gate;
     (* anyseq *) wire       stm32_new_chirp;
     (* anyseq *) wire       stm32_new_elevation;
     (* anyseq *) wire       stm32_new_azimuth;
@@ -107,6 +108,7 @@ module fv_radar_mode_controller (
         .clk                (clk),
         .reset_n            (reset_n),
         .mode               (mode),
+        .frame_gate         (frame_gate),
         .stm32_new_chirp    (stm32_new_chirp),
         .stm32_new_elevation(stm32_new_elevation),
         .stm32_new_azimuth  (stm32_new_azimuth),
@@ -192,15 +194,20 @@ module fv_radar_mode_controller (
     end
 
     // ================================================================
-    // PROPERTY 6: Auto-scan never stalls in S_IDLE
-    // In mode 2'b01, if the FSM is in S_IDLE on one cycle it must
-    // leave S_IDLE on the very next cycle.
+    // PROPERTY 6: Gated auto-scan (mode 01) starts on frame_gate
+    // In mode 2'b01, the FSM must leave S_IDLE on the cycle after a
+    // frame_gate pulse, and must stay in S_IDLE while no gate arrives.
     // ================================================================
     always @(posedge clk) begin
         if (reset_n && f_past_valid) begin
+            // Gate pulse seen in S_IDLE → must start on the next cycle
             if ($past(mode) == 2'b01 && $past(scan_state) == S_IDLE &&
-                $past(reset_n) && mode == 2'b01)
+                $past(frame_gate) == 1'b1 && mode == 2'b01)
                 assert(scan_state != S_IDLE);
+            // No gate in S_IDLE → must not start
+            if ($past(mode) == 2'b01 && $past(scan_state) == S_IDLE &&
+                $past(frame_gate) == 1'b0 && mode == 2'b01)
+                assert(scan_state == S_IDLE);
         end
     end
 

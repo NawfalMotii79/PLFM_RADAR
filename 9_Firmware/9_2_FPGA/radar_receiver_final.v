@@ -149,6 +149,7 @@ radar_mode_controller rmc (
     .clk(clk),
     .reset_n(reset_n),
     .mode(host_mode),                     // Controlled by host via USB (default: 2'b01 auto-scan)
+    .frame_gate(tx_frame_start),          // TX burst start → starts one RX frame (mode 01)
     .stm32_new_chirp(stm32_new_chirp_rx),
     .stm32_new_elevation(stm32_new_elevation_rx),
     .stm32_new_azimuth(stm32_new_azimuth_rx),
