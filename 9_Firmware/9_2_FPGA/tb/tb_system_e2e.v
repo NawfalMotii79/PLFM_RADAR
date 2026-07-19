@@ -876,9 +876,11 @@ initial begin
     check(dut.rx_inst.rmc_chirp_count > 0 || dut.rx_inst.rmc_elevation_count > 0,
           "G8.2: RX mode controller chirp/elevation counters advanced");
 
-    // G8.3: RX-side elevation counter incremented (4 chirps/elev)
-    check(dut.rx_inst.rmc_elevation_count >= 1,
-          "G8.3: RX elevation counter incremented in auto-scan");
+    // G8.3: Gated auto-scan returns to gated idle (no autonomous frames).
+    // The TX FSM runs its full 5.6ms burst from the first toggle, so no
+    // new frame_gate arrives in this window — the RX must NOT free-run.
+    check(dut.rx_inst.rmc_scanning == 1'b0,
+          "G8.3: RX stays in gated idle without a TX frame gate");
 
     // G8.4: Switch to single-chirp mode — auto-scan stops
     bfm_send_cmd(8'h01, 8'h00, 16'h0002);  // mode = 10 = single chirp
@@ -930,6 +932,10 @@ initial begin
     bfm_send_cmd(8'h15, 8'h00, 16'd4);
 
     saved_range_count = obs_range_valid_count;
+    // Gated auto-scan: the RX frame only starts on a TX burst start
+    // (frame_gate). Fire one chirp toggle so the TX FSM starts a burst
+    // and the gate pulse reaches the RX mode controller.
+    stm32_chirp_toggle;
     #120000;  // 120us for auto-scan to produce range outputs
 
     // G9.3: System resumes after reset — verify range processing restarts
@@ -965,15 +971,33 @@ initial begin
     // ================================================================
     $display("--- Group 11: Processing Latency Budgets ---");
 
-    // Trigger chirps and measure time to first range output
+    // Gated auto-scan: a fresh RX frame only starts on a new TX burst
+    // (frame_gate). Reset so the TX FSM is back in IDLE, configure short
+    // RX timing, then fire ONE chirp toggle: TX burst → gate → RX frame.
+    reset_n = 0;
+    bfm_rx_wr_ptr = 0;
+    bfm_rx_rd_ptr = 0;
+    #200;
+    reset_n = 1;
+    #500;
+
+    stm32_mixers_enable = 1;
+    ft601_txe = 0;
+    bfm_send_cmd(8'h04, 8'h00, 16'h0001);  // stream_control = range only
+    #500;
+    bfm_send_cmd(8'h01, 8'h00, 16'h0001);  // auto-scan (gated)
+    bfm_send_cmd(8'h10, 8'h00, 16'd100);   // short timing
+    bfm_send_cmd(8'h11, 8'h00, 16'd200);
+    bfm_send_cmd(8'h12, 8'h00, 16'd100);
+    bfm_send_cmd(8'h13, 8'h00, 16'd20);
+    bfm_send_cmd(8'h14, 8'h00, 16'd100);
+    bfm_send_cmd(8'h15, 8'h00, 16'd4);
+
     obs_range_valid_count = 0;
     obs_range_first_time  = 0;
     t_start = $time;
 
-    for (i = 0; i < 4; i = i + 1) begin
-        stm32_chirp_toggle;
-        #3000;
-    end
+    stm32_chirp_toggle;  // one toggle → TX burst → frame_gate → RX frame
     #80000;
 
     // G11.1: Range output appeared within 200us of chirp start
