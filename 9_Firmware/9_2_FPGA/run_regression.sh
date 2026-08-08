@@ -266,12 +266,20 @@ run_lint_static() {
 
 # ---------------------------------------------------------------------------
 # Helper: compile and run a single testbench
-#   run_test <name> <vvp_path> <iverilog_args...>
+#   run_test <name> <vvp_path> [<timeout_secs>] <iverilog_args...>
+# Default timeout: 120s. Long integration tests (receiver golden) need more —
+# the golden TB simulates ~1.3ms at a 400MHz ADC clock with iverilog.
 # ---------------------------------------------------------------------------
 run_test() {
     local name="$1"
     local vvp="$2"
     shift 2
+    local run_timeout=120
+    # Optional timeout override as the first numeric argument
+    if [[ "$1" =~ ^[0-9]+$ ]]; then
+        run_timeout="$1"
+        shift
+    fi
     local args=("$@")
 
     printf "  %-45s " "$name"
@@ -286,7 +294,7 @@ run_test() {
 
     # Run
     local output
-    output=$(timeout 120 vvp "$vvp" 2>&1) || true
+    output=$(timeout "$run_timeout" vvp "$vvp" 2>&1) || true
 
     # Count PASS/FAIL in output (testbenches use explicit [PASS]/[FAIL] markers)
     local test_pass test_fail
@@ -430,12 +438,14 @@ if [[ "$QUICK" -eq 0 ]]; then
     # Golden generate
     run_test "Receiver (golden generate)" \
         tb/tb_rx_golden_reg.vvp \
+        480 \
         -DGOLDEN_GENERATE \
         tb/tb_radar_receiver_final.v "${RECEIVER_RTL[@]}"
 
     # Golden compare
     run_test "Receiver (golden compare)" \
         tb/tb_rx_compare_reg.vvp \
+        480 \
         tb/tb_radar_receiver_final.v "${RECEIVER_RTL[@]}"
 
     # Full system top (monitoring-only, legacy)

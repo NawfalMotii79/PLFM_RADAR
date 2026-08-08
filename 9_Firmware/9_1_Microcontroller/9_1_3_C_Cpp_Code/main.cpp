@@ -285,7 +285,7 @@ static void MX_IWDG_Init(void);  /* GAP-3 FIX 2: hardware watchdog */
 void systemPowerUpSequence();
 void systemPowerDownSequence();
 void initializeBeamMatrices();
-void runRadarPulseSequence();
+void runRadarScanStep();
 void executeChirpSequence(int num_chirps, uint32_t T1, uint32_t PRI1, uint32_t T2, uint32_t PRI2);
 void printSystemStatus();
 
@@ -489,105 +489,187 @@ void initializeBeamMatrices() {
 }
 
 void executeChirpSequence(int num_chirps, float T1, float PRI1, float T2, float PRI2) {
-    // NOTE: No per-chirp DIAG — this is a us/ns timing-critical path.
-    // Only log entry params for post-mortem analysis.
-    
-    DIAG("SYS", "executeChirpSequence: num_chirps=%d T1=%.2f PRI1=%.2f T2=%.2f PRI2=%.2f",
-         num_chirps, T1, PRI1, T2, PRI2);
-    // First chirp sequence (microsecond timing)
-    for(int i = 0; i < num_chirps; i++) {
-        HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_8); // New chirp signal to FPGA
-        (void)adarManager.pulseTXMode();
-        delay_us((uint32_t)T1);
-        (void)adarManager.pulseRXMode();
-        delay_us((uint32_t)(PRI1 - T1));
-    }
+    // RELIABILITY (burst mode): the FPGA plfm_chirp_controller sequences all
+    // chirps (16 long + 16 short) from ONE new_chirp edge with hardware
+    // timing. Per-chirp MCU toggling + delay_us/delay_ns busy-waits injected
+    // interrupt jitter into the chirp windows (phase-coherence killer for
+    // Doppler processing) and the short-chirp TR switching was impossible via
+    // SPI (0.5us << SPI transaction time).
+    //
+    // Sequence per block:
+    //   1. TR_SOURCE=1 (REG_SW_CONTROL bit 2) -> ADAR1000 TR pins control
+    //      TX/RX. The FPGA drives adar_tr high during chirps, low during
+    //      listen, with hardware timing (no SPI in the chirp loop).
+    //   2. One GPIO toggle -> TX burst starts (16 long + guard + 16 short).
+    //   3. Wait the deterministic burst duration. This wait is NOT
+    //      timing-critical: chirp boundaries come from the FPGA.
+    //   4. TR_SOURCE=0 (SPI control, TR_SPI=0) -> RX idle state.
+    DIAG("SYS", "executeChirpSequence: num_chirps=%d single FPGA-timed burst", num_chirps);
 
-    delay_us((uint32_t)Guard);
+    // Step 1: enable TR hardware-pin override on all devices
+    (void)adarManager.pulseTXMode();
 
-    // Second chirp sequence (nanosecond timing)
-    for(int i = 0; i < num_chirps; i++) {
-    	HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_8); // New chirp signal to FPGA
-        (void)adarManager.pulseTXMode();
-        delay_ns((uint32_t)(T2 * 1000));
-        (void)adarManager.pulseRXMode();
-        delay_ns((uint32_t)((PRI2 - T2) * 1000));
+    // Step 2: one edge starts the whole burst
+    HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_8);
 
-    }
+    // Step 3: burst duration = num_chirps*PRI1 + Guard + num_chirps*PRI2
+    uint32_t burst_us = (uint32_t)(num_chirps * PRI1 + Guard + num_chirps * PRI2);
+    HAL_Delay(burst_us / 1000 + 1);
+
+    // Step 4: back to SPI RX mode (safe idle between bursts)
+    (void)adarManager.pulseRXMode();
 }
 
-void runRadarPulseSequence() {
+void runRadarScanStep() {
+    // One beam-position burst per call. The main loop stays responsive
+    // between bursts (~6 ms), so health checks, GPS, USB and the FPGA
+    // heartbeat run every iteration instead of once per full scan (~4 s).
+    // The scan protocol is identical to the old blocking runRadarPulseSequence:
+    // elevation GPIO toggle per position, 3 patterns (matrix1/broadside/matrix2)
+    // of 16+16 chirps each, azimuth GPIO toggle + stepper step per sweep.
     static int sequence_count = 0;
-    char msg[50];
+    static int beam_pos = 0;      // 0..14 (15 positions per azimuth sweep)
+    static int block_idx = 0;     // 0=matrix1, 1=broadside, 2=matrix2
+    static bool position_started = false;
 
-    snprintf(msg, sizeof(msg), "Starting RADAR Sequence #%d\r\n", ++sequence_count);
-    HAL_UART_Transmit(&huart3, (uint8_t*)msg, strlen(msg), 1000);
-    DIAG("SYS", "runRadarPulseSequence #%d: m_max=%d n_max=%d y_max=%d",
-         sequence_count, m_max, n_max, y_max);
+    if (!position_started) {
+        position_started = true;
+        sequence_count++;
+        char msg[50];
+        snprintf(msg, sizeof(msg), "Starting RADAR Sequence #%d\r\n", sequence_count);
+        HAL_UART_Transmit(&huart3, (uint8_t*)msg, strlen(msg), 1000);
+        DIAG("SYS", "runRadarScanStep #%d: m_max=%d n_max=%d y_max=%d",
+             sequence_count, m_max, n_max, y_max);
 
-    // Configure for fast switching
-    DIAG("BF", "Enabling fast-switch mode for beam sweep");
-    adarManager.setFastSwitchMode(true);
+        // Configure for fast switching
+        DIAG("BF", "Enabling fast-switch mode for beam sweep");
+        adarManager.setFastSwitchMode(true);
 
-    int m = 1; // Chirp counter
-    int n = 1; // Beam Elevation position counter
-    int y = 1; // Beam Azimuth counter
-
-    // Main beam steering sequence
-    for(int beam_pos = 0; beam_pos < 15; beam_pos++) {
-    	HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_9);// Notify FPGA of elevation change
-    	DIAG("SYS", "Beam pos %d/15: elevation GPIO toggle, patterns matrix1/vector_0/matrix2", beam_pos);
-        // Pattern 1: matrix1 (positive steering angles)
-        adarManager.setCustomBeamPattern16(matrix1[beam_pos], ADAR1000Manager::BeamDirection::TX);
-        adarManager.setCustomBeamPattern16(matrix1[beam_pos], ADAR1000Manager::BeamDirection::RX);
-
-        executeChirpSequence(m_max/2, T1, PRI1, T2, PRI2);
-        m += m_max/2;
-
-        // Pattern 2: vector_0 (broadside)
-        adarManager.setCustomBeamPattern16(vector_0, ADAR1000Manager::BeamDirection::TX);
-        adarManager.setCustomBeamPattern16(vector_0, ADAR1000Manager::BeamDirection::RX);
-
-        executeChirpSequence(m_max/2, T1, PRI1, T2, PRI2);
-        m += m_max/2;
-
-        // Pattern 3: matrix2 (negative steering angles)
-        adarManager.setCustomBeamPattern16(matrix2[beam_pos], ADAR1000Manager::BeamDirection::TX);
-        adarManager.setCustomBeamPattern16(matrix2[beam_pos], ADAR1000Manager::BeamDirection::RX);
-
-        executeChirpSequence(m_max/2, T1, PRI1, T2, PRI2);
-        m += m_max/2;
-
-        // Reset chirp counter if needed
-        if(m > m_max) m = 1;
-
-        n++;
-        if(n > n_max) n = 1;
-
+        HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_9);// Notify FPGA of elevation change
+        DIAG("SYS", "Beam pos %d/15: elevation GPIO toggle, patterns matrix1/vector_0/matrix2", beam_pos);
     }
 
-    HAL_GPIO_TogglePin(GPIOD,GPIO_PIN_10);//Tell FPGA that there is a new azimuth
-    DIAG("SYS", "Azimuth GPIO toggle (GPIOD pin 10), stepping motor");
+    // Beam pattern for this burst (TX + RX)
+    switch (block_idx) {
+        case 0:  // Pattern 1: matrix1 (positive steering angles)
+            adarManager.setCustomBeamPattern16(matrix1[beam_pos], ADAR1000Manager::BeamDirection::TX);
+            adarManager.setCustomBeamPattern16(matrix1[beam_pos], ADAR1000Manager::BeamDirection::RX);
+            break;
+        case 1:  // Pattern 2: vector_0 (broadside)
+            adarManager.setCustomBeamPattern16(vector_0, ADAR1000Manager::BeamDirection::TX);
+            adarManager.setCustomBeamPattern16(vector_0, ADAR1000Manager::BeamDirection::RX);
+            break;
+        default: // Pattern 3: matrix2 (negative steering angles)
+            adarManager.setCustomBeamPattern16(matrix2[beam_pos], ADAR1000Manager::BeamDirection::TX);
+            adarManager.setCustomBeamPattern16(matrix2[beam_pos], ADAR1000Manager::BeamDirection::RX);
+            break;
+    }
 
-    y++; if(y>y_max)y=1;
-	  //Rotate stepper to next y position
-	  for(int k= 0;k<(int)(Stepper_steps/y_max);k++){
-		  HAL_GPIO_WritePin(STEPPER_CLK_P_GPIO_Port, STEPPER_CLK_P_Pin, GPIO_PIN_SET);
-		  delay_us(500);
-		  HAL_GPIO_WritePin(STEPPER_CLK_P_GPIO_Port, STEPPER_CLK_P_Pin, GPIO_PIN_RESET);
-		  delay_us(500);
-	  }
-    DIAG("MOT", "Stepper moved %d steps for azimuth position y=%d", (int)(Stepper_steps/y_max), y);
+    // One FPGA-timed burst (16 long + 16 short chirps, hardware timing)
+    executeChirpSequence(m_max / 2, T1, PRI1, T2, PRI2);
 
+    // Scan counters (globals — reported to the GUI via getSystemStatusForGUI)
+    m += m_max / 2;
+    if (m > m_max) m = 1;
 
+    block_idx++;
+    if (block_idx >= 3) {
+        block_idx = 0;
+        n++;
+        if (n > n_max) n = 1;
+        beam_pos++;
+        if (beam_pos >= 15) {
+            beam_pos = 0;
+            // Azimuth complete: tell FPGA + rotate stepper to next y position
+            HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_10);//Tell FPGA that there is a new azimuth
+            DIAG("SYS", "Azimuth GPIO toggle (GPIOD pin 10), stepping motor");
 
-    snprintf(msg, sizeof(msg), "RADAR Sequence #%d Completed\r\n", sequence_count);
-    HAL_UART_Transmit(&huart3, (uint8_t*)msg, strlen(msg), 1000);
-    DIAG("SYS", "runRadarPulseSequence #%d COMPLETE", sequence_count);
+            y++; if(y>y_max)y=1;
+            for(int k= 0;k<(int)(Stepper_steps/y_max);k++){
+                HAL_GPIO_WritePin(STEPPER_CLK_P_GPIO_Port, STEPPER_CLK_P_Pin, GPIO_PIN_SET);
+                delay_us(500);
+                HAL_GPIO_WritePin(STEPPER_CLK_P_GPIO_Port, STEPPER_CLK_P_Pin, GPIO_PIN_RESET);
+                delay_us(500);
+            }
+            DIAG("MOT", "Stepper moved %d steps for azimuth position y=%d", (int)(Stepper_steps/y_max), y);
+            DIAG("SYS", "runRadarScanStep #%d COMPLETE", sequence_count);
+        } else {
+            HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_9);// Notify FPGA of elevation change
+        }
+    }
 }
 
 
 
+
+// ============================================================================
+// FPGA HEARTBEAT MONITOR (DIG_7 / PD15)
+// ============================================================================
+// The FPGA toggles DIG_7 at ~1 Hz while its configuration is alive. Missing
+// edges for FPGA_HEARTBEAT_TIMEOUT_MS means the FPGA hung or crashed.
+// Recovery: one automatic re-init attempt (TX mixers off → FPGA reset pulse
+// → mixers back on). If the heartbeat stays dead after the re-init, the
+// caller escalates to ERROR_FPGA_COMM (in the critical range → Emergency_Stop,
+// because an unresponsive FPGA can leave the PA in an uncontrolled TX state).
+#define FPGA_HEARTBEAT_TIMEOUT_MS   4000
+#define FPGA_RESET_GPIO_Pin         GPIO_PIN_12   // GPIOD12: FPGA config reset
+#define FPGA_TX_MIXER_EN_Pin        GPIO_PIN_11   // GPIOD11: TX mixer master enable
+
+static bool fpga_heartbeat_seen = false;
+static bool fpga_recovery_attempted = false;
+static uint32_t fpga_last_heartbeat_tick = 0;
+static uint32_t fpga_first_check_tick = 0;   // cold-start seed (dead-at-boot detection)
+static GPIO_PinState fpga_dig7_prev = GPIO_PIN_RESET;
+
+// Returns true while the FPGA is alive (or while recovery is in progress).
+// Returns false only after a re-init attempt failed to restore the heartbeat.
+bool checkFpgaHeartbeat(void) {
+    uint32_t now = HAL_GetTick();
+
+    // Cold start: seed the timeout reference on the first call so a FPGA that
+    // never configures at boot (no first edge ever) is still detected after
+    // FPGA_HEARTBEAT_TIMEOUT_MS instead of being skipped forever by the
+    // first-edge arming below.
+    if (fpga_first_check_tick == 0) {
+        fpga_first_check_tick = now;
+        fpga_last_heartbeat_tick = now;
+    }
+
+    // Edge detection on DIG_7
+    GPIO_PinState dig7 = HAL_GPIO_ReadPin(FPGA_DIG7_GPIO_Port, FPGA_DIG7_Pin);
+    if (dig7 != fpga_dig7_prev) {
+        fpga_dig7_prev = dig7;
+        fpga_heartbeat_seen = true;
+        fpga_last_heartbeat_tick = now;
+        fpga_recovery_attempted = false;  // heartbeat restored -> arm next recovery
+        return true;
+    }
+
+    if ((uint32_t)(now - fpga_last_heartbeat_tick) > FPGA_HEARTBEAT_TIMEOUT_MS) {
+        if (!fpga_recovery_attempted) {
+            // First timeout: automatic FPGA re-init (safe order: cut TX first)
+            fpga_recovery_attempted = true;
+            DIAG_WARN("FPGA", "Heartbeat lost (%lu ms) -- attempting FPGA re-init",
+                      (unsigned long)(now - fpga_last_heartbeat_tick));
+            HAL_GPIO_WritePin(GPIOD, FPGA_TX_MIXER_EN_Pin, GPIO_PIN_RESET);
+            HAL_Delay(10);
+            HAL_GPIO_WritePin(GPIOD, FPGA_RESET_GPIO_Pin, GPIO_PIN_RESET);
+            HAL_Delay(10);
+            HAL_GPIO_WritePin(GPIOD, FPGA_RESET_GPIO_Pin, GPIO_PIN_SET);
+            HAL_Delay(50);
+            HAL_GPIO_WritePin(GPIOD, FPGA_TX_MIXER_EN_Pin, GPIO_PIN_SET);
+            // Re-arm: wait for fresh heartbeat edges
+            fpga_heartbeat_seen = false;
+            fpga_last_heartbeat_tick = now;
+            DIAG("FPGA", "FPGA re-init done -- waiting for heartbeat");
+            return true;
+        }
+        // Second consecutive timeout: FPGA is dead, escalate
+        DIAG_ERR("FPGA", "FPGA heartbeat still missing after re-init -- ERROR_FPGA_COMM");
+        return false;
+    }
+    return true;
+}
 
 void printSystemStatus() {
     char status_msg[100];
@@ -2060,6 +2142,15 @@ int main(void)
   while (1)
   {
 	  //////////////////////////////////////////////////////////////////////////////////////
+	  ////////////////////////// FPGA heartbeat monitor (DIG_7) ////////////////////////////
+	  //////////////////////////////////////////////////////////////////////////////////////
+	  // First timeout -> automatic FPGA re-init (inside checkFpgaHeartbeat).
+	  // Persistent failure -> ERROR_FPGA_COMM (critical range 9..13) -> Emergency_Stop.
+	  if (!checkFpgaHeartbeat()) {
+	      handleSystemError(ERROR_FPGA_COMM);
+	  }
+
+	  //////////////////////////////////////////////////////////////////////////////////////
 	  //////////////////////// Check system health at the start of each loop////////////////
 	  //////////////////////////////////////////////////////////////////////////////////////
 
@@ -2210,17 +2301,19 @@ int main(void)
 	 //phase_step = 127 => phase = 360°
 	 //steering angle (rad)= arcsin(phase_dif/Pi)
 
-      runRadarPulseSequence();
+      runRadarScanStep();
 
       /* [AGC] Outer-loop AGC: sync enable from FPGA via DIG_6 (PD14),
        * then read saturation flag (DIG_5 / PD13) and adjust ADAR1000 VGA
-       * common gain once per radar frame (~258 ms).
+       * common gain once per radar burst (~6 ms — runRadarScanStep executes
+       * one burst per loop iteration, so AGC now tracks per frame instead of
+       * per full scan).
        * FPGA register host_agc_enable is the single source of truth —
        * DIG_6 propagates it to MCU every frame.
        * 2-frame confirmation debounce: only change outerAgc.enabled when
        * two consecutive frames read the same DIG_6 value. Prevents a
        * single-sample glitch from causing a spurious AGC state transition.
-       * Added latency: 1 extra frame (~258 ms), acceptable for control plane. */
+       * Added latency: 1 extra frame (~6 ms), acceptable for control plane. */
       {
           bool dig6_now = (HAL_GPIO_ReadPin(FPGA_DIG6_GPIO_Port,
                                             FPGA_DIG6_Pin) == GPIO_PIN_SET);

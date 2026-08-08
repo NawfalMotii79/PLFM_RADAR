@@ -21,6 +21,7 @@ module tb_radar_mode_controller;
     reg         clk;
     reg         reset_n;
     reg  [1:0]  mode;
+    reg         frame_gate;
     reg         stm32_new_chirp;
     reg         stm32_new_elevation;
     reg         stm32_new_azimuth;
@@ -55,6 +56,7 @@ module tb_radar_mode_controller;
     reg mc_new_chirp_prev;
     reg mc_new_elevation_prev;
     reg mc_new_azimuth_prev;
+    reg scanning_prev;
     integer chirp_toggles;
     integer elevation_toggles;
     integer azimuth_toggles;
@@ -82,6 +84,7 @@ module tb_radar_mode_controller;
         .clk                (clk),
         .reset_n            (reset_n),
         .mode               (mode),
+        .frame_gate         (frame_gate),
         .stm32_new_chirp    (stm32_new_chirp),
         .stm32_new_elevation(stm32_new_elevation),
         .stm32_new_azimuth  (stm32_new_azimuth),
@@ -126,6 +129,7 @@ module tb_radar_mode_controller;
         begin
             reset_n             = 0;
             mode                = 2'b11;  // reserved = safe idle
+            frame_gate          = 0;
             stm32_new_chirp     = 0;
             stm32_new_elevation = 0;
             stm32_new_azimuth   = 0;
@@ -139,6 +143,21 @@ module tb_radar_mode_controller;
             cfg_chirps_per_elev    = SIM_CHIRPS;
             repeat (4) @(posedge clk);
             reset_n = 1;
+            @(posedge clk); #1;
+        end
+    endtask
+
+    // ── Helper: pulse the frame gate (1 cycle, race-free) ─────
+    // The gate must stay high when the DUT samples it. Deasserting with a
+    // blocking assignment at the sampling edge races with the DUT's always
+    // block (iverilog process order is unspecified) — the #1 after the edge
+    // guarantees the DUT sampled gate=1 before it is deasserted.
+    task pulse_gate;
+        begin
+            @(posedge clk);
+            frame_gate = 1;
+            @(posedge clk); #1;
+            frame_gate = 0;
             @(posedge clk); #1;
         end
     endtask
@@ -230,9 +249,11 @@ module tb_radar_mode_controller;
               "azimuth_count incremented to 1");
 
         // ════════════════════════════════════════════════════════
-        // TEST GROUP 3: Auto-scan mode (mode 01) — full scan
+        // TEST GROUP 3: Gated auto-scan mode (mode 01) — full scan
+        // Frames are started by frame_gate pulses (mirrors TX bursts).
+        // Re-gate on each frame end to complete the full scan.
         // ════════════════════════════════════════════════════════
-        $display("\n--- Test Group 3: Auto-scan (mode 01) — Full Scan ---");
+        $display("\n--- Test Group 3: Gated Auto-scan (mode 01) — Full Scan ---");
         apply_reset;
         mode = 2'b01;
 
@@ -242,18 +263,35 @@ module tb_radar_mode_controller;
         mc_new_chirp_prev     = 0;
         mc_new_elevation_prev = 0;
         mc_new_azimuth_prev   = 0;
+        scanning_prev         = 0;
         chirp_toggles     = 0;
         elevation_toggles = 0;
         azimuth_toggles   = 0;
         scan_completes    = 0;
 
-        // Check: scanning starts immediately
+        // Check: gated auto-scan must NOT start without a gate
         @(posedge clk); #1;
-        check(scanning === 1'b1, "Scanning starts immediately in auto mode");
+        check(scanning === 1'b0, "Scanning stays idle without frame gate");
 
-        // Run for enough cycles to complete one full scan
+        // Fire the first gate — frame starts
+        pulse_gate;
+        check(scanning === 1'b1, "Scanning starts on frame gate");
+
+        // Run enough cycles to complete one full scan, re-gating on each
+        // frame end (gated auto-scan returns to S_IDLE between frames)
         for (i = 0; i < 15000; i = i + 1) begin
             @(posedge clk); #1;
+
+            // Count the scan_complete pulse BEFORE the re-gate below:
+            // pulse_gate consumes 3 clock edges, and the pulse is only
+            // visible for 1-2 edges after the S_ADVANCE edge.
+            if (scan_complete)
+                scan_completes = scan_completes + 1;
+
+            // Frame ended (scanning falling edge) → fire the next gate
+            if (!scanning && scanning_prev) begin
+                pulse_gate;
+            end
 
             if (mc_new_chirp !== mc_new_chirp_prev)
                 chirp_toggles = chirp_toggles + 1;
@@ -267,6 +305,7 @@ module tb_radar_mode_controller;
             mc_new_chirp_prev     = mc_new_chirp;
             mc_new_elevation_prev = mc_new_elevation;
             mc_new_azimuth_prev   = mc_new_azimuth;
+            scanning_prev         = scanning;
 
             if (i % 100 == 0) begin
                 $fwrite(csv_file, "%0d,%0d,%0d,%0d,%0d,%0d,%0d\n",
@@ -293,14 +332,15 @@ module tb_radar_mode_controller;
               "Azimuth toggles >= 1");
 
         // ════════════════════════════════════════════════════════
-        // TEST GROUP 4: Auto-scan chirp timing
+        // TEST GROUP 4: Gated auto-scan chirp timing
         // ════════════════════════════════════════════════════════
         $display("\n--- Test Group 4: Chirp Timing Sequence ---");
         apply_reset;
         mode = 2'b01;
 
+        pulse_gate;
         @(posedge clk); #1;
-        check(use_long_chirp === 1'b1, "Starts with long chirp");
+        check(use_long_chirp === 1'b1, "Starts with long chirp after gate");
 
         repeat (SIM_LONG_CHIRP / 2) @(posedge clk);
         #1;
@@ -371,10 +411,11 @@ module tb_radar_mode_controller;
         // ════════════════════════════════════════════════════════
         $display("\n--- Test Group 7: Mode Switching ---");
         apply_reset;
-        mode = 2'b01;  // Auto-scan
+        mode = 2'b01;  // Gated auto-scan
 
+        pulse_gate;
         repeat (100) @(posedge clk); #1;
-        check(scanning === 1'b1, "Auto mode: scanning");
+        check(scanning === 1'b1, "Auto mode: scanning (gated)");
 
         mode = 2'b11;
         repeat (10) @(posedge clk); #1;
@@ -437,7 +478,8 @@ module tb_radar_mode_controller;
         // ════════════════════════════════════════════════════════
         $display("\n--- Test Group 10: Reset Mid-Scan ---");
         apply_reset;
-        mode = 2'b01;  // auto-scan
+        mode = 2'b01;  // gated auto-scan
+        pulse_gate;
 
         // Wait ~200 cycles (partway through first chirp)
         repeat (200) @(posedge clk); #1;
@@ -466,25 +508,24 @@ module tb_radar_mode_controller;
         // ════════════════════════════════════════════════════════
         $display("\n--- Test Group 11: Mode-Switch State Leakage ---");
         apply_reset;
-        mode = 2'b01;  // auto-scan
+        mode = 2'b01;  // gated auto-scan
+        pulse_gate;
 
         // Run for ~500 cycles
         repeat (500) @(posedge clk); #1;
-        check(scanning === 1'b1, "Leakage: scanning=1 during auto-scan");
+        check(scanning === 1'b1, "Leakage: scanning=1 during gated auto-scan");
 
         // Switch to reserved mode (11) — forces scan_state=S_IDLE
         mode = 2'b11;
         repeat (10) @(posedge clk); #1;
         check(scanning === 1'b0, "Leakage: scanning=0 in reserved mode");
 
-        // Switch back to auto-scan (01)
+        // Switch back to gated auto-scan (01) — stays idle until a gate
         mode = 2'b01;
-        // Auto-scan S_IDLE transitions to S_LONG_CHIRP on the next clock
-        // so after 1 cycle scan_state != S_IDLE => scanning=1
         @(posedge clk); #1;
-        // The first cycle in mode 01 hits S_IDLE and transitions out
-        // scanning should be 1 now (scan_state moved to S_LONG_CHIRP)
-        check(scanning === 1'b1, "Leakage: auto-scan restarts cleanly (scanning=1)");
+        check(scanning === 1'b0, "Leakage: stays idle in auto-scan until gate");
+        pulse_gate;
+        check(scanning === 1'b1, "Leakage: auto-scan restarts cleanly on gate (scanning=1)");
 
         // ════════════════════════════════════════════════════════
         // TEST GROUP 12: Simultaneous STM32 Toggle Events
@@ -558,54 +599,52 @@ module tb_radar_mode_controller;
               "Rapid trigger: mc_new_chirp toggled on third trigger");
 
         // ════════════════════════════════════════════════════════
-        // TEST GROUP 14: Auto-Scan Counter Verification
+        // TEST GROUP 14: Gated Auto-Scan Counter Verification
         // ════════════════════════════════════════════════════════
         $display("\n--- Test Group 14: Auto-Scan Counter Verification ---");
         apply_reset;
-        mode = 2'b01;  // auto-scan
+        mode = 2'b01;  // gated auto-scan
 
         mc_new_chirp_prev     = 0;
+        scanning_prev         = 0;
         chirp_toggles  = 0;
         scan_completes = 0;
 
-        // The first chirp toggle happens on the S_IDLE→S_LONG_CHIRP transition.
-        // We need to capture it. Sample after the first posedge so we get the
-        // initial state right.
-        @(posedge clk); #1;
-        // After this clock, scan_state has moved to S_LONG_CHIRP and
-        // mc_new_chirp has already toggled once. Record its value as prev
-        // so we can count from here.
+        // The first chirp toggle happens on the gate's S_IDLE→S_LONG_CHIRP
+        // transition. Fire the first gate, then sample and count from there.
+        pulse_gate;
+        // After this, scan_state is S_LONG_CHIRP and mc_new_chirp has already
+        // toggled once. Record its value as prev so we can count from here.
         mc_new_chirp_prev = mc_new_chirp;
         chirp_toggles = 1;  // count the initial toggle
 
-        // Run until first scan_complete
-        // Total chirps = 4*3*2 = 24, each chirp ~523 cycles
-        // 24*523 = 12552, add margin
-        // NOTE: When scan_complete fires (S_ADVANCE full-scan branch), the DUT
-        // simultaneously toggles mc_new_chirp for the NEXT scan's first chirp.
-        // We must check scan_complete before counting the toggle so we don't
-        // include that restart toggle in our count of the current scan's chirps.
+        // Run until first scan_complete, re-gating on each frame end.
+        // Total chirps = 4*3*2 = 24, each chirp ~523 cycles → 6 frames of
+        // 4 chirps ≈ 12552 cycles, add margin.
         for (i = 0; i < 14000; i = i + 1) begin
             @(posedge clk); #1;
             if (scan_complete)
                 scan_completes = scan_completes + 1;
-            // Stop BEFORE counting the toggle that coincides with scan_complete
-            // (that toggle starts the next scan, not the current one)
+            // Stop BEFORE counting the toggle that starts the next frame
             if (scan_completes >= 1)
                 i = 14000;  // break
             else begin
+                // Frame ended → fire the next gate (frame n+1 starts)
+                if (!scanning && scanning_prev) begin
+                    pulse_gate;
+                end
                 if (mc_new_chirp !== mc_new_chirp_prev)
                     chirp_toggles = chirp_toggles + 1;
                 mc_new_chirp_prev = mc_new_chirp;
+                scanning_prev = scanning;
             end
         end
 
         $display("  Total chirp toggles: %0d (expected 24)", chirp_toggles);
         $display("  Scan completes:      %0d (expected 1)", scan_completes);
 
-        // At scan_complete, the DUT wraps all counters and immediately starts
-        // a new chirp (transitions to S_LONG_CHIRP, not S_IDLE). The counters
-        // are reset to 0 in the full-scan-complete branch of S_ADVANCE.
+        // At scan_complete, the DUT wraps all counters and returns to S_IDLE
+        // (gated — the next frame only starts on a new frame_gate).
         check(scan_completes == 1, "Counter verify: exactly 1 scan_complete");
         // The full-scan-complete branch resets all counters to 0:
         check(chirp_count === 6'd0,     "Counter verify: chirp_count=0 at scan_complete");
@@ -660,11 +699,12 @@ module tb_radar_mode_controller;
         // ════════════════════════════════════════════════════════
         $display("\n--- Test Group 16: Runtime Timing Reconfiguration (Gap 2) ---");
         apply_reset;
-        mode = 2'b01;  // auto-scan
+        mode = 2'b01;  // gated auto-scan
 
-        // Let the first chirp start (S_IDLE -> S_LONG_CHIRP)
+        // Fire the gate so the frame starts (S_IDLE -> S_LONG_CHIRP)
+        pulse_gate;
         @(posedge clk); #1;
-        check(scanning === 1'b1, "Reconfig: auto-scan started");
+        check(scanning === 1'b1, "Reconfig: auto-scan started (gated)");
         check(use_long_chirp === 1'b1, "Reconfig: starts with long chirp");
 
         // Wait ~half the default long chirp time to confirm we're still in S_LONG_CHIRP
@@ -689,12 +729,14 @@ module tb_radar_mode_controller;
         // Reset and set chirps_per_elev to 2 (instead of default 4)
         apply_reset;
         cfg_chirps_per_elev = 6'd2;
-        mode = 2'b01;  // auto-scan
+        mode = 2'b01;  // gated auto-scan
 
         mc_new_chirp_prev = 0;
+        mc_new_elevation_prev = 0;
         chirp_toggles = 0;
         elevation_toggles = 0;
 
+        pulse_gate;
         @(posedge clk); #1;
         mc_new_chirp_prev = mc_new_chirp;
         mc_new_elevation_prev = mc_new_elevation;
@@ -725,6 +767,44 @@ module tb_radar_mode_controller;
 
         // Restore defaults
         cfg_chirps_per_elev = SIM_CHIRPS;
+
+        // ════════════════════════════════════════════════════════
+        // TEST GROUP 17: Frame Gating Contract (reliability feature)
+        // RX frames must start only on frame_gate and must not run
+        // between gates (MCU-gated TX bursts).
+        // ════════════════════════════════════════════════════════
+        $display("\n--- Test Group 17: Frame Gating Contract ---");
+        apply_reset;
+        mode = 2'b01;
+
+        // G17a: no activity without a gate
+        repeat (100) @(posedge clk); #1;
+        check(scanning === 1'b0, "G17a: no scanning without frame gate");
+
+        // G17b/c: first gate starts a frame and toggles mc_new_chirp
+        saved_mc_new_chirp = mc_new_chirp;
+        pulse_gate;
+        check(scanning === 1'b1, "G17b: scanning starts on frame gate");
+        check(mc_new_chirp !== saved_mc_new_chirp,
+              "G17c: mc_new_chirp toggled at frame start");
+
+        // G17d: frame completes and returns to gated idle
+        // Frame = 4 chirps x (30+137+175+5+175) = 2088 cycles + margin
+        repeat (2400) @(posedge clk); #1;
+        check(scanning === 1'b0, "G17d: returns to gated idle after frame");
+
+        // G17e: no chirps between gates
+        saved_mc_new_chirp = mc_new_chirp;
+        repeat (500) @(posedge clk); #1;
+        check(mc_new_chirp === saved_mc_new_chirp,
+              "G17e: no chirp activity between gates");
+
+        // G17f/g: a second gate starts a second frame
+        saved_mc_new_chirp = mc_new_chirp;
+        pulse_gate;
+        check(scanning === 1'b1, "G17f: second gate starts second frame");
+        check(mc_new_chirp !== saved_mc_new_chirp,
+              "G17g: mc_new_chirp toggled on second frame");
 
         // ════════════════════════════════════════════════════════
         // Summary

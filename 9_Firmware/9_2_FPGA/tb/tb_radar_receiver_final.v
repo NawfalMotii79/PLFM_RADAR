@@ -96,31 +96,39 @@ end
 reg [5:0] chirp_counter;
 reg mc_new_chirp_prev;
 
-// Frame-start pulse: mirrors the real transmitter's new_chirp_frame signal.
-// In the real system this fires on IDLE→LONG_CHIRP transitions in the chirp
-// controller.  Here we derive it from the mode controller's chirp_count
-// wrapping back to 0 (which wraps correctly at cfg_chirps_per_elev).
+// Frame-start pulse (frame_gate): mirrors the real transmitter's
+// new_chirp_frame.  The RX mode controller is now GATED (mode 01 waits in
+// S_IDLE for frame_gate), so the gate must be generated independently:
+//   - one pulse after reset release to start the first frame,
+//   - then one pulse every time a frame ends (scanning falling edge),
+//     which makes frames run back-to-back like the real TX bursts.
 reg tx_frame_start;
-reg [5:0] rmc_chirp_prev;
+reg scanning_prev;
+reg initial_gate_done;
 
 always @(posedge clk_100m or negedge reset_n) begin
     if (!reset_n) begin
         chirp_counter <= 6'd0;
         mc_new_chirp_prev <= 1'b0;
         tx_frame_start <= 1'b0;
-        rmc_chirp_prev <= 6'd0;
+        scanning_prev <= 1'b0;
+        initial_gate_done <= 1'b0;
     end else begin
         mc_new_chirp_prev <= dut.mc_new_chirp;
         if (dut.mc_new_chirp != mc_new_chirp_prev) begin
-            chirp_counter <= chirp_counter + 1;
+            chirp_counter <= chirp_counter + 6'd1;
         end
-        
-        // Detect when the internal mode controller's chirp_count wraps to 0
+
         tx_frame_start <= 1'b0;
-        if (dut.rmc_chirp_count == 6'd0 && rmc_chirp_prev != 6'd0) begin
+        if (!initial_gate_done) begin
+            // First gate shortly after reset release starts frame 1
+            initial_gate_done <= 1'b1;
+            tx_frame_start <= 1'b1;
+        end else if (!dut.rmc.scanning && scanning_prev) begin
+            // Frame ended (S_IDLE) → next gate starts the next frame
             tx_frame_start <= 1'b1;
         end
-        rmc_chirp_prev <= dut.rmc_chirp_count;
+        scanning_prev <= dut.rmc.scanning;
     end
 end
 

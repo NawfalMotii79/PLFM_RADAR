@@ -131,7 +131,7 @@ module radar_system_top (
     // Used by STM32 outer AGC loop to read saturation state without USB polling.
     output wire gpio_dig5,          // DIG_5 (H11→PD13): AGC saturation flag (1=clipping detected)
     output wire gpio_dig6,          // DIG_6 (G12→PD14): AGC enable flag (mirrors host_agc_enable)
-    output wire gpio_dig7           // DIG_7 (H12→PD15): reserved (tied low)
+    output wire gpio_dig7           // DIG_7 (H12→PD15): FPGA heartbeat (toggles ~1 Hz)
 );
 
 // ============================================================================
@@ -1039,10 +1039,27 @@ assign system_status = status_reg;
 //        STM32 reads PD13 to detect clipping and adjust ADAR1000 VGA gain.
 // DIG_6: AGC enable flag — mirrors host_agc_enable so STM32 outer-loop AGC
 //        tracks the FPGA register as single source of truth.
-// DIG_7: Reserved (tied low for future use).
+// DIG_7: FPGA heartbeat — toggles at ~1 Hz (2 s period) so the STM32 can
+//        detect an FPGA hang/crash (missed edges for >4 s → ERROR_FPGA_COMM).
 assign gpio_dig5 = (rx_agc_saturation_count != 8'd0);
 assign gpio_dig6 = host_agc_enable;
-assign gpio_dig7 = 1'b0;
+
+// Heartbeat generator (clk_100m domain): 100 MHz / 50 000 000 = 1 Hz toggle
+reg [26:0] heartbeat_counter;
+reg heartbeat_toggle;
+always @(posedge clk_100m_buf or negedge sys_reset_n) begin
+    if (!sys_reset_n) begin
+        heartbeat_counter <= 27'd0;
+        heartbeat_toggle   <= 1'b0;
+    end else begin
+        heartbeat_counter <= heartbeat_counter + 27'd1;
+        if (heartbeat_counter == 27'd49999999) begin
+            heartbeat_counter <= 27'd0;
+            heartbeat_toggle   <= ~heartbeat_toggle;
+        end
+    end
+end
+assign gpio_dig7 = heartbeat_toggle;
 
 // ============================================================================
 // DEBUG AND VERIFICATION

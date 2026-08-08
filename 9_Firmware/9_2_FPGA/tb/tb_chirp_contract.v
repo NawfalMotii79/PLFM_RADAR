@@ -130,9 +130,10 @@ endtask
 // KNOWN BEHAVIOR: chirp_counter reaches CHIRP_MAX for exactly 1 cycle during DONE state.
 // This is because the combinational next_state logic checks chirp_counter == CHIRP_MAX-1
 // at the same clock edge that the registered block increments chirp_counter.
-// The value CHIRP_MAX only appears in DONE (state 6) and IDLE (state 0, briefly).
+// The value CHIRP_MAX only appears in DONE (state 6) for 1 cycle, then the DONE-state
+// auto-reset pulls it back to 0 (burst-mode fix) before the FSM returns to IDLE.
 // This is benign: no chirp is transmitting during DONE, and the receiver doesn't use
-// chirp_counter during that state. The counter resets to 0 on the next reset.
+// chirp_counter during that state.
 // We flag as a violation ONLY if chirp_counter exceeds CHIRP_MAX (should never happen).
 reg reset_done;
 initial reset_done = 0;
@@ -325,11 +326,13 @@ initial begin
     // but the registered increment on the same edge pushes it to CHIRP_MAX.
     check("C1: Final chirp_counter = CHIRP_MAX (known DONE overshoot)",
           final_chirp_value == SIM_CHIRP_MAX);
-    
-    // C7: After DONE → IDLE, chirp_counter should still be CHIRP_MAX
-    // (it resets to 0 on the next reset, not automatically)
-    check("C7a: chirp_counter holds at CHIRP_MAX after DONE",
-          chirp_counter == SIM_CHIRP_MAX);
+
+    // C7: After DONE → IDLE, chirp_counter auto-resets to 0.
+    // RELIABILITY CONTRACT: without this reset the counter stayed at CHIRP_MAX
+    // and every burst after the first ran 48+ long chirps (6-bit wrap). The
+    // MCU now triggers one burst per beam block; each burst must start from 0.
+    check("C7a: chirp_counter auto-resets to 0 after DONE",
+          chirp_counter == 6'd0);
     
     // C8: Verify that chirp_counter was 0 at the start of the sequence
     // (we tested this via C2 — it starts at 0 after reset)
@@ -478,10 +481,11 @@ initial begin
     begin : c7b_check
         reg [5:0] val_after_first;
         val_after_first = chirp_counter;
-        check("C7b: First sequence ends at CHIRP_MAX (DONE overshoot)",
-              val_after_first == SIM_CHIRP_MAX);
+        // Auto-reset at DONE → 0 once back in IDLE (burst-mode contract)
+        check("C7b: First sequence ends at 0 (DONE auto-reset)",
+              val_after_first == 6'd0);
     end
-    
+
     // Reset and run second sequence
     reset_n = 0;
     reset_done = 0;
@@ -492,14 +496,14 @@ initial begin
     reset_n = 1;
     wait_120m_cycles(3);
     reset_done = 1;
-    
+
     check("C7c: chirp_counter wraps to 0 after reset between sequences",
           chirp_counter == 6'd0);
-    
+
     // Run second sequence
     run_full_sequence;
-    check("C7d: Second sequence also ends at CHIRP_MAX",
-          chirp_counter == SIM_CHIRP_MAX);
+    check("C7d: Second sequence also auto-resets to 0 at end",
+          chirp_counter == 6'd0);
     
     // ================================================================
     // TEST GROUP 8: Contract C10 — Receiver Port Compatibility
