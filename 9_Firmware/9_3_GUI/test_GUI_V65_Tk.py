@@ -22,7 +22,9 @@ from radar_protocol import (
     NUM_RANGE_BINS, NUM_DOPPLER_BINS,
     DATA_PACKET_SIZE,
 )
-from GUI_V65_Tk import DemoTarget, DemoSimulator, _ReplayController
+from GUI_V65_Tk import (
+    DemoTarget, DemoSimulator, _ReplayController, ppi_xy, ppi_raster, ppi_beam_weights,
+)
 
 
 class TestRadarProtocol(unittest.TestCase):
@@ -776,6 +778,60 @@ class TestAGCVisualizationHistory(unittest.TestCase):
 
 
 # =====================================================================
+# Tests for north-up PPI coordinate conversion
+# =====================================================================
+
+
+class TestPpiXy(unittest.TestCase):
+    """ppi_xy is the only PPI math — keep it vectorized and north-up."""
+
+    def test_empty(self):
+        xy = ppi_xy([], [])
+        self.assertEqual(xy.shape, (0, 2))
+
+    def test_north_is_plus_y(self):
+        xy = ppi_xy(1000.0, 0.0)
+        np.testing.assert_allclose(xy[0], [0.0, 1000.0], atol=1e-9)
+
+    def test_east_is_plus_x(self):
+        xy = ppi_xy(1000.0, 90.0)
+        np.testing.assert_allclose(xy[0], [1000.0, 0.0], atol=1e-9)
+
+    def test_south_and_west(self):
+        south = ppi_xy(500.0, 180.0)
+        west = ppi_xy(500.0, 270.0)
+        np.testing.assert_allclose(south[0], [0.0, -500.0], atol=1e-9)
+        np.testing.assert_allclose(west[0], [-500.0, 0.0], atol=1e-9)
+
+    def test_vectorized_shape(self):
+        xy = ppi_xy([100.0, 200.0, 300.0], [0.0, 90.0, 180.0])
+        self.assertEqual(xy.shape, (3, 2))
+        self.assertTrue(np.isfinite(xy).all())
+
+    def test_raster_north_pixel(self):
+        img = ppi_raster(ppi_xy(1000.0, 0.0), 1000.0, size=11)
+        self.assertEqual(img[10, 5], 1.0)
+
+    def test_raster_decay(self):
+        img = np.ones((8, 8), dtype=np.float32)
+        ppi_raster(np.empty((0, 2)), 1.0, size=8, decay=0.5, out=img)
+        np.testing.assert_allclose(img, 0.5)
+
+    def test_beam_weights_peak_on_heading(self):
+        w = ppi_beam_weights([0.0, 90.0, 180.0], 0.0, beam_deg=10.0)
+        self.assertAlmostEqual(float(w[0]), 1.0, places=5)
+        self.assertLess(float(w[1]), 0.01)
+        self.assertLess(float(w[2]), 0.01)
+
+    def test_raster_10k(self):
+        n = 10_000
+        xy = ppi_xy(np.full(n, 500.0), np.linspace(0.0, 360.0, n, endpoint=False))
+        img = ppi_raster(xy, 1536.0, size=256)
+        self.assertEqual(img.shape, (256, 256))
+        self.assertGreater(float(img.sum()), 100.0)
+
+
+# =====================================================================
 # Tests for DemoTarget, DemoSimulator, and _ReplayController
 # =====================================================================
 
@@ -849,8 +905,7 @@ class TestDemoSimulatorNoTk(unittest.TestCase):
 
     def test_initial_targets_created(self):
         sim, _fq, _uq, _root = self._make_simulator()
-        # Should seed 8 initial targets
-        self.assertEqual(len(sim._targets), 8)
+        self.assertEqual(sim.n_targets, 8)
 
     def test_tick_produces_frame_and_targets(self):
         sim, fq, uq, _root = self._make_simulator()
@@ -864,6 +919,12 @@ class TestDemoSimulatorNoTk(unittest.TestCase):
         tag, payload = uq.get_nowait()
         self.assertEqual(tag, "demo_targets")
         self.assertIsInstance(payload, list)
+        xy = ppi_xy(
+            [t["range_m"] for t in payload],
+            [t["azimuth"] for t in payload],
+        )
+        self.assertEqual(xy.shape, (len(payload), 2))
+        self.assertTrue(np.isfinite(xy).all())
 
     def test_tick_produces_nonzero_detections(self):
         """Demo targets should actually render into the range-Doppler grid."""
@@ -875,6 +936,23 @@ class TestDemoSimulatorNoTk(unittest.TestCase):
                            "Demo targets should render into range-Doppler grid")
         self.assertGreater(frame.detection_count, 0,
                            "Demo targets should produce detections")
+
+    def test_10k_tick_is_vectorized(self):
+        from unittest.mock import MagicMock
+
+        fq = queue.Queue(maxsize=4)
+        uq = queue.Queue(maxsize=4)
+        mock_root = MagicMock()
+        mock_root.after.return_value = "mock_after_id"
+        sim = DemoSimulator(fq, uq, mock_root, interval_ms=50, n_targets=10_000)
+        sim._tick()
+        self.assertEqual(sim.n_targets, 10_000)
+        frame = fq.get_nowait()
+        self.assertGreater(frame.magnitude.sum(), 0)
+        xy = ppi_xy(sim._range, sim._az)
+        img = ppi_raster(xy, DemoTarget._MAX_RANGE, size=256)
+        self.assertEqual(xy.shape, (10_000, 2))
+        self.assertGreater(float(img.sum()), 100.0)
 
     def test_stop_cancels_after(self):
         sim, _fq, _uq, mock_root = self._make_simulator()
