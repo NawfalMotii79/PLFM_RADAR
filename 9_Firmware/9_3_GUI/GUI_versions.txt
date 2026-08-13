@@ -8,6 +8,6 @@ GUI_V5 ==> Added Mercury Color
 
 GUI_V6 ==> Added USB3 FT601 support  [DEPRECATED — superseded by V65/V7]
 
-GUI_V65_Tk ==> Board bring-up dashboard (FT2232H reader, real-time R-D heatmap, CFAR overlay, waterfall, host commands, HDF5 recording, replay, demo mode)
+GUI_V65_Tk ==> Board bring-up dashboard (FT2232H reader, real-time R-D heatmap, CFAR overlay, waterfall, PPI, host commands, HDF5 recording, replay, demo mode)
 radar_protocol ==> Protocol layer (packet parsing, command building, FT2232H connection, data recorder, acquisition thread)
 smoke_test ==> Board bring-up smoke test host script (triggers FPGA self-test via opcode 0x30)

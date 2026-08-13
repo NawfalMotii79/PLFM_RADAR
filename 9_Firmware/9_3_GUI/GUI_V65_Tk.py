@@ -10,6 +10,7 @@ Features:
   - Real-time range-Doppler magnitude heatmap (64x32)
   - CFAR detection overlay (flagged cells highlighted)
   - Range profile waterfall plot (range vs. time)
+  - North-up PPI raster (demo, phosphor decay)
   - Host command sender (opcodes per radar_system_top.v:
     0x01-0x04, 0x10-0x16, 0x20-0x27, 0x30-0x31, 0xFF)
   - Configuration panel for all radar parameters
@@ -25,11 +26,10 @@ Usage:
   python GUI_V65_Tk.py --live       # Launch with FT2232H hardware
   python GUI_V65_Tk.py --record     # Launch with HDF5 recording
   python GUI_V65_Tk.py --replay path/to/data  # Auto-load replay
-  python GUI_V65_Tk.py --demo       # Start in demo mode
+  python GUI_V65_Tk.py --demo       # Start in demo mode (100 PPI targets)
 """
 
 import os
-import math
 import time
 import copy
 import queue
@@ -51,6 +51,8 @@ try:
     import matplotlib
     matplotlib.use("TkAgg")
     from matplotlib.figure import Figure
+    from matplotlib.patches import Circle
+    from matplotlib.colors import LinearSegmentedColormap
     from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
     _HAS_GUI = True
@@ -89,6 +91,66 @@ YELLOW = "#f9e2af"
 SURFACE = "#313244"
 
 
+PPI_SIZE = 256
+PPI_DECAY = 0.93
+PPI_SWEEP_RPS = 0.4
+PPI_BEAM_DEG = 10.0
+PPI_BG = "#000000"
+PPI_PHOS = "#3dff7a"
+PPI_PHOS_DIM = "#145c2e"
+DEMO_N_DEFAULT = 100
+DEMO_N_MAX = 100
+DEMO_INTERVAL_MS = 50
+_TABLE_K = 20
+_CLASS_NAMES = ("aircraft", "drone", "bird", "unknown")
+
+
+def ppi_xy(range_m, azimuth_deg) -> np.ndarray:
+    """North-up PPI coordinates in metres. 0°=North, 90°=East (clockwise).
+
+    Returns (N, 2) as (east, north). Empty input → shape (0, 2).
+    """
+    r = np.atleast_1d(np.asarray(range_m, dtype=np.float64))
+    az = np.radians(np.atleast_1d(np.asarray(azimuth_deg, dtype=np.float64)))
+    if r.size == 0:
+        return np.empty((0, 2), dtype=np.float64)
+    return np.column_stack((r * np.sin(az), r * np.cos(az)))
+
+
+def ppi_raster(xy, max_range: float, *, size: int = PPI_SIZE,
+               decay: float = 0.0, out: np.ndarray | None = None,
+               weights=None) -> np.ndarray:
+    """Stamp PPI samples into a dense image. O(N) index writes, no artists."""
+    if out is None:
+        out = np.zeros((size, size), dtype=np.float32)
+    if decay:
+        out *= np.float32(decay)
+    else:
+        out.fill(0.0)
+    if xy is None or xy.size == 0 or max_range <= 0:
+        return out
+    s = (size - 1) * 0.5
+    scale = s / max_range
+    cols = np.rint(xy[:, 0] * scale + s).astype(np.intp)
+    rows = np.rint(xy[:, 1] * scale + s).astype(np.intp)
+    m = (cols >= 0) & (cols < size) & (rows >= 0) & (rows < size)
+    if not np.any(m):
+        return out
+    if weights is None:
+        out[rows[m], cols[m]] = 1.0
+    else:
+        w = np.asarray(weights, dtype=np.float32)[m]
+        out[rows[m], cols[m]] = np.maximum(out[rows[m], cols[m]], w)
+    return out
+
+
+def ppi_beam_weights(azimuth_deg, sweep_az: float, beam_deg: float = PPI_BEAM_DEG):
+    """Gaussian illumination vs sweep heading. Peak 1 at the beam."""
+    d = (np.asarray(azimuth_deg, dtype=np.float64) - sweep_az + 180.0) % 360.0 - 180.0
+    sigma = max(beam_deg, 1e-3)
+    return np.exp(-0.5 * (d / sigma) ** 2).astype(np.float32)
+
+
 # ============================================================================
 # Demo Target Simulator (Tkinter timer-based)
 # ============================================================================
@@ -124,26 +186,26 @@ class DemoTarget:
 
 
 class DemoSimulator:
-    """Timer-driven demo target generator for the Tkinter dashboard.
+    """Vectorized demo swarm. Kinematics stay in numpy; UI gets arrays + top-K rows."""
 
-    Produces synthetic ``RadarFrame`` objects and a target list each tick,
-    pushing them into the dashboard's ``frame_queue`` and ``_ui_queue``.
-    """
+    _RANGE_PER_BIN: float = DemoTarget._RANGE_PER_BIN
+    _MAX_RANGE: float = DemoTarget._MAX_RANGE
+    _VEL_PER_BIN: float = 5.34
 
     def __init__(self, frame_queue: queue.Queue, ui_queue: queue.Queue,
-                 root: tk.Tk, interval_ms: int = 500):
+                 root: tk.Tk, interval_ms: int = 500, n_targets: int = 8,
+                 on_ppi=None):
         self._frame_queue = frame_queue
         self._ui_queue = ui_queue
         self._root = root
         self._interval_ms = interval_ms
-        self._targets: list[DemoTarget] = []
-        self._next_id = 1
+        self._on_ppi = on_ppi
         self._frame_number = 0
         self._after_id: str | None = None
-
-        # Seed initial targets
-        for _ in range(8):
-            self._add_target()
+        self._tick_i = 0
+        self._rng = np.random.default_rng()
+        self.n_targets = max(1, int(n_targets))
+        self._alloc(self.n_targets)
 
     def start(self):
         self._tick()
@@ -154,77 +216,84 @@ class DemoSimulator:
             self._after_id = None
 
     def add_random_target(self):
-        self._add_target()
+        """Keep API: replace the weakest-SNR slot instead of appending."""
+        i = int(np.argmin(self._snr))
+        mask = np.zeros(self.n_targets, dtype=bool)
+        mask[i] = True
+        self._spawn_into(mask)
 
-    def _add_target(self):
-        t = DemoTarget(self._next_id)
-        self._next_id += 1
-        self._targets.append(t)
+    def _alloc(self, n: int):
+        rng = self._rng
+        self._id = np.arange(1, n + 1, dtype=np.int32)
+        self._range = rng.uniform(20.0, self._MAX_RANGE - 20.0, n)
+        self._vel = rng.uniform(-10.0, 10.0, n)
+        self._az = rng.uniform(0.0, 360.0, n)
+        self._snr = rng.uniform(10.0, 35.0, n)
+        self._cls = rng.integers(0, 4, n)
+        self._next_id = n + 1
+
+    def _spawn_into(self, mask: np.ndarray):
+        k = int(mask.sum())
+        if k == 0:
+            return
+        rng = self._rng
+        self._range[mask] = rng.uniform(20.0, self._MAX_RANGE - 20.0, k)
+        self._vel[mask] = rng.uniform(-10.0, 10.0, k)
+        self._az[mask] = rng.uniform(0.0, 360.0, k)
+        self._snr[mask] = rng.uniform(10.0, 35.0, k)
+        self._cls[mask] = rng.integers(0, 4, k)
+        self._id[mask] = np.arange(self._next_id, self._next_id + k, dtype=np.int32)
+        self._next_id += k
+
+    def _step(self):
+        scale = self._interval_ms / 500.0
+        n = self.n_targets
+        rng = self._rng
+        self._range -= self._vel * (0.1 * scale)
+        self._vel = np.clip(self._vel + rng.uniform(-1.0, 1.0, n) * scale, -20.0, 20.0)
+        self._az = (self._az + rng.uniform(-0.5, 0.5, n) * scale) % 360.0
+        self._snr = np.clip(self._snr + rng.uniform(-1.0, 1.0, n) * scale, 0.0, 50.0)
+        self._spawn_into((self._range < 5.0) | (self._range > self._MAX_RANGE))
+
+    def _table_rows(self) -> list[dict]:
+        k = min(_TABLE_K, self.n_targets)
+        idx = np.argpartition(self._snr, -k)[-k:]
+        idx = idx[np.argsort(self._snr[idx])[::-1]]
+        return [
+            {"id": int(self._id[i]), "range_m": float(self._range[i]),
+             "velocity": float(self._vel[i]), "azimuth": float(self._az[i]),
+             "snr": float(self._snr[i]), "class": _CLASS_NAMES[int(self._cls[i])]}
+            for i in idx
+        ]
 
     def _tick(self):
-        updated: list[DemoTarget] = [t for t in self._targets if t.step()]
-        if len(updated) < 5 or (random.random() < 0.05 and len(updated) < 15):
-            self._add_target()
-            updated.append(self._targets[-1])
-        self._targets = updated
-
-        # Synthesize a RadarFrame with Gaussian blobs for each target
-        frame = self._make_frame(updated)
+        self._step()
         with contextlib.suppress(queue.Full):
-            self._frame_queue.put_nowait(frame)
-
-        # Post target info for the detected-targets treeview
-        target_dicts = [
-            {"id": t.id, "range_m": t.range_m, "velocity": t.velocity,
-             "azimuth": t.azimuth, "snr": t.snr, "class": t.classification}
-            for t in updated
-        ]
-        self._ui_queue.put(("demo_targets", target_dicts))
-
+            self._frame_queue.put_nowait(self._make_frame())
+        if self._on_ppi is not None:
+            self._on_ppi(self._range, self._az)
+        self._tick_i += 1
+        if self._tick_i % 10 == 1:
+            self._ui_queue.put(("demo_targets", self._table_rows()))
         self._after_id = self._root.after(self._interval_ms, self._tick)
 
-    def _make_frame(self, targets: list[DemoTarget]) -> RadarFrame:
-        """Build a synthetic RadarFrame from target list."""
+    def _make_frame(self) -> RadarFrame:
         mag = np.zeros((NUM_RANGE_BINS, NUM_DOPPLER_BINS), dtype=np.float64)
-        det = np.zeros((NUM_RANGE_BINS, NUM_DOPPLER_BINS), dtype=np.uint8)
-
-        # Range/Doppler scaling: bin spacing = c/(2*Fs)*decimation
-        range_per_bin = (3e8 / (2 * 100e6)) * 16  # ~24 m/bin
-        max_range = range_per_bin * NUM_RANGE_BINS
-        vel_per_bin = 5.34  # m/s per Doppler bin (radar_scene.py: lam/(2*16*PRI))
-
-        for t in targets:
-            if t.range_m > max_range or t.range_m < 0:
-                continue
-            r_bin = int(t.range_m / range_per_bin)
-            d_bin = int((t.velocity / vel_per_bin) + NUM_DOPPLER_BINS / 2)
-            r_bin = max(0, min(NUM_RANGE_BINS - 1, r_bin))
-            d_bin = max(0, min(NUM_DOPPLER_BINS - 1, d_bin))
-
-            # Gaussian-ish blob
-            amplitude = 500 + t.snr * 200
-            for dr in range(-2, 3):
-                for dd in range(-1, 2):
-                    ri = r_bin + dr
-                    di = d_bin + dd
-                    if 0 <= ri < NUM_RANGE_BINS and 0 <= di < NUM_DOPPLER_BINS:
-                        w = math.exp(-0.5 * (dr**2 + dd**2))
-                        mag[ri, di] += amplitude * w
-                        if w > 0.5:
-                            det[ri, di] = 1
-
-        rd_i = (mag * 0.5).astype(np.int16)
-        rd_q = np.zeros_like(rd_i)
-        rp = mag.max(axis=1)
-
+        r_bin = np.clip(
+            (self._range / self._RANGE_PER_BIN).astype(np.intp), 0, NUM_RANGE_BINS - 1)
+        d_bin = np.clip(
+            np.rint(self._vel / self._VEL_PER_BIN + NUM_DOPPLER_BINS / 2).astype(np.intp),
+            0, NUM_DOPPLER_BINS - 1)
+        np.add.at(mag, (r_bin, d_bin), 500.0 + self._snr * 200.0)
+        det = (mag > 0).astype(np.uint8)
         self._frame_number += 1
         return RadarFrame(
             timestamp=time.time(),
-            range_doppler_i=rd_i,
-            range_doppler_q=rd_q,
+            range_doppler_i=(mag * 0.5).astype(np.int16),
+            range_doppler_q=np.zeros((NUM_RANGE_BINS, NUM_DOPPLER_BINS), dtype=np.int16),
             magnitude=mag,
             detections=det,
-            range_profile=rp,
+            range_profile=mag.max(axis=1),
             detection_count=int(det.sum()),
             frame_number=self._frame_number,
         )
@@ -441,6 +510,7 @@ class RadarDashboard:
         # Demo state
         self._demo_sim: DemoSimulator | None = None
         self._demo_active = False
+        self._demo_n = DEMO_N_DEFAULT
 
         # Detected targets (from demo or replay host-DSP)
         self._detected_targets: list[dict] = []
@@ -538,13 +608,13 @@ class RadarDashboard:
         plot_frame = ttk.Frame(parent)
         plot_frame.pack(fill="both", expand=True)
 
-        # Matplotlib figure with 3 subplots
-        self.fig = Figure(figsize=(14, 5), facecolor=BG)
-        self.fig.subplots_adjust(left=0.07, right=0.98, top=0.94, bottom=0.10,
-                                  wspace=0.30, hspace=0.35)
+        # One figure so PPI cannot be packed off-screen. Raster blit stays O(pixels).
+        self.fig = Figure(figsize=(16, 5), facecolor=BG)
+        self.fig.subplots_adjust(left=0.05, right=0.99, top=0.94, bottom=0.10,
+                                  wspace=0.28, hspace=0.35)
 
         # Range-Doppler heatmap
-        self.ax_rd = self.fig.add_subplot(1, 3, (1, 2))
+        self.ax_rd = self.fig.add_subplot(1, 4, (1, 2))
         self.ax_rd.set_facecolor(BG2)
         self._rd_img = self.ax_rd.imshow(
             np.zeros((NUM_RANGE_BINS, NUM_DOPPLER_BINS)),
@@ -567,7 +637,7 @@ class RadarDashboard:
                                                 zorder=5, label="CFAR Det")
 
         # Waterfall plot (range profile vs time)
-        self.ax_wf = self.fig.add_subplot(1, 3, 3)
+        self.ax_wf = self.fig.add_subplot(1, 4, 3)
         self.ax_wf.set_facecolor(BG2)
         wf_init = np.zeros((WATERFALL_DEPTH, NUM_RANGE_BINS))
         self._wf_img = self.ax_wf.imshow(
@@ -580,8 +650,51 @@ class RadarDashboard:
         self.ax_wf.set_ylabel("Frame", color=FG)
         self.ax_wf.tick_params(colors=FG)
 
+        # Classic circular PPI: phosphor raster, range rings, spokes, rotating sweep.
+        self._ppi_buf = np.zeros((PPI_SIZE, PPI_SIZE), dtype=np.float32)
+        self.ax_ppi = self.fig.add_subplot(1, 4, 4)
+        self.ax_ppi.set_facecolor(PPI_BG)
+        self.ax_ppi.set_aspect("equal")
+        phosphor = LinearSegmentedColormap.from_list(
+            "phosphor", [PPI_BG, PPI_PHOS_DIM, PPI_PHOS, "#e8ffe8"])
+        self._ppi_img = self.ax_ppi.imshow(
+            self._ppi_buf, origin="lower", cmap=phosphor, interpolation="nearest",
+            extent=[-max_range, max_range, -max_range, max_range],
+            vmin=0.0, vmax=1.0, zorder=1)
+        clip = Circle((0.0, 0.0), max_range, transform=self.ax_ppi.transData)
+        self._ppi_img.set_clip_path(clip)
+        self.ax_ppi.set_title("PPI", color=PPI_PHOS, fontsize=12)
+        self.ax_ppi.set_xticks([])
+        self.ax_ppi.set_yticks([])
+        self.ax_ppi.tick_params(length=0)
+        for spine in self.ax_ppi.spines.values():
+            spine.set_visible(False)
+        pad = max_range * 1.18
+        self.ax_ppi.set_xlim(-pad, pad)
+        self.ax_ppi.set_ylim(-pad, pad)
+        ring_kw = {"fill": False, "ec": PPI_PHOS, "lw": 0.7, "alpha": 0.35, "zorder": 2}
+        for frac in (0.25, 0.5, 0.75, 1.0):
+            self.ax_ppi.add_patch(Circle((0.0, 0.0), max_range * frac, **ring_kw))
+        spoke_r = np.array([0.0, max_range])
+        for deg in range(0, 360, 30):
+            rad = np.radians(deg)
+            self.ax_ppi.plot(
+                spoke_r * np.sin(rad), spoke_r * np.cos(rad),
+                color=PPI_PHOS, lw=0.4, alpha=0.28, zorder=2, solid_capstyle="round")
+        for label, deg in (("N", 0), ("E", 90), ("S", 180), ("W", 270)):
+            rad = np.radians(deg)
+            rr = max_range * 1.08
+            self.ax_ppi.text(
+                rr * np.sin(rad), rr * np.cos(rad), label,
+                color=PPI_PHOS, fontsize=8, ha="center", va="center", zorder=4)
+        self._sweep_line, = self.ax_ppi.plot(
+            [0.0, 0.0], [0.0, max_range],
+            color=PPI_PHOS, lw=1.4, alpha=0.85, zorder=3)
+
         canvas = FigureCanvasTkAgg(self.fig, master=plot_frame)
         canvas.draw()
+        self._ppi_img.set_clip_path(
+            Circle((0.0, 0.0), max_range, transform=self.ax_ppi.transData))
         canvas.get_tk_widget().pack(fill="both", expand=True)
         self._canvas = canvas
 
@@ -1259,19 +1372,24 @@ class RadarDashboard:
             log.warning("Cannot start demo while radar is connected")
             return
 
+        n = max(1, min(DEMO_N_MAX, self._demo_n))
         self._demo_sim = DemoSimulator(
-            self.frame_queue, self._ui_queue, self.root, interval_ms=500)
+            self.frame_queue, self._ui_queue, self.root,
+            interval_ms=DEMO_INTERVAL_MS, n_targets=n, on_ppi=self._blit_ppi)
         self._demo_sim.start()
         self._demo_active = True
-        self.lbl_status.config(text="DEMO", foreground=YELLOW)
+        self.lbl_status.config(text=f"DEMO {n}", foreground=YELLOW)
         self.btn_demo.config(text="Stop Demo")
-        log.info("Demo mode started")
+        log.info("Demo mode started (%d targets)", n)
 
     def _stop_demo(self):
         if self._demo_sim is not None:
             self._demo_sim.stop()
             self._demo_sim = None
         self._demo_active = False
+        self._detected_targets = []
+        self._update_targets_table([])
+        self._update_ppi([])
         self.lbl_status.config(text="DISCONNECTED", foreground=RED)
         self.btn_demo.config(text="Start Demo")
         log.info("Demo mode stopped")
@@ -1445,8 +1563,36 @@ class RadarDashboard:
         self._rp_slider.set(index)
 
     def _on_demo_targets(self, targets: list[dict]):
-        """Update the detected targets treeview from demo data."""
+        """Table only — PPI is blitted from numpy arrays in ``_blit_ppi``."""
+        self._detected_targets = targets
         self._update_targets_table(targets)
+
+    def _blit_ppi(self, range_m, azimuth_deg):
+        """Stamp blips under the rotating sweep, phosphor-decay the rest."""
+        sweep_az = (time.monotonic() * 360.0 * PPI_SWEEP_RPS) % 360.0
+        rad = np.radians(sweep_az)
+        reach = self._max_range
+        self._sweep_line.set_data(
+            [0.0, reach * np.sin(rad)], [0.0, reach * np.cos(rad)])
+        az = np.asarray(azimuth_deg, dtype=np.float64)
+        ppi_raster(
+            ppi_xy(range_m, az), self._max_range,
+            out=self._ppi_buf, decay=PPI_DECAY,
+            weights=ppi_beam_weights(az, sweep_az),
+        )
+        self._ppi_img.set_data(self._ppi_buf)
+
+    def _update_ppi(self, targets: list[dict]):
+        """Clear or (slow path) stamp from dict rows. Demo uses ``_blit_ppi``."""
+        if not targets:
+            self._ppi_buf.fill(0.0)
+            self._ppi_img.set_data(self._ppi_buf)
+            self._canvas.draw_idle()
+            return
+        self._blit_ppi(
+            [t.get("range_m", 0.0) for t in targets],
+            [t.get("azimuth", 0.0) for t in targets],
+        )
 
     def _update_targets_table(self, targets: list[dict]):
         """Refresh the detected targets treeview."""
@@ -1572,6 +1718,8 @@ def main():
                             help="Auto-load replay file or directory on startup")
     mode_group.add_argument("--demo", action="store_true",
                             help="Start in demo mode with synthetic targets")
+    parser.add_argument("--demo-n", type=int, default=DEMO_N_DEFAULT,
+                        help=f"Demo target count (default: {DEMO_N_DEFAULT}, max {DEMO_N_MAX})")
     args = parser.parse_args()
 
     if args.live:
@@ -1586,6 +1734,7 @@ def main():
     root = tk.Tk()
 
     dashboard = RadarDashboard(root, mock, recorder, device_index=args.device)
+    dashboard._demo_n = max(1, min(DEMO_N_MAX, args.demo_n))
 
     if args.record:
         filepath = os.path.join(
