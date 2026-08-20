@@ -292,15 +292,15 @@ initial begin
 
     // ================================================================
     // TEST GROUP 3: Single Tone (cosine at bin 4)
-    // cos(2*pi*4*n/32) -> peaks at bins 4 and N-4=28
-    // Amplitude 1000 -> each peak = 1000*N/2 = 16000
+    // N=16: cos(2*pi*4*n/16) -> peaks at bins 4 and N-4=12
+    // Amplitude 1000 -> each peak = 1000*N/2 = 8000
     // ================================================================
     $display("");
     $display("--- Test Group 3: Single Tone (bin 4) ---");
 
     for (i = 0; i < N; i = i + 1) begin
-        // cos(2*pi*4*i/32) in Q15-ish
-        angle = 6.28318530718 * 4.0 * i / 32.0;
+        // cos(2*pi*4*i/16) in Q15-ish
+        angle = 6.28318530718 * 4.0 * i / 16.0;
         cos_val = $rtoi($cos(angle) * 1000.0);
         in_re[i] = cos_val;
         in_im[i] = 16'sd0;
@@ -320,13 +320,13 @@ initial begin
     end
     $display("  Tone FFT peak bin: %0d (expect 4)", max_mag_bin);
     $display("  Tone FFT bin[4]  = %0d + j%0d", out_re[4], out_im[4]);
-    $display("  Tone FFT bin[28] = %0d + j%0d", out_re[28], out_im[28]);
-    check(max_mag_bin == 4 || max_mag_bin == 28, 
-          "Tone FFT: peak at bin 4 or 28");
-    // Bin 4 and 28 should have magnitude ~= N/2 * 1000 = 16000
+    $display("  Tone FFT bin[12] = %0d + j%0d", out_re[12], out_im[12]);
+    check(max_mag_bin == 4 || max_mag_bin == 12, 
+          "Tone FFT: peak at bin 4 or 12");
+    // Bin 4 and 12 should have magnitude ~= N/2 * 1000 = 8000
     mag = out_re[4] * out_re[4] + out_im[4] * out_im[4];
-    check(mag > 15000*15000 && mag < 17000*17000,
-          "Tone FFT: bin 4 magnitude ~= 16000");
+    check(mag > 6800*6800 && mag < 9200*9200,
+          "Tone FFT: bin 4 magnitude ~= 8000");
 
     // ================================================================
     // TEST GROUP 4: Roundtrip (FFT then IFFT = identity)
@@ -464,7 +464,7 @@ initial begin
 
     for (i = 0; i < N; i = i + 1) begin
         in_re[i] = 16'sd0;
-        angle = 6.28318530718 * 2.0 * i / 32.0;
+        angle = 6.28318530718 * 2.0 * i / 16.0;
         in_im[i] = $rtoi($sin(angle) * 1000.0);
     end
 
@@ -480,9 +480,9 @@ initial begin
             max_mag_bin = i;
         end
     end
-    $display("  Imag tone peak bin: %0d (expect 2 or 30)", max_mag_bin);
-    check(max_mag_bin == 2 || max_mag_bin == 30,
-          "Imag tone: peak at bin 2 or 30");
+    $display("  Imag tone peak bin: %0d (expect 2 or 14)", max_mag_bin);
+    check(max_mag_bin == 2 || max_mag_bin == 14,
+          "Imag tone: peak at bin 2 or 14");
 
     // ================================================================
     // TEST GROUP 8: Zero input
