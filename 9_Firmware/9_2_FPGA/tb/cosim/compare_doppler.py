@@ -249,8 +249,8 @@ def compare_scenario(name, config, base_dir):
     checks.append(('RTL output count == 2048', count_ok))
 
     energy_ok = (ENERGY_RATIO_MIN < energy_ratio < ENERGY_RATIO_MAX)
-    checks.append((f'Energy ratio in bounds '
-                    f'({ENERGY_RATIO_MIN}-{ENERGY_RATIO_MAX})', energy_ok))
+    checks.append(((f'Energy ratio in bounds '
+                    f'({ENERGY_RATIO_MIN}-{ENERGY_RATIO_MAX})'), energy_ok))
 
     peak_ok = (peak_agreement_frac >= PEAK_AGREEMENT_MIN)
     checks.append((f'Peak agreement >= {PEAK_AGREEMENT_MIN:.0%}', peak_ok))
@@ -261,8 +261,8 @@ def compare_scenario(name, config, base_dir):
     if high_energy_rbins:
         he_mag_corr = sum(d['mag_corr'] for d in high_energy_rbins) / len(high_energy_rbins)
         he_ok = (he_mag_corr >= MAG_CORR_MIN)
-        checks.append((f'High-energy rbin avg mag_corr >= {MAG_CORR_MIN:.2f} '
-                        f'(actual={he_mag_corr:.3f})', he_ok))
+        checks.append(((f'High-energy rbin avg mag_corr >= {MAG_CORR_MIN:.2f} '
+                        f'(actual={he_mag_corr:.3f})'), he_ok))
 
     all_pass = True
     for _check_name, passed in checks:

@@ -1737,11 +1737,11 @@ class RadarDashboard(QMainWindow):
         """Update FPGA status readback labels."""
         # Diagnostics tab
         lines = [
-            f"Mode: {st.radar_mode}  Stream: {st.stream_ctrl:03b}  "
-            f"Thresh: {st.cfar_threshold}",
+            (f"Mode: {st.radar_mode}  Stream: {st.stream_ctrl:03b}  "
+            f"Thresh: {st.cfar_threshold}"),
             f"Long Chirp: {st.long_chirp}  Listen: {st.long_listen}",
-            f"Guard: {st.guard}  Short Chirp: {st.short_chirp}  "
-            f"Listen: {st.short_listen}",
+            (f"Guard: {st.guard}  Short Chirp: {st.short_chirp}  "
+            f"Listen: {st.short_listen}"),
             f"Chirps/Elev: {st.chirps_per_elev}  Range Mode: {st.range_mode}",
         ]
         self._fpga_status_label.setText("\n".join(lines))
