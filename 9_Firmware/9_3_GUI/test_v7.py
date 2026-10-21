@@ -17,6 +17,7 @@ import unittest
 from dataclasses import asdict
 
 import numpy as np
+import pytest
 
 
 # =============================================================================
@@ -1097,6 +1098,53 @@ class TestExtractTargetsFromFrame(unittest.TestCase):
         self.assertEqual(len(targets), 3)
         # IDs should be sequential 0, 1, 2
         self.assertEqual([t.id for t in targets], [0, 1, 2])
+
+
+@pytest.mark.parametrize("target_counts", [(1, 0, 1), (0, 0, 1)])
+def test_live_worker_emits_empty_target_updates(target_counts):
+    import ast
+    import logging
+    import queue
+    from types import SimpleNamespace
+    from unittest.mock import Mock, call
+
+    from radar_protocol import RadarFrame
+
+    # Execute the production method without requiring Qt in headless CI.
+    method = TestLiveReplayPhysicalUnitsParity._parse_method("RadarDataWorker", "run")
+    module = ast.Module(body=[method], type_ignores=[])
+    acquisition = Mock()
+    namespace = {
+        "RadarAcquisition": Mock(return_value=acquisition),
+        "logger": logging.getLogger(__name__),
+        "queue": queue,
+    }
+    exec(compile(module, "workers.py", "exec"), namespace)
+
+    frames = [RadarFrame() for _ in target_counts]
+    target_lists = [[Mock()] * count for count in target_counts]
+    frame_queue = queue.Queue()
+    for frame in frames:
+        frame_queue.put(frame)
+    worker = SimpleNamespace(
+        _connection=Mock(), _frame_queue=frame_queue, _recorder=None,
+        _on_status=Mock(), _processor=Mock(), _frame_count=0, _error_count=0,
+        _run_host_dsp=Mock(side_effect=target_lists), frameReady=Mock(),
+        targetsUpdated=Mock(), statsUpdated=Mock(), errorOccurred=Mock(),
+    )
+
+    def stop_after_frames(_stats):
+        if worker._frame_count == len(frames):
+            worker._running = False
+
+    worker.statsUpdated.emit.side_effect = stop_after_frames
+    namespace["run"](worker)
+
+    assert worker.targetsUpdated.emit.call_args_list == [call(t) for t in target_lists]
+    assert worker.frameReady.emit.call_args_list == [call(f) for f in frames]
+    worker.errorOccurred.emit.assert_not_called()
+    acquisition.stop.assert_called_once()
+    acquisition.join.assert_called_once_with(timeout=2.0)
 
 
 # =============================================================================

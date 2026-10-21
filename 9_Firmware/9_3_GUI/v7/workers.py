@@ -135,8 +135,7 @@ class RadarDataWorker(QThread):
                 # Run host-side DSP if processor is configured
                 if self._processor is not None:
                     targets = self._run_host_dsp(frame)
-                    if targets:
-                        self.targetsUpdated.emit(targets)
+                    self.targetsUpdated.emit(targets)
 
                 # Emit stats
                 self.statsUpdated.emit({
