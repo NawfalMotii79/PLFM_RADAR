@@ -286,7 +286,17 @@ run_test() {
 
     # Run
     local output
-    output=$(timeout 120 vvp "$vvp" 2>&1) || true
+    local run_status=0
+    output=$(timeout 120 vvp "$vvp" 2>&1) || run_status=$?
+
+    if [[ "$run_status" -ne 0 ]]; then
+        echo -e "${RED}FAIL${NC} (exit status $run_status)"
+        printf '%s\n' "$output"
+        ERRORS="$ERRORS\n  $name: simulator exited with status $run_status"
+        FAIL=$((FAIL + 1))
+        rm -f "$vvp"
+        return
+    fi
 
     # Count PASS/FAIL in output (testbenches use explicit [PASS]/[FAIL] markers)
     local test_pass test_fail

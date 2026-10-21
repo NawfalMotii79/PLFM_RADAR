@@ -81,6 +81,10 @@ jobs:
       - name: Install Icarus Verilog
         run: sudo apt-get update && sudo apt-get install -y iverilog
 
+      - name: Test FPGA regression runner
+        run: bash test_run_regression.sh
+        working-directory: 9_Firmware/9_2_FPGA
+
       - name: Run full FPGA regression
         run: bash run_regression.sh
         working-directory: 9_Firmware/9_2_FPGA
