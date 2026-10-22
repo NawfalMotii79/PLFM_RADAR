@@ -103,6 +103,15 @@ class Opcode(IntEnum):
     STATUS_REQUEST      = 0xFF
 
 
+# MCU-only commands — NOT dispatched to the FPGA opcode switch.
+# These values have no corresponding case in radar_system_top.v.
+# Listed here so the GUI can build and send them via build_command().
+# contract_parser.py filters MCU_ONLY_OPCODES out of the Python/Verilog
+# bidirectional check.
+FAULT_ACK = 0x40  # Exact 4-byte CDC packet; clears system_emergency_state
+MCU_ONLY_OPCODES: frozenset[int] = frozenset({0x40})
+
+
 # ============================================================================
 # Data Structures
 # ============================================================================

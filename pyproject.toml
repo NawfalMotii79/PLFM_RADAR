@@ -49,3 +49,6 @@ select = [
 "test_*.py" = ["ARG", "T20", "ERA"]
 # Re-export modules: unused imports are intentional
 "v7/hardware.py" = ["F401"]
+# 8_Utils/Python/LUT.py is a single-purpose Verilog LUT generator whose only
+# output is `print(f"8'd{val},")` per the file's docstring intent.
+"8_Utils/Python/LUT.py" = ["T20"]

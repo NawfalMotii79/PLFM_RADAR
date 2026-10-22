@@ -53,46 +53,6 @@ reg [2:0] saturation_count;
 reg overflow_detected;
 reg [7:0] error_counter;
 
-// ============================================================================
-// 400 MHz Reset Synchronizer
-//
-// reset_n arrives from the 100 MHz domain (sys_reset_n from radar_system_top).
-// Using it directly as an async reset in the 400 MHz domain causes the reset
-// deassertion edge to violate timing: the 100 MHz flip-flop driving reset_n
-// has its output fanning out to 1156 registers across the FPGA in the 400 MHz
-// domain, requiring 18.243ns of routing (WNS = -18.081ns).
-//
-// Solution: 2-stage async-assert, sync-deassert reset synchronizer in the
-// 400 MHz domain. Reset assertion is immediate (asynchronous — combinatorial
-// path from reset_n to all 400 MHz registers). Reset deassertion is
-// synchronized to clk_400m rising edge, preventing metastability.
-//
-// All 400 MHz submodules (NCO, CIC, mixers, LFSR) use reset_n_400m.
-// All 100 MHz submodules (FIR, output stage) continue using reset_n directly
-// (already synchronized to 100 MHz at radar_system_top level).
-// ============================================================================
-(* ASYNC_REG = "TRUE" *) reg [1:0] reset_sync_400m;
-(* max_fanout = 50 *) wire reset_n_400m = reset_sync_400m[1];
-
-// Active-high reset for DSP48E1 RST ports (avoids LUT1 inverter fan-out)
-(* max_fanout = 50 *) reg reset_400m;
-
-always @(posedge clk_400m or negedge reset_n) begin
-    if (!reset_n) begin
-        reset_sync_400m <= 2'b00;
-        reset_400m      <= 1'b1;
-    end else begin
-        reset_sync_400m <= {reset_sync_400m[0], 1'b1};
-        reset_400m      <= ~reset_sync_400m[1];
-    end
-end
-
-// CDC synchronization for control signals (2-stage synchronizers)
-(* ASYNC_REG = "TRUE" *) reg [1:0] mixers_enable_sync_chain;
-(* ASYNC_REG = "TRUE" *) reg [1:0] force_saturation_sync_chain;
-wire mixers_enable_sync;
-wire force_saturation_sync;
-
 // Debug monitoring signals
 reg [31:0] sample_counter;
 wire signed [17:0] debug_mixed_i_trunc;
@@ -130,8 +90,6 @@ reg baseband_valid_reg;
 wire [7:0] phase_dither_bits;
 reg [31:0] phase_inc_dithered;
 
-
-
 // ============================================================================
 // Debug Signal Assignments
 // ============================================================================
@@ -142,13 +100,66 @@ assign debug_mixed_i_trunc = mixed_i[25:8];
 assign debug_mixed_q_trunc = mixed_q[25:8];
 
 // ============================================================================
-// Clock Domain Crossing for Control Signals (2-stage synchronizers)
+// 400 MHz Reset Synchronizer
+//
+// reset_n arrives from the 100 MHz domain (sys_reset_n from radar_system_top).
+// Using it directly as an async reset in the 400 MHz domain causes the reset
+// deassertion edge to violate timing: the 100 MHz flip-flop driving reset_n
+// has its output fanning out to 1156 registers across the FPGA in the 400 MHz
+// domain, requiring 18.243ns of routing (WNS = -18.081ns).
+//
+// Solution: 2-stage async-assert, sync-deassert reset synchronizer in the
+// 400 MHz domain. Reset assertion is immediate (asynchronous — combinatorial
+// path from reset_n to all 400 MHz registers). Reset deassertion is
+//
+// reset_400m   : ACTIVE-HIGH registered reset with (* max_fanout = 50 *).
+//                This is THE signal fed to every synchronous 400 MHz FDRE
+//                and every DSP48E1 RST pin in this module and its children
+//                (NCO, CIC, LFSR). Vivado replicates the register (~14
+//                copies) so each replica drives ≈50 loads regionally,
+//                eliminating the single-LUT1 / 702-load net that caused
+//                WNS=-0.626 ns in Build N.
+//
+// System-level invariants preserved:
+//   I1  Reset assertion propagates to all 400 MHz regs within ≤3 clk edges
+//       (2 sync + 1 replicated-reg fanout).  At 400 MHz = 7.5 ns << any
+//       system-level reset assertion duration.
+//   I2  Reset de-assertion is always synchronous to clk_400m (via
+//       reset_sync_400m), never glitches.
+//   I3  DSP48E1 RST pins are all fed from Q of a register — glitch-free.
+//   I4  No new CDC introduced: reset_400m is entirely in clk_400m domain.
+//   I5  Power-up: reset_n is asserted externally and mmcm_locked is low;
+//       reset_sync_400m stays 2'b00, reset_400m stays 1'b1, downstream
+//       FDREs stay cleared. Safe.
 // ============================================================================
+(* ASYNC_REG = "TRUE" *) reg [1:0] reset_sync_400m = 2'b00;
+(* max_fanout = 50 *) wire reset_n_400m = reset_sync_400m[1];
+
+// Active-high replicated reset for all synchronous 400 MHz consumers
+(* max_fanout = 50 *) reg reset_400m = 1'b1;
+
+always @(posedge clk_400m or negedge reset_n) begin
+    if (!reset_n) begin
+        reset_sync_400m <= 2'b00;
+        reset_400m      <= 1'b1;
+    end else begin
+        reset_sync_400m <= {reset_sync_400m[0], 1'b1};
+        reset_400m      <= ~reset_sync_400m[1];
+    end
+end
+
+// CDC synchronization for control signals (2-stage synchronizers)
+(* ASYNC_REG = "TRUE" *) reg [1:0] mixers_enable_sync_chain;
+(* ASYNC_REG = "TRUE" *) reg [1:0] force_saturation_sync_chain;
+wire mixers_enable_sync;
+wire force_saturation_sync;
 assign mixers_enable_sync = mixers_enable_sync_chain[1];
 assign force_saturation_sync = force_saturation_sync_chain[1];
 
-always @(posedge clk_400m or negedge reset_n_400m) begin
-    if (!reset_n_400m) begin
+// Sync reset via reset_400m (replicated, max_fanout=50). Was async on
+// reset_n_400m — see "400 MHz RESET DISTRIBUTION" comment above.
+always @(posedge clk_400m) begin
+    if (reset_400m) begin
         mixers_enable_sync_chain <= 2'b00;
         force_saturation_sync_chain <= 2'b00;
     end else begin
@@ -160,8 +171,8 @@ end
 // ============================================================================
 // Sample Counter and Debug Monitoring
 // ============================================================================
-always @(posedge clk_400m or negedge reset_n_400m) begin
-    if (!reset_n_400m || reset_monitors) begin
+always @(posedge clk_400m) begin
+    if (reset_400m || reset_monitors) begin
         sample_counter <= 0;
         error_counter <= 0;
     end else if (adc_data_valid_i && adc_data_valid_q ) begin
@@ -189,8 +200,8 @@ lfsr_dither_enhanced #(
 localparam PHASE_INC_120MHZ = 32'h4CCCCCCD;
 
 // Apply dithering to reduce spurious tones (registered for 400 MHz timing)
-always @(posedge clk_400m or negedge reset_n_400m) begin
-    if (!reset_n_400m)
+always @(posedge clk_400m) begin
+    if (reset_400m)
         phase_inc_dithered <= PHASE_INC_120MHZ;
     else
         phase_inc_dithered <= PHASE_INC_120MHZ + {24'b0, phase_dither_bits};
@@ -229,8 +240,8 @@ assign adc_signed_w = {1'b0, adc_data, {(MIXER_WIDTH-ADC_WIDTH-1){1'b0}}} -
                       {1'b0, {ADC_WIDTH{1'b1}}, {(MIXER_WIDTH-ADC_WIDTH-1){1'b0}}} / 2;
 
 // Valid pipeline: 5-stage shift register (1 NCO pipe + 3 DSP48E1 AREG+MREG+PREG + 1 retiming)
-always @(posedge clk_400m or negedge reset_n_400m) begin
-    if (!reset_n_400m) begin
+always @(posedge clk_400m) begin
+    if (reset_400m) begin
         dsp_valid_pipe <= 5'b00000;
     end else begin
         dsp_valid_pipe <= {dsp_valid_pipe[3:0], (nco_ready && adc_data_valid_i && adc_data_valid_q)};
@@ -246,8 +257,8 @@ reg signed [MIXER_WIDTH+NCO_WIDTH-1:0] mult_i_internal, mult_q_internal;  // Mod
 reg signed [MIXER_WIDTH+NCO_WIDTH-1:0] mult_i_reg, mult_q_reg;            // Models PREG
 
 // Stage 0: NCO pipeline — breaks long NCO→DSP route (matches synthesis fabric registers)
-always @(posedge clk_400m or negedge reset_n_400m) begin
-    if (!reset_n_400m) begin
+always @(posedge clk_400m) begin
+    if (reset_400m) begin
         cos_nco_pipe <= 0;
         sin_nco_pipe <= 0;
     end else begin
@@ -257,8 +268,8 @@ always @(posedge clk_400m or negedge reset_n_400m) begin
 end
 
 // Stage 1: AREG/BREG equivalent (uses pipelined NCO outputs)
-always @(posedge clk_400m or negedge reset_n_400m) begin
-    if (!reset_n_400m) begin
+always @(posedge clk_400m) begin
+    if (reset_400m) begin
         adc_signed_reg <= 0;
         cos_pipe_reg <= 0;
         sin_pipe_reg <= 0;
@@ -270,8 +281,8 @@ always @(posedge clk_400m or negedge reset_n_400m) begin
 end
 
 // Stage 2: MREG equivalent
-always @(posedge clk_400m or negedge reset_n_400m) begin
-    if (!reset_n_400m) begin
+always @(posedge clk_400m) begin
+    if (reset_400m) begin
         mult_i_internal <= 0;
         mult_q_internal <= 0;
     end else begin
@@ -281,8 +292,8 @@ always @(posedge clk_400m or negedge reset_n_400m) begin
 end
 
 // Stage 3: PREG equivalent
-always @(posedge clk_400m or negedge reset_n_400m) begin
-    if (!reset_n_400m) begin
+always @(posedge clk_400m) begin
+    if (reset_400m) begin
         mult_i_reg <= 0;
         mult_q_reg <= 0;
     end else begin
@@ -292,8 +303,8 @@ always @(posedge clk_400m or negedge reset_n_400m) begin
 end
 
 // Stage 4: Post-DSP retiming register (matches synthesis path)
-always @(posedge clk_400m or negedge reset_n_400m) begin
-    if (!reset_n_400m) begin
+always @(posedge clk_400m) begin
+    if (reset_400m) begin
         mult_i_retimed <= 0;
         mult_q_retimed <= 0;
     end else begin
@@ -311,8 +322,8 @@ wire [47:0] dsp_p_i, dsp_p_q;
 // (1.505ns routing observed in Build 26). These fabric registers are placed
 // near the DSP by the placer, splitting the route into two shorter segments.
 // DONT_TOUCH on the reg declaration (above) prevents absorption/retiming.
-always @(posedge clk_400m or negedge reset_n_400m) begin
-    if (!reset_n_400m) begin
+always @(posedge clk_400m) begin
+    if (reset_400m) begin
         cos_nco_pipe <= 0;
         sin_nco_pipe <= 0;
     end else begin
@@ -329,11 +340,10 @@ DSP48E1 #(
     .USE_DPORT("FALSE"),
     .USE_MULT("MULTIPLY"),
     .USE_SIMD("ONE48"),
-    // Pipeline register attributes — all enabled for max timing
     .AREG(1),
     .BREG(1),
     .MREG(1),
-    .PREG(1),           // P register enabled — absorbs CLK→P delay for timing closure
+    .PREG(1),
     .ADREG(0),
     .ACASCREG(1),
     .BCASCREG(1),
@@ -344,7 +354,6 @@ DSP48E1 #(
     .DREG(0),
     .INMODEREG(0),
     .OPMODEREG(0),
-    // Pattern detector (unused)
     .AUTORESET_PATDET("NO_RESET"),
     .MASK(48'h3fffffffffff),
     .PATTERN(48'h000000000000),
@@ -496,8 +505,8 @@ wire signed [MIXER_WIDTH+NCO_WIDTH-1:0] mult_q_reg = dsp_p_q[MIXER_WIDTH+NCO_WID
 // Stage 4: Post-DSP retiming register — breaks DSP48E1 CLK→P to fabric path
 // Without this, the DSP output prop delay (1.866ns) + routing (0.515ns) exceeds
 // the 2.500ns clock period at slow process corner
-always @(posedge clk_400m or negedge reset_n_400m) begin
-    if (!reset_n_400m) begin
+always @(posedge clk_400m) begin
+    if (reset_400m) begin
         mult_i_retimed <= 0;
         mult_q_retimed <= 0;
     end else begin
@@ -513,8 +522,8 @@ end
 // force_saturation mux is intentionally AFTER the DSP48E1 output to avoid
 // polluting the critical input path with extra logic
 // ============================================================================
-always @(posedge clk_400m or negedge reset_n_400m) begin
-    if (!reset_n_400m) begin
+always @(posedge clk_400m) begin
+    if (reset_400m) begin
         mixed_i <= 0;
         mixed_q <= 0;
         mixed_valid <= 0;
@@ -759,8 +768,17 @@ generate
     end
 endgenerate
 
-always @(posedge clk or negedge reset_n) begin
-    if (!reset_n) begin
+// ============================================================================
+// RESET FAN-OUT INVARIANT: registered active-high reset with max_fanout=50.
+// See cic_decimator_4x_enhanced.v for full reasoning. reset_n here is driven
+// by the parent DDC's reset_n_400m (already synchronized to clk_400m), so
+// sync reset on the LFSR is safe. INIT=1'b1 holds LFSR in reset on power-up.
+// ============================================================================
+(* max_fanout = 50 *) reg reset_h = 1'b1;
+always @(posedge clk) reset_h <= ~reset_n;
+
+always @(posedge clk) begin
+    if (reset_h) begin
         lfsr_reg <= {DITHER_WIDTH{1'b1}};  // Non-zero initial state
         cycle_counter <= 0;
         lock_detected <= 0;

@@ -24,6 +24,7 @@ ADAR1000_AGC::ADAR1000_AGC()
     , saturation_event_count(0)
 {
     memset(cal_offset, 0, sizeof(cal_offset));
+    if (holdoff_frames == 0) holdoff_frames = 1;
 }
 
 // ---------------------------------------------------------------------------

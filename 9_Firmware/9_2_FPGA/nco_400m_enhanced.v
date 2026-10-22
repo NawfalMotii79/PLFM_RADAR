@@ -59,6 +59,25 @@ reg [1:0] quadrant_reg2;                 // Pass-through for Stage 5 MUX
 // Valid pipeline: tracks 6-stage latency
 reg [5:0] valid_pipe;
 
+// ============================================================================
+// RESET FAN-OUT INVARIANT (Build N+1 fix for WNS=-0.626ns at 400 MHz):
+// ============================================================================
+// reset_h is an ACTIVE-HIGH, REGISTERED copy of ~reset_n with (* max_fanout=50 *).
+// Vivado replicates this register (14+ copies) so each copy drives ≈50 loads
+// regionally, avoiding the single-LUT1 / 702-load net that caused timing
+// failure in Build N. It feeds:
+//   - DSP48E1 RSTP/RSTC on the phase-accumulator DSP (below)
+//   - All pipeline-stage fabric FDREs (synchronous reset)
+// Invariants (see cic_decimator_4x_enhanced.v for full reasoning):
+//   I1 correctness:      reset_h == ~reset_n one cycle later
+//   I2 glitch-free:      registered output
+//   I3 power-up safe:    INIT=1'b1 holds all downstream in reset until first
+//                        valid clock edge; reset_n is low on power-up anyway
+//   I4 de-assert lat.:   +1 cycle vs. direct async; negligible at 400 MHz
+// ============================================================================
+(* max_fanout = 50 *) reg reset_h = 1'b1;
+always @(posedge clk_400m) reset_h <= ~reset_n;
+
 // Use only the top 8 bits for LUT addressing (256-entry LUT equivalent)
 wire [7:0] lut_address = phase_with_offset[31:24];
 
@@ -135,8 +154,8 @@ wire [15:0] cos_abs_w = sin_lut[63 - lut_index_pipe_cos];
 // Stage 2: phase_with_offset adds phase offset
 reg [31:0] phase_accumulator;
 
-always @(posedge clk_400m or negedge reset_n) begin
-    if (!reset_n) begin
+always @(posedge clk_400m) begin
+    if (reset_h) begin
         phase_accumulator <= 32'h00000000;
         phase_accum_reg   <= 32'h00000000;
         phase_with_offset <= 32'h00000000;
@@ -190,8 +209,8 @@ DSP48E1 #(
     .RSTA(1'b0),
     .RSTB(1'b0),
     .RSTM(1'b0),
-    .RSTP(!reset_n),             // Reset P register (phase accumulator) on !reset_n
-    .RSTC(!reset_n),             // Reset C register (tuning word) on !reset_n
+    .RSTP(reset_h),              // Reset P register (phase accumulator) — registered, max_fanout=50
+    .RSTC(reset_h),              // Reset C register (tuning word)       — registered, max_fanout=50
     .RSTALLCARRYIN(1'b0),
     .RSTALUMODE(1'b0),
     .RSTCTRL(1'b0),
@@ -245,8 +264,8 @@ DSP48E1 #(
 // Stage 1: Capture DSP48E1 P output into fabric register
 // Stage 2: Add phase offset to captured value
 // Split into two registered stages to break DSP48E1.P→CARRY4 critical path
-always @(posedge clk_400m or negedge reset_n) begin
-    if (!reset_n) begin
+always @(posedge clk_400m) begin
+    if (reset_h) begin
         phase_accum_reg   <= 32'h00000000;
         phase_with_offset <= 32'h00000000;
     end else if (phase_valid) begin
@@ -264,8 +283,8 @@ end
 //           Only 2 registers driven (lut_index_pipe + quadrant_pipe)
 //           Minimal fanout → short routes → easy timing
 // ============================================================================
-always @(posedge clk_400m or negedge reset_n) begin
-    if (!reset_n) begin
+always @(posedge clk_400m) begin
+    if (reset_h) begin
         lut_index_pipe_sin <= 6'b000000;
         lut_index_pipe_cos <= 6'b000000;
         quadrant_pipe      <= 2'b00;
@@ -281,8 +300,8 @@ end
 //           Registered address → combinational LUT6 read → register
 //           Only 1 logic level (LUT6), trivial timing
 // ============================================================================
-always @(posedge clk_400m or negedge reset_n) begin
-    if (!reset_n) begin
+always @(posedge clk_400m) begin
+    if (reset_h) begin
         sin_abs_reg <= 16'h0000;
         cos_abs_reg <= 16'h7FFF;
         quadrant_reg <= 2'b00;
@@ -298,8 +317,8 @@ end
 //          CARRY4 x4 chain has registered inputs — easily fits in 2.5ns
 //          Also pass through abs values and quadrant for Stage 5
 // ============================================================================
-always @(posedge clk_400m or negedge reset_n) begin
-    if (!reset_n) begin
+always @(posedge clk_400m) begin
+    if (reset_h) begin
         sin_neg_reg <= 16'h0000;
         cos_neg_reg <= -16'h7FFF;
         sin_abs_reg2 <= 16'h0000;
@@ -318,8 +337,8 @@ end
 // Stage 5: Quadrant sign application → final sin/cos output
 //          Uses pre-computed negated values from Stage 4 — pure MUX, no arithmetic
 // ============================================================================
-always @(posedge clk_400m or negedge reset_n) begin
-    if (!reset_n) begin
+always @(posedge clk_400m) begin
+    if (reset_h) begin
         sin_out <= 16'h0000;
         cos_out <= 16'h7FFF;
     end else if (valid_pipe[4]) begin
@@ -347,8 +366,8 @@ end
 // ============================================================================
 // Valid pipeline and dds_ready (6-stage latency)
 // ============================================================================
-always @(posedge clk_400m or negedge reset_n) begin
-    if (!reset_n) begin
+always @(posedge clk_400m) begin
+    if (reset_h) begin
         valid_pipe <= 6'b000000;
         dds_ready <= 1'b0;
     end else begin

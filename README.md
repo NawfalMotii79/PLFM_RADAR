@@ -206,15 +206,15 @@ Originally, the entire project used the MIT license. The community (special than
 
 Comprehensive documentation is available in the `/docs` folder and served via GitHub Pages at [https://NawfalMotii79.github.io/PLFM_RADAR/docs/](https://NawfalMotii79.github.io/PLFM_RADAR/docs/):
 
-- [System Architecture](/docs/architecture.html)
-- [Implementation Log](/docs/implementation-log.html)
-- [Hardware Bring-Up Guide](/docs/bring-up.html)
-- [Test Reports](/docs/reports.html)
-- [Release Notes](/docs/release-notes.html)
+- [System Architecture](docs/architecture.html)
+- [Implementation Log](docs/implementation-log.html)
+- [Hardware Bring-Up Guide](docs/bring-up.html)
+- [Test Reports](docs/reports.html)
+- [Release Notes](docs/release-notes.html)
 
 ## 🤝 Contributing
 
-We welcome contributions! Please see our [Contributing Guidelines](/CONTRIBUTING.md) for details on repo layout, branch workflow, and basic PR checks.
+We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details on repo layout, branch workflow, and basic PR checks.
 
 Areas where help is especially appreciated:
 - **RF Engineers**: Review designs, optimize antenna performance

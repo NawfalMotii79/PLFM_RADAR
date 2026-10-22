@@ -108,11 +108,22 @@ class ConcatWidth:
 
 def parse_python_opcodes(filepath: Path | None = None) -> dict[int, OpcodeEntry]:
     """Parse the Opcode enum from radar_protocol.py.
-    Returns {opcode_value: OpcodeEntry}.
+    Returns {opcode_value: OpcodeEntry}, excluding MCU_ONLY_OPCODES.
+    MCU-only opcodes have no FPGA case statement and must not appear in
+    the bidirectional Python/Verilog contract check.
     """
     if filepath is None:
         filepath = GUI_DIR / "radar_protocol.py"
     text = filepath.read_text()
+
+    # Extract MCU_ONLY_OPCODES set so we can exclude those values below.
+    mcu_only: set[int] = set()
+    m_set = re.search(r'MCU_ONLY_OPCODES[^=]*=\s*frozenset\(\{([^}]*)\}\)', text)
+    if m_set:
+        for tok in m_set.group(1).split(','):
+            tok = tok.strip()
+            if tok.startswith(('0x', '0X')):
+                mcu_only.add(int(tok, 16))
 
     # Find the Opcode class body
     match = re.search(r'class Opcode\b.*?(?=\nclass |\Z)', text, re.DOTALL)
@@ -123,7 +134,8 @@ def parse_python_opcodes(filepath: Path | None = None) -> dict[int, OpcodeEntry]
     for m in re.finditer(r'(\w+)\s*=\s*(0x[0-9a-fA-F]+)', match.group()):
         name = m.group(1)
         value = int(m.group(2), 16)
-        opcodes[value] = OpcodeEntry(name=name, value=value)
+        if value not in mcu_only:
+            opcodes[value] = OpcodeEntry(name=name, value=value)
     return opcodes
 
 

@@ -63,6 +63,12 @@ static struct {
     GPIO_PinState val;
 } gpio_read_table[GPIO_READ_TABLE_SIZE];
 
+/* SPI failure-injection state */
+static int               mock_spi_fail_remaining = 0;
+static HAL_StatusTypeDef mock_spi_fail_status    = HAL_OK;
+static uint8_t           mock_spi_rx_byte        = 0;
+static uint32_t          mock_tick_auto_advance  = 0;
+
 void spy_reset(void)
 {
     spy_count = 0;
@@ -73,6 +79,26 @@ void spy_reset(void)
     memset(mock_uart_rx, 0, sizeof(mock_uart_rx));
     mock_uart_tx_len = 0;
     memset(mock_uart_tx_buf, 0, sizeof(mock_uart_tx_buf));
+    mock_spi_fail_remaining = 0;
+    mock_spi_fail_status    = HAL_OK;
+    mock_spi_rx_byte        = 0;
+    mock_tick_auto_advance  = 0;
+}
+
+void mock_spi_queue_failure(int call_count, HAL_StatusTypeDef status)
+{
+    mock_spi_fail_remaining = call_count;
+    mock_spi_fail_status    = status;
+}
+
+void mock_spi_set_rx_byte(uint8_t value)
+{
+    mock_spi_rx_byte = value;
+}
+
+void mock_set_tick_auto_advance(uint32_t delta)
+{
+    mock_tick_auto_advance = delta;
 }
 
 const SpyRecord *spy_get(int index)
@@ -177,14 +203,16 @@ void HAL_GPIO_TogglePin(GPIO_TypeDef *GPIOx, uint16_t GPIO_Pin)
 
 uint32_t HAL_GetTick(void)
 {
+    uint32_t result = mock_tick;
     spy_push((SpyRecord){
         .type  = SPY_HAL_GET_TICK,
         .port  = NULL,
         .pin   = 0,
-        .value = mock_tick,
+        .value = result,
         .extra = NULL
     });
-    return mock_tick;
+    mock_tick += mock_tick_auto_advance;
+    return result;
 }
 
 void HAL_Delay(uint32_t Delay)
@@ -369,6 +397,7 @@ void mock_tim_set_compare(TIM_HandleTypeDef *htim, uint32_t Channel, uint32_t Co
 
 HAL_StatusTypeDef HAL_SPI_TransmitReceive(SPI_HandleTypeDef *hspi, uint8_t *pTxData, uint8_t *pRxData, uint16_t Size, uint32_t Timeout)
 {
+    (void)pTxData;
     spy_push((SpyRecord){
         .type  = SPY_SPI_TRANSMIT_RECEIVE,
         .port  = NULL,
@@ -376,11 +405,19 @@ HAL_StatusTypeDef HAL_SPI_TransmitReceive(SPI_HandleTypeDef *hspi, uint8_t *pTxD
         .value = Timeout,
         .extra = hspi
     });
+    if (mock_spi_fail_remaining > 0) {
+        mock_spi_fail_remaining--;
+        return mock_spi_fail_status;
+    }
+    if (pRxData && Size > 0) {
+        pRxData[Size - 1] = mock_spi_rx_byte;
+    }
     return HAL_OK;
 }
 
 HAL_StatusTypeDef HAL_SPI_Transmit(SPI_HandleTypeDef *hspi, uint8_t *pData, uint16_t Size, uint32_t Timeout)
 {
+    (void)pData;
     spy_push((SpyRecord){
         .type  = SPY_SPI_TRANSMIT,
         .port  = NULL,
@@ -388,6 +425,10 @@ HAL_StatusTypeDef HAL_SPI_Transmit(SPI_HandleTypeDef *hspi, uint8_t *pData, uint
         .value = Timeout,
         .extra = hspi
     });
+    if (mock_spi_fail_remaining > 0) {
+        mock_spi_fail_remaining--;
+        return mock_spi_fail_status;
+    }
     return HAL_OK;
 }
 

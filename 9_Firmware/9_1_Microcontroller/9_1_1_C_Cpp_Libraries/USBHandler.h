@@ -29,6 +29,11 @@ public:
     // Reset USB handler
     void reset();
 
+    // Fault-acknowledgement: host sends FAULT_ACK (0x40) to clear
+    // system_emergency_state and exit the safe-mode blink loop.
+    bool isFaultAckReceived() const { return fault_ack_received; }
+    void clearFaultAck()            { fault_ack_received = false; }
+
 private:
     RadarSettings current_settings;
     USBState current_state;
@@ -38,6 +43,7 @@ private:
     static constexpr uint32_t MAX_BUFFER_SIZE = 256;
     uint8_t usb_buffer[MAX_BUFFER_SIZE];
     uint32_t buffer_index;
+    bool fault_ack_received;
     
     void processStartFlag(const uint8_t* data, uint32_t length);
     void processSettingsData(const uint8_t* data, uint32_t length);

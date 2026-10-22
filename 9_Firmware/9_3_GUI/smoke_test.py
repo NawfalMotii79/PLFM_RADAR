@@ -148,11 +148,11 @@ class SmokeTest:
                 if ptype == "status":
                     status = RadarProtocol.parse_status_packet(raw[start:end])
                     if status is not None:
-                        # Self-test results encoded in status fields
-                        # (This is a simplification — in production, the FPGA
-                        #  would have a dedicated self-test result packet type)
-                        result_flags = status.cfar_threshold & 0x1F
-                        result_detail = (status.cfar_threshold >> 8) & 0xFF
+                        # Self-test results live in dedicated status fields
+                        # (word 5: self_test_flags[4:0], self_test_detail[7:0]).
+                        # See radar_protocol.py:257 and test_GUI_V65_Tk.py:198.
+                        result_flags = status.self_test_flags
+                        result_detail = status.self_test_detail
                         return (result_flags, result_detail)
 
             time.sleep(0.1)

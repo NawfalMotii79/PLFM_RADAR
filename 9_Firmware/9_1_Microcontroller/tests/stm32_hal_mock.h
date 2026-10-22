@@ -176,6 +176,11 @@ void mock_set_tick(uint32_t tick);
 /* Advance the mock tick by `delta` ms */
 void mock_advance_tick(uint32_t delta);
 
+/* Each subsequent HAL_GetTick() call advances the mock tick by `delta` ms after
+ * returning the current value. Use to drive timeout loops without wall-clock
+ * waits. Set to 0 (default) for stable tick. */
+void mock_set_tick_auto_advance(uint32_t delta);
+
 /* ========================= Mock GPIO read returns ================= */
 
 /* Set the value HAL_GPIO_ReadPin will return for a specific port/pin */
@@ -211,6 +216,15 @@ void mock_uart_tx_clear(void);
 
 HAL_StatusTypeDef HAL_SPI_TransmitReceive(SPI_HandleTypeDef *hspi, uint8_t *pTxData, uint8_t *pRxData, uint16_t Size, uint32_t Timeout);
 HAL_StatusTypeDef HAL_SPI_Transmit(SPI_HandleTypeDef *hspi, uint8_t *pData, uint16_t Size, uint32_t Timeout);
+
+/* Queue the next N SPI calls (Transmit and TransmitReceive) to return `status`
+ * instead of HAL_OK. Decremented on each call. Use for failure-propagation tests. */
+void mock_spi_queue_failure(int call_count, HAL_StatusTypeDef status);
+
+/* Set the byte that HAL_SPI_TransmitReceive will write at pRxData[Size-1] for
+ * subsequent calls. ADAR1000 reads land at index 2 of a 3-byte transfer, so
+ * this lets tests inject scratchpad / register readback values. */
+void mock_spi_set_rx_byte(uint8_t value);
 
 /* ========================= no_os compat layer ===================== */
 

@@ -21,4 +21,4 @@ y_scaled = np.round(y * 127.5).astype(int)  # Scale to 8-bit range (0-255)
 
 # Print values in Verilog-friendly format
 for _i in range(n):
-    pass
+    print(f"8'd{y_scaled[_i]},")

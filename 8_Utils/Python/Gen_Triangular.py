@@ -41,7 +41,7 @@ plt.xlim(0, (fmax+fmax/10))
 plt.ylim(0, 20)
 
 plt.subplot(122)
-plt.plot(2*n, y)
+plt.plot(t, x)
 plt.xlabel('Time (s)')
 plt.ylabel('Amplitude')
 plt.tight_layout()

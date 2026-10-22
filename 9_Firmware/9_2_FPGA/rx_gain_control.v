@@ -169,11 +169,11 @@ endfunction
 // =========================================================================
 // Clamp a wider signed value to [-7, +7]
 function signed [3:0] clamp_gain;
-    input signed [4:0] val;  // 5-bit to handle overflow from add
+    input signed [5:0] val;  // 6-bit: covers [-22,+22] (max |gain|+step = 7+15)
     begin
-        if (val > 5'sd7)
+        if (val > 6'sd7)
             clamp_gain = 4'sd7;
-        else if (val < -5'sd7)
+        else if (val < -6'sd7)
             clamp_gain = -4'sd7;
         else
             clamp_gain = val[3:0];
@@ -246,15 +246,15 @@ always @(posedge clk or negedge reset_n) begin
                 // Use inclusive counts/peaks (accounting for simultaneous valid_in)
                 if (wire_frame_sat_incr || frame_sat_count > 8'd0) begin
                     // Clipping detected: reduce gain immediately (attack)
-                    agc_gain <= clamp_gain($signed({agc_gain[3], agc_gain}) -
-                                           $signed({1'b0, agc_attack}));
+                    agc_gain <= clamp_gain($signed({agc_gain[3], agc_gain[3], agc_gain}) -
+                                           $signed({2'b00, agc_attack}));
                     holdoff_counter <= agc_holdoff;  // Reset holdoff
                 end else if ((wire_frame_peak_update ? max_iq[14:7] : frame_peak[14:7])
                              < agc_target) begin
                     // Signal too weak: increase gain after holdoff expires
                     if (holdoff_counter == 4'd0) begin
-                        agc_gain <= clamp_gain($signed({agc_gain[3], agc_gain}) +
-                                               $signed({1'b0, agc_decay}));
+                        agc_gain <= clamp_gain($signed({agc_gain[3], agc_gain[3], agc_gain}) +
+                                               $signed({2'b00, agc_decay}));
                     end else begin
                         holdoff_counter <= holdoff_counter - 4'd1;
                     end

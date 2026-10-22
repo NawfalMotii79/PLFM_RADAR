@@ -36,6 +36,19 @@ public:
         }
     };
 
+    // Communication health counters. Incremented by checked SPI helpers; queryable
+    // for telemetry/observability without changing the boolean public contract.
+    // PR2 may promote a richer OpStatus enum; today the policy is bool returns
+    // for control flow + this struct for trends.
+    struct CommStats {
+        uint32_t writes_ok;
+        uint32_t writes_fail;
+        uint32_t reads_ok;
+        uint32_t reads_fail;
+        uint32_t adc_timeouts;
+        uint8_t  last_fail_dev;   // device index of most recent failure (0xFF if none)
+    };
+
     ADAR1000Manager();
     ~ADAR1000Manager();
 
@@ -46,12 +59,12 @@ public:
     bool performSystemCalibration();
 
     // Mode Switching
-    void switchToTXMode();
-    void switchToRXMode();
-    void fastTXMode();
-    void fastRXMode();
-    void pulseTXMode();
-    void pulseRXMode();
+    bool switchToTXMode();
+    bool switchToRXMode();
+    bool fastTXMode();
+    bool fastRXMode();
+    bool pulseTXMode();
+    bool pulseRXMode();
 
     // Beam Steering
     bool setBeamAngle(float angle_degrees, BeamDirection direction);
@@ -68,14 +81,20 @@ public:
     // Device Control
     bool setAllDevicesTXMode();
     bool setAllDevicesRXMode();
-    void setADTR1107Mode(BeamDirection direction);
-    void setADTR1107Control(bool tx_mode);
+    bool setADTR1107Mode(BeamDirection direction);
+    bool setADTR1107Control(bool tx_mode);
 
     // Monitoring and Diagnostics
+    // readTemperature returns NaN when the on-chip ADC times out, so callers
+    // can distinguish a hung chip from a real cold reading via std::isnan().
     float readTemperature(uint8_t deviceIndex);
     bool verifyDeviceCommunication(uint8_t deviceIndex);
     uint8_t readRegister(uint8_t deviceIndex, uint32_t address);
-    void writeRegister(uint8_t deviceIndex, uint32_t address, uint8_t value);
+    bool writeRegister(uint8_t deviceIndex, uint32_t address, uint8_t value);
+
+    // Communication health observability
+    const CommStats& getCommStats() const { return comm_stats_; }
+    void resetCommStats();
 
     // Configuration
     void setSwitchSettlingTime(uint32_t us);
@@ -108,6 +127,9 @@ public:
     // Device Management
     std::vector<std::unique_ptr<ADAR1000Device>> devices_;
     BeamDirection current_mode_ = BeamDirection::RX;
+
+    // Comm health counters (zeroed in resetCommStats()).
+    CommStats comm_stats_ = {0, 0, 0, 0, 0, 0xFF};
 
     // Beam Sweeping
     std::vector<BeamConfig> tx_beam_sequence_;
@@ -142,32 +164,42 @@ public:
     void delayUs(uint32_t microseconds);
 
     // Power Management
+    // PA/LNA supply rails are pure GPIO toggles -- those stay void.
+    // setPABias/setLNABias issue per-device SPI writes, so they propagate.
     void enablePASupplies();
     void disablePASupplies();
     void enableLNASupplies();
     void disableLNASupplies();
-    void setPABias(bool enable);
-    void setLNABias(bool enable);
+    bool setPABias(bool enable);
+    bool setLNABias(bool enable);
 
     // SPI Communication
+    // setChipSelect is a pure GPIO toggle (no failure mode in HAL_GPIO_WritePin).
+    // Everything else returns true on success, false on SPI failure or invalid index.
     void setChipSelect(uint8_t deviceIndex, bool state);
-    uint32_t spiTransfer(uint8_t* txData, uint8_t* rxData, uint32_t size);
-    void adarWrite(uint8_t deviceIndex, uint32_t mem_addr, uint8_t data, uint8_t broadcast);
+    bool spiTransfer(uint8_t* txData, uint8_t* rxData, uint32_t size);
+    bool adarWrite(uint8_t deviceIndex, uint32_t mem_addr, uint8_t data, uint8_t broadcast);
+    // adarRead returns the register byte; on SPI failure it returns 0 and the
+    // failure is reflected in comm_stats_.reads_fail (callers wanting an
+    // explicit ok/fail signal should use adarReadChecked below).
     uint8_t adarRead(uint8_t deviceIndex, uint32_t mem_addr);
-    void adarSetBit(uint8_t deviceIndex, uint32_t mem_addr, uint8_t bit, uint8_t broadcast);
-    void adarResetBit(uint8_t deviceIndex, uint32_t mem_addr, uint8_t bit, uint8_t broadcast);
-    void adarSoftReset(uint8_t deviceIndex);
-    void adarWriteConfigA(uint8_t deviceIndex, uint8_t flags, uint8_t broadcast);
-    void adarSetRamBypass(uint8_t deviceIndex, uint8_t broadcast);
+    bool adarReadChecked(uint8_t deviceIndex, uint32_t mem_addr, uint8_t* out);
+    bool adarSetBit(uint8_t deviceIndex, uint32_t mem_addr, uint8_t bit, uint8_t broadcast);
+    bool adarResetBit(uint8_t deviceIndex, uint32_t mem_addr, uint8_t bit, uint8_t broadcast);
+    bool adarSoftReset(uint8_t deviceIndex);
+    bool adarWriteConfigA(uint8_t deviceIndex, uint8_t flags, uint8_t broadcast);
+    bool adarSetRamBypass(uint8_t deviceIndex, uint8_t broadcast);
 
     // Channel Configuration
-    void adarSetRxPhase(uint8_t deviceIndex, uint8_t channel, uint8_t phase, uint8_t broadcast);
-    void adarSetTxPhase(uint8_t deviceIndex, uint8_t channel, uint8_t phase, uint8_t broadcast);
-    void adarSetRxVgaGain(uint8_t deviceIndex, uint8_t channel, uint8_t gain, uint8_t broadcast);
-    void adarSetTxVgaGain(uint8_t deviceIndex, uint8_t channel, uint8_t gain, uint8_t broadcast);
-    void adarSetTxBias(uint8_t deviceIndex, uint8_t broadcast);
+    bool adarSetRxPhase(uint8_t deviceIndex, uint8_t channel, uint8_t phase, uint8_t broadcast);
+    bool adarSetTxPhase(uint8_t deviceIndex, uint8_t channel, uint8_t phase, uint8_t broadcast);
+    bool adarSetRxVgaGain(uint8_t deviceIndex, uint8_t channel, uint8_t gain, uint8_t broadcast);
+    bool adarSetTxVgaGain(uint8_t deviceIndex, uint8_t channel, uint8_t gain, uint8_t broadcast);
+    bool adarSetTxBias(uint8_t deviceIndex, uint8_t broadcast);
+    // adarAdcRead returns 0 on timeout AND increments comm_stats_.adc_timeouts.
+    // readTemperature() detects the timeout via that counter delta.
     uint8_t adarAdcRead(uint8_t deviceIndex, uint8_t broadcast);
-    void setTRSwitchPosition(uint8_t deviceIndex, bool tx_mode);
+    bool setTRSwitchPosition(uint8_t deviceIndex, bool tx_mode);
 
 private:
 

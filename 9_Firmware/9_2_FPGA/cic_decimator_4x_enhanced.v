@@ -32,11 +32,50 @@ localparam COMB_WIDTH = 28;
 // adjacent DSP48E1 tiles — zero fabric delay, guaranteed to meet 400+ MHz
 // on 7-series regardless of speed grade.
 //
-// Active-high reset derived from reset_n (inverted).
+// Active-high reset derived from reset_n (inverted and REGISTERED).
 // CEP (clock enable for P register) gated by data_valid.
-// ============================================================================
-
-wire reset_h = ~reset_n;  // active-high reset for DSP48E1 RSTP
+//
+// ----------------------------------------------------------------------------
+// RESET FAN-OUT INVARIANT (Build N+1 fix for WNS=-0.626ns at 400 MHz):
+// ----------------------------------------------------------------------------
+// Previously this was a combinational wire (`wire reset_h = ~reset_n`). Vivado
+// collapsed all per-module inversions across the DDC hierarchy into a SINGLE
+// shared LUT1, whose output fanned out to 702 loads (DSP48E1 RSTP/RSTB/RSTC
+// plus FDRE R pins of all comb-stage DSP48E1s inferred via use_dsp="yes").
+// Route delay alone on that net was 2.019–2.268 ns — nearly one full 2.5 ns
+// period. Timing failed by 626 ps on the 400 MHz domain.
+//
+// Fix: convert reset_h to a REGISTERED signal with (* max_fanout = 50 *).
+// Vivado treats max_fanout on a REG (not a wire) as authoritative and
+// replicates the register into N copies, each placed near its ≈50 loads.
+// Invariants preserved:
+//   I1 (correctness):       reset_h is still active-high, equals ~reset_n
+//                           after one clk edge; CIC reset is a RECEIVER-side
+//                           synchronizer anyway (driven by reset_n_400m which
+//                           is already sync'd in the parent DDC), so adding
+//                           one more clk cycle of latency is safe.
+//   I2 (glitch-free):       Registered output => inherently glitch-free,
+//                           feeding DSP48E1 RST pins (which are synchronous
+//                           to CLK, so they capture on the same edge anyway).
+//   I3 (power-up safety):   reset_h is NOT async-reset itself. On power-up,
+//                           FDRE INIT=0 starts reset_h LOW. First clk edge
+//                           samples ~reset_n which is LOW on power-up (the
+//                           parent DDC holds reset_n_400m low until the 2-
+//                           stage synchronizer releases), so reset_h goes
+//                           HIGH on cycle 1 and all DSPs see reset during
+//                           the following cycles. System is held in reset
+//                           for enough cycles that any initial register
+//                           state garbage is overwritten. ✅
+//   I4 (reset de-assertion):reset_h goes LOW one cycle AFTER reset_n_400m
+//                           goes HIGH. Downstream DSPs come out of reset on
+//                           the next clk edge after that. Total latency
+//                           from system reset release to first valid sample:
+//                           2 (sync chain) + 1 (reset_h reg) + 1 (first
+//                           DSP output) = 4 cycles at 400 MHz = 10 ns.
+//                           Negligible vs system reset assertion duration.
+// ----------------------------------------------------------------------------
+(* max_fanout = 50 *) reg reset_h = 1'b1;  // INIT=1'b1: registers start in reset state on power-up
+always @(posedge clk) reset_h <= ~reset_n;
 
 // Sign-extended input for integrator_0 C port (48-bit)
 wire [ACC_WIDTH-1:0] data_in_c = {{(ACC_WIDTH-18){data_in[17]}}, data_in};
@@ -699,10 +738,11 @@ initial begin
 end
 
 // Decimation control + monitoring (integrators are now DSP48E1 instances)
-// Sync reset: enables FDRE inference for better timing at 400 MHz.
-// Reset is already synchronous to clk via reset synchronizer in parent module.
+// Sync reset via reset_h (registered, max_fanout=50) — eliminates the shared
+// LUT1 inverter that previously fanned out to all fabric FDRE R pins plus
+// DSP48E1 RST pins (702 loads total). See "RESET FAN-OUT INVARIANT" at top.
 always @(posedge clk) begin
-    if (!reset_n) begin
+    if (reset_h) begin
         integrator_sampled <= 0;
         decimation_counter <= 0;
         data_valid_delayed <= 0;
@@ -755,9 +795,9 @@ always @(posedge clk) begin
 end
 
 // Pipeline the valid signal for comb section
-// Sync reset: matches decimation control block reset style.
+// Sync reset via reset_h — same replicated-register source as DSP48E1 RSTs.
 always @(posedge clk) begin
-    if (!reset_n) begin
+    if (reset_h) begin
         data_valid_comb <= 0;
         data_valid_comb_pipe <= 0;
         data_valid_comb_0_out <= 0;
@@ -792,7 +832,7 @@ end
 //   - Each stage: comb[i] = comb[i-1] - comb_delay[i][last]
 
 always @(posedge clk) begin
-    if (!reset_n) begin
+    if (reset_h) begin
         for (i = 0; i < STAGES; i = i + 1) begin
             comb[i] <= 0;
             for (j = 0; j < COMB_DELAY; j = j + 1) begin

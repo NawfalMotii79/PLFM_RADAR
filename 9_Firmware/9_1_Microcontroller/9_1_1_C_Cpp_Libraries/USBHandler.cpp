@@ -13,6 +13,7 @@ void USBHandler::reset() {
     start_flag_received = false;
     buffer_index = 0;
     current_settings.resetToDefaults();
+    fault_ack_received = false;
 }
 
 void USBHandler::processUSBData(const uint8_t* data, uint32_t length) {
@@ -22,6 +23,18 @@ void USBHandler::processUSBData(const uint8_t* data, uint32_t length) {
     }
     
     DIAG("USB", "processUSBData: %lu bytes, state=%d", (unsigned long)length, (int)current_state);
+    
+    // FAULT_ACK: host sends exactly 4 bytes [0x40, 0x00, 0x00, 0x00].
+    // Requires exact 4-byte packet length: settings packets are always
+    // >= 82 bytes, so a lone 4-byte payload is unambiguous. Scanning
+    // inside larger packets would false-trigger on the IEEE 754
+    // encoding of 2.0 (0x4000000000000000) embedded in settings doubles.
+    static const uint8_t FAULT_ACK_SEQ[4] = {0x40, 0x00, 0x00, 0x00};
+    if (length == 4 && memcmp(data, FAULT_ACK_SEQ, 4) == 0) {
+        fault_ack_received = true;
+        DIAG("USB", "FAULT_ACK received");
+        return;
+    }
     
     switch (current_state) {
         case USBState::WAITING_FOR_START:

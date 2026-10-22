@@ -70,7 +70,8 @@ TESTS_STANDALONE := test_bug12_pa_cal_loop_inverted \
                     test_gap3_idq_periodic_reread \
                     test_gap3_emergency_state_ordering \
                     test_gap3_overtemp_emergency_stop \
-                    test_gap3_health_watchdog_cold_start
+                    test_gap3_health_watchdog_cold_start \
+                    test_gap3_fault_ack_clears_emergency
 
 # Tests that need platform_noos_stm32.o + mocks
 TESTS_WITH_PLATFORM := test_bug11_platform_spi_transmit_only
@@ -78,10 +79,17 @@ TESTS_WITH_PLATFORM := test_bug11_platform_spi_transmit_only
 # C++ tests (AGC outer loop)
 TESTS_WITH_CXX := test_agc_outer_loop
 
+# ADAR1000 error/status propagation tests -- link real ADAR1000_Manager.o + mocks
+TESTS_ADAR_STATUS := test_adar_init_aborts_on_scratchpad_mismatch \
+                     test_adar_spi_write_failure_propagates \
+                     test_adar_adc_timeout_returns_nan \
+                     test_adar_mode_switch_does_not_lie \
+                     test_adar_comm_stats_increment
+
 # GPS driver tests (need mocks + GPS source + -lm)
 TESTS_GPS := test_um982_gps
 
-ALL_TESTS := $(TESTS_WITH_REAL) $(TESTS_MOCK_ONLY) $(TESTS_STANDALONE) $(TESTS_WITH_PLATFORM) $(TESTS_WITH_CXX) $(TESTS_GPS)
+ALL_TESTS := $(TESTS_WITH_REAL) $(TESTS_MOCK_ONLY) $(TESTS_STANDALONE) $(TESTS_WITH_PLATFORM) $(TESTS_WITH_CXX) $(TESTS_ADAR_STATUS) $(TESTS_GPS)
 
 .PHONY: all build test clean \
         $(addprefix test_,bug1 bug2 bug3 bug4 bug5 bug6 bug7 bug8 bug9 bug10 bug11 bug12 bug13 bug14 bug15) \
@@ -178,6 +186,9 @@ test_gap3_overtemp_emergency_stop: test_gap3_overtemp_emergency_stop.c
 test_gap3_health_watchdog_cold_start: test_gap3_health_watchdog_cold_start.c
 	$(CC) $(CFLAGS) $< -o $@
 
+test_gap3_fault_ack_clears_emergency: test_gap3_fault_ack_clears_emergency.c
+	$(CC) $(CFLAGS) $< -o $@
+
 # Tests that need platform_noos_stm32.o + mocks
 $(TESTS_WITH_PLATFORM): %: %.c $(MOCK_OBJS) $(PLATFORM_OBJ)
 	$(CC) $(CFLAGS) $(INCLUDES) $< $(MOCK_OBJS) $(PLATFORM_OBJ) -o $@
@@ -199,6 +210,16 @@ test_agc_outer_loop: test_agc_outer_loop.cpp $(CXX_OBJS) $(MOCK_OBJS)
 .PHONY: test_agc
 test_agc: test_agc_outer_loop
 	./test_agc_outer_loop
+
+# --- ADAR1000 status-propagation test rules ---
+# Each test links the real ADAR1000_Manager.cpp (compiled as ADAR1000_Manager.o)
+# against the HAL mock so failure injection drives the production code paths.
+$(TESTS_ADAR_STATUS): %: %.cpp ADAR1000_Manager.o $(MOCK_OBJS)
+	$(CXX) $(CXXFLAGS) $(INCLUDES) $< ADAR1000_Manager.o $(MOCK_OBJS) -o $@
+
+.PHONY: test_adar_status
+test_adar_status: $(TESTS_ADAR_STATUS)
+	@for t in $(TESTS_ADAR_STATUS); do echo "--- $$t ---"; ./$$t || exit 1; done
 
 # --- GPS driver rules ---
 

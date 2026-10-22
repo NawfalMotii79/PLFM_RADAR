@@ -23,7 +23,7 @@ import numpy as np
 
 from PyQt6.QtCore import QThread, QObject, QTimer, pyqtSignal
 
-from .models import RadarTarget, GPSData, RadarSettings
+from .models import RadarTarget, GPSData, RadarSettings, WaveformConfig
 from .hardware import (
     RadarAcquisition,
     RadarFrame,
@@ -84,6 +84,7 @@ class RadarDataWorker(QThread):
         self._recorder = recorder
         self._gps = gps_data_ref
         self._settings = settings or RadarSettings()
+        self._waveform = WaveformConfig()
         self._running = False
 
         # Frame queue for production RadarAcquisition → this thread
@@ -96,6 +97,9 @@ class RadarDataWorker(QThread):
         self._frame_count = 0
         self._byte_count = 0
         self._error_count = 0
+
+    def set_waveform(self, wf: "WaveformConfig") -> None:
+        self._waveform = wf
 
     def stop(self):
         self._running = False
@@ -169,8 +173,8 @@ class RadarDataWorker(QThread):
         The FPGA already does: FFT, MTI, CFAR, DC notch.
         Host-side DSP adds: clustering, tracking, geo-coordinate mapping.
 
-        Bin-to-physical conversion uses RadarSettings.range_resolution
-        and velocity_resolution (should be calibrated to actual waveform).
+        Bin-to-physical conversion uses self._waveform (WaveformConfig) to keep
+        live and replay units aligned. Override via set_waveform() if needed.
         """
         targets: list[RadarTarget] = []
 
@@ -180,8 +184,11 @@ class RadarDataWorker(QThread):
 
         # Extract detections from FPGA CFAR flags
         det_indices = np.argwhere(frame.detections > 0)
-        r_res = self._settings.range_resolution
-        v_res = self._settings.velocity_resolution
+        r_res = self._waveform.range_resolution_m
+        v_res = self._waveform.velocity_resolution_mps
+        n_doppler = (frame.detections.shape[1] if frame.detections.ndim == 2
+                     else self._waveform.n_doppler_bins)
+        doppler_center = n_doppler // 2
 
         for idx in det_indices:
             rbin, dbin = idx
@@ -190,8 +197,9 @@ class RadarDataWorker(QThread):
 
             # Convert bin indices to physical units
             range_m = float(rbin) * r_res
-            # Doppler: centre bin (16) = 0 m/s; positive bins = approaching
-            velocity_ms = float(dbin - 16) * v_res
+            # Doppler: centre bin = 0 m/s; positive bins = approaching.
+            # Derived from frame shape — mirrors processing.py:520.
+            velocity_ms = float(dbin - doppler_center) * v_res
 
             # Apply pitch correction if GPS data available
             raw_elev = 0.0  # FPGA doesn't send elevation per-detection
