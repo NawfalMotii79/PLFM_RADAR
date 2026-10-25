@@ -265,6 +265,19 @@ run_lint_static() {
 }
 
 # ---------------------------------------------------------------------------
+# Helper: register a test as skipped, with an explicit reason
+#   skip_test <name> <reason>
+# Keeps untestable-but-known gaps visible instead of silently dropping them.
+# ---------------------------------------------------------------------------
+skip_test() {
+    local name="$1"
+    local reason="$2"
+    printf "  %-45s " "$name"
+    echo -e "${YELLOW}SKIP${NC} ($reason)"
+    SKIP=$((SKIP + 1))
+}
+
+# ---------------------------------------------------------------------------
 # Helper: compile and run a single testbench
 #   run_test <name> <vvp_path> <iverilog_args...>
 # ---------------------------------------------------------------------------
@@ -288,14 +301,25 @@ run_test() {
     local output
     output=$(timeout 120 vvp "$vvp" 2>&1) || true
 
-    # Count PASS/FAIL in output (testbenches use explicit [PASS]/[FAIL] markers)
+    # Count PASS/FAIL in output (testbenches use explicit [PASS]/[FAIL] markers).
+    # NOTE: several testbenches indent their markers ("  [PASS] ..."), so leading
+    # whitespace MUST be tolerated. An anchored grep silently hides indented
+    # failures and turns passing tests into "no markers" UNKNOWNs.
     local test_pass test_fail
-    test_pass=$(echo "$output" | grep -Ec '^\[PASS([^]]*)\]' || true)
-    test_fail=$(echo "$output" | grep -Ec '^\[FAIL([^]]*)\]' || true)
+    test_pass=$(echo "$output" | grep -Ec '^[[:space:]]*\[PASS([^]]*)\]' || true)
+    test_fail=$(echo "$output" | grep -Ec '^[[:space:]]*\[FAIL([^]]*)\]' || true)
 
     if [[ "$test_fail" -gt 0 ]]; then
         echo -e "${RED}FAIL${NC} (pass=$test_pass, fail=$test_fail)"
         ERRORS="$ERRORS\n  $name: $test_fail failure(s)"
+        FAIL=$((FAIL + 1))
+    elif echo "$output" | grep -qE 'RESULT:.*ALL TESTS PASSED'; then
+        # Data-driven testbenches report a summary line instead of markers
+        echo -e "${GREEN}PASS${NC} ($(echo "$output" | grep -oE 'RESULT:.*ALL TESTS PASSED' | head -1))"
+        PASS=$((PASS + 1))
+    elif echo "$output" | grep -qE 'SOME TESTS FAILED|RESULT:.*FAILED'; then
+        echo -e "${RED}FAIL${NC} (testbench summary reported failure)"
+        ERRORS="$ERRORS\n  $name: testbench summary reported failure"
         FAIL=$((FAIL + 1))
     elif [[ "$test_pass" -gt 0 ]]; then
         echo -e "${GREEN}PASS${NC} ($test_pass checks)"
@@ -454,10 +478,12 @@ if [[ "$QUICK" -eq 0 ]]; then
         -DUSB_MODE_1 \
         tb/radar_system_tb.v "${SYSTEM_RTL[@]}"
 
-    run_test "System E2E USB_MODE=1 (FT2232H)" \
-        tb/tb_system_e2e_ft2232h_reg.vvp \
-        -DUSB_MODE_1 \
-        tb/tb_system_e2e.v "${SYSTEM_RTL[@]}"
+    # E2E 集成测试在 USB_MODE=1 (FT2232H) 下无法运行：
+    # tb_system_e2e.v 只建模了 FT601 总线（ft601_data/be/txe/rxf + BFM），
+    # FT2232H 模式下 DUT 不使用 ft601_* 引脚，宿主命令与 USB 写事务无法送达，
+    # 会产生 ~31 条伪失败。改为显式 SKIP 并记录该覆盖缺口。
+    skip_test "System E2E USB_MODE=1 (FT2232H)" \
+        "no FT2232H bus functional model in tb_system_e2e.v (coverage gap)"
 else
     echo "  (skipped receiver golden + system top + E2E — use without --quick)"
     SKIP=$((SKIP + 6))

@@ -239,20 +239,39 @@ integer    usb_wr_count;
 integer    usb_wr_header_count;
 integer    usb_wr_footer_count;
 
+// 数据包帧格式（usb_data_interface.v 重写后的 3×32bit 打包，字节序为字内高字节在前）：
+//   word0 = {0xAA, cap[31:24], cap[23:16], cap[15:8]}   BE=1111
+//   word1 = {cap[7:0], dop_re[15:8], dop_re[7:0], dop_im[15:8]}  BE=1111
+//   word2 = {dop_im[7:0], cfar, 0x55, 0x00}             BE=1110
+// 拼成字节流后为：[0xAA][range_q 2B][range_i 2B][dop_re 2B][dop_im 2B][cfar][0x55]（11 字节），
+// 与上位机 radar_protocol.py 的 parse_data_packet() 完全一致。
+// 注意：旧实现用独立的 {24'b0, 0xAA} / {24'b0, 0x55} 字（BE=0001），故旧判帧条件已失效。
+reg [1:0]  pkt_state;   // 0=等待 word0, 1=已见 word0, 2=已见 word1
+
 always @(posedge ft601_clk_in) begin
     if (!reset_n) begin
         usb_wr_count        <= 0;
         usb_wr_header_count <= 0;
         usb_wr_footer_count <= 0;
+        pkt_state           <= 2'd0;
     end else if (!ft601_wr_n && !ft601_txe) begin
         if (usb_wr_count < 1024)
             usb_wr_capture[usb_wr_count] <= ft601_data;
         usb_wr_count <= usb_wr_count + 1;
-        // Count headers and footers
-        if (ft601_data[7:0] == 8'hAA && ft601_be == 4'b0001)
-            usb_wr_header_count <= usb_wr_header_count + 1;
-        if (ft601_data[7:0] == 8'h55 && ft601_be == 4'b0001)
-            usb_wr_footer_count <= usb_wr_footer_count + 1;
+        // 按 word0/word1/word2 的时序判帧，避免误把数据字节当成帧头
+        case (pkt_state)
+            2'd0: if (ft601_be == 4'b1111 && ft601_data[31:24] == 8'hAA) begin
+                      usb_wr_header_count <= usb_wr_header_count + 1;
+                      pkt_state <= 2'd1;
+                  end
+            2'd1: if (ft601_be == 4'b1111)
+                      pkt_state <= 2'd2;
+            2'd2: if (ft601_be == 4'b1110) begin
+                      if (ft601_data[15:8] == 8'h55)
+                          usb_wr_footer_count <= usb_wr_footer_count + 1;
+                      pkt_state <= 2'd0;
+                  end
+        endcase
     end
 end
 
