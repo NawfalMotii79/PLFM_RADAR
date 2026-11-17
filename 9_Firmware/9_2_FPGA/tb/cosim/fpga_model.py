@@ -59,17 +59,18 @@ def arith_rshift(value, shift, _width=None):
 # NCO: Numerically Controlled Oscillator (6-stage pipeline)
 # =============================================================================
 
-# Quarter-wave sine LUT (64 entries, 16-bit unsigned)
+# Quarter-wave sine LUT (64 entries, 16-bit unsigned), sampled half a step off zero:
+# entry k is 32767 times the sine of (k + 0.5)/256 of a cycle, rounded
 # Matches nco_400m_enhanced.v exactly
 NCO_SINE_LUT = [
-    0x0000, 0x0324, 0x0648, 0x096A, 0x0C8C, 0x0FAB, 0x12C8, 0x15E2,
-    0x18F9, 0x1C0B, 0x1F1A, 0x2223, 0x2528, 0x2826, 0x2B1F, 0x2E11,
-    0x30FB, 0x33DF, 0x36BA, 0x398C, 0x3C56, 0x3F17, 0x41CE, 0x447A,
-    0x471C, 0x49B4, 0x4C3F, 0x4EBF, 0x5133, 0x539B, 0x55F5, 0x5842,
-    0x5A82, 0x5CB3, 0x5ED7, 0x60EB, 0x62F1, 0x64E8, 0x66CF, 0x68A6,
-    0x6A6D, 0x6C23, 0x6DC9, 0x6F5E, 0x70E2, 0x7254, 0x73B5, 0x7504,
-    0x7641, 0x776B, 0x7884, 0x7989, 0x7A7C, 0x7B5C, 0x7C29, 0x7CE3,
-    0x7D89, 0x7E1D, 0x7E9C, 0x7F09, 0x7F61, 0x7FA6, 0x7FD8, 0x7FF5,
+    0x0192, 0x04B6, 0x07D9, 0x0AFB, 0x0E1C, 0x113A, 0x1455, 0x176E,
+    0x1A82, 0x1D93, 0x209F, 0x23A6, 0x26A8, 0x29A3, 0x2C99, 0x2F87,
+    0x326E, 0x354D, 0x3824, 0x3AF2, 0x3DB8, 0x4073, 0x4325, 0x45CD,
+    0x4869, 0x4AFB, 0x4D81, 0x4FFB, 0x5268, 0x54C9, 0x571D, 0x5964,
+    0x5B9C, 0x5DC7, 0x5FE3, 0x61F0, 0x63EE, 0x65DD, 0x67BC, 0x698B,
+    0x6B4A, 0x6CF8, 0x6E96, 0x7022, 0x719D, 0x7307, 0x745F, 0x75A5,
+    0x76D8, 0x77FA, 0x7909, 0x7A05, 0x7AEE, 0x7BC5, 0x7C88, 0x7D39,
+    0x7DD5, 0x7E5F, 0x7ED5, 0x7F37, 0x7F86, 0x7FC1, 0x7FE9, 0x7FFD,
 ]
 
 
@@ -93,7 +94,12 @@ class NCO:
     Latency: 6 cycles from phase_valid to dds_ready
     """
 
-    def __init__(self):
+    def __init__(self, phase_dither=True):
+        self.phase_dither = phase_dither
+        self.dith_lfsr = 0x7FFFFF   # 23-bit LFSR, x^23 + x^18 + 1, 8 steps per cycle
+        self.top_r = 0              # Stage 2: accumulator top byte + offset top byte
+        # Stage 2: carry (0..2) of accumulator[23:16] + offset low byte + dither
+        self.dith_q = 0
         self.phase_accumulator = 0  # 32-bit
         self.phase_accum_reg = 0    # Stage 1 output
         self.phase_with_offset = 0  # Stage 2 output
@@ -124,12 +130,15 @@ class NCO:
 
     def _quadrant_and_index(self, phase_with_offset):
         """Compute quadrant and LUT index from phase_with_offset[31:24]."""
-        lut_address = (phase_with_offset >> 24) & 0xFF
+        return self._quadrant_index_from_address((phase_with_offset >> 24) & 0xFF)
+
+    def _quadrant_index_from_address(self, lut_address):
+        """Quadrant and LUT index from the 8-bit LUT address (RTL: top_r + dith_q)."""
         quadrant = (lut_address >> 6) & 0x3
         raw_index = lut_address & 0x3F
 
-        # RTL: lut_index = (quadrant[0] ^ quadrant[1]) ? ~lut_address[5:0] : lut_address[5:0]
-        lut_index = ~raw_index & 63 if quadrant & 1 ^ quadrant >> 1 & 1 else raw_index
+        # RTL: lut_index = quadrant[0] ? ~lut_address[5:0] : lut_address[5:0]
+        lut_index = ~raw_index & 63 if quadrant & 1 else raw_index
 
         return quadrant, lut_index
 
@@ -177,7 +186,6 @@ class NCO:
         # Compute all NBA assignments from OLD state:
         # Save old state for NBA evaluation
         old_phase_accum_reg = self.phase_accum_reg
-        old_phase_with_offset = self.phase_with_offset
         old_lut_index_pipe = self.lut_index_pipe
         old_quadrant_pipe = self.quadrant_pipe
         old_sin_abs_reg = self.sin_abs_reg
@@ -189,6 +197,8 @@ class NCO:
         old_cos_abs_reg2 = self.cos_abs_reg2
         old_quadrant_reg2 = self.quadrant_reg2
         old_valid_pipe = self.valid_pipe
+        old_top_r = self.top_r
+        old_dith_q = self.dith_q
 
         if phase_valid:
             # Stage 1 NBA: phase_accum_reg <= phase_accumulator (old value)
@@ -201,10 +211,25 @@ class NCO:
             ) & 0xFFFFFFFF
             # phase_accumulator was already updated above
 
+            # Phase dither (RTL: dith_lfsr, dith_r, top_r, dith_q). This model's phase_accum_reg
+            # and phase_with_offset run one cycle ahead of the RTL's (see above; the output
+            # pipeline absorbs it), so dith_q pairs this cycle's phase_accum_reg with the dither
+            # byte of the LFSR state before its step.
+            lf = self.dith_lfsr
+            dith_byte = (lf & 0xFF) if self.phase_dither else 0
+            acc = self.phase_accum_reg
+            self.top_r = ((acc >> 24) + (phase_offset >> 8)) & 0xFF
+            self.dith_q = (((acc >> 16) & 0xFF) + (phase_offset & 0xFF) + dith_byte) >> 8
+            new = 0
+            for n in range(8):   # bit 7-n of the new byte = lf[22-n] ^ lf[17-n]
+                new |= (((lf >> (22 - n)) ^ (lf >> (17 - n))) & 1) << (7 - n)
+            self.dith_lfsr = ((lf << 8) | new) & 0x7FFFFF
+
         # ---- Stage 3a: Register LUT address + quadrant ----
         # Gated by valid_pipe[1]
         if (old_valid_pipe >> 1) & 1:
-            quadrant_w, lut_index_w = self._quadrant_and_index(old_phase_with_offset)
+            lut_address = (old_top_r + old_dith_q) & 0xFF
+            quadrant_w, lut_index_w = self._quadrant_index_from_address(lut_address)
             self.lut_index_pipe = lut_index_w
             self.quadrant_pipe = quadrant_w
 
