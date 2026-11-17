@@ -7,8 +7,8 @@ model (fpga_model.py), then compares the output against the RTL simulation
 CSV (from tb_ddc_cosim.v).
 
 Key considerations:
-  - The RTL DDC has LFSR phase dithering on the NCO FTW, so exact bit-match
-    is not expected. We use statistical metrics (correlation, RMS error).
+  - The RTL NCO dithers its phase with an LFSR; fpga_model.NCO models it bit-exactly.
+    The rest of the chain is compared with statistical metrics (correlation, RMS error).
   - The CDC (gray-coded 400→100 MHz crossing) may introduce non-deterministic
     latency offsets. We auto-align using cross-correlation.
   - The comparison reports pass/fail based on configurable thresholds.
@@ -50,10 +50,10 @@ SCENARIOS = {
         'adc_hex': 'adc_dc.hex',
         'rtl_csv': 'rtl_bb_dc.csv',
         'description': 'DC input (ADC=128)',
-        # DC input: expect small outputs, but LFSR dithering adds ~+128 LSB
-        # average bias to NCO FTW which accumulates through CIC integrators
-        # as a small DC offset (~15-20 LSB in baseband). This is expected.
-        'max_rms': 25.0,        # Relaxed to account for LFSR dithering bias
+        # DC input: expect small outputs. (Before the NCO phase-dither fix, the old FTW dither added
+        # ~+128 LSB average bias to the FTW, which showed up as a 15-20 LSB DC offset in baseband;
+        # the threshold is left as it was.)
+        'max_rms': 25.0,
         'min_corr': -1.0,       # Correlation not meaningful for near-zero
     },
     'single_target': {

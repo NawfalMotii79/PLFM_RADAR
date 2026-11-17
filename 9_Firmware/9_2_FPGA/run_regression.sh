@@ -478,6 +478,10 @@ run_test "NCO 400MHz" \
     tb/tb_nco_reg.vvp \
     tb/tb_nco_400m.v nco_400m_enhanced.v
 
+run_test "NCO image rejection" \
+    tb/tb_nco_image_reg.vvp \
+    tb/tb_nco_image.v nco_400m_enhanced.v
+
 run_test "FIR Lowpass" \
     tb/tb_fir_reg.vvp \
     tb/tb_fir_lowpass.v fir_lowpass.v

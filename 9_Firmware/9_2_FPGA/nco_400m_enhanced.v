@@ -1,6 +1,10 @@
 `timescale 1ns / 1ps
 
-module nco_400m_enhanced (
+module nco_400m_enhanced #(
+    // 1: add a fresh pseudo-random byte to the accumulator just below the 8 LUT address bits before
+    // truncation (see Stage 2). 0: plain truncation, as before.
+    parameter PHASE_DITHER = 1
+) (
     input wire clk_400m,
     input wire reset_n,
     input wire [31:0] frequency_tuning_word,
@@ -79,7 +83,13 @@ reg [5:0] valid_pipe;
 always @(posedge clk_400m) reset_h <= ~reset_n;
 
 // Use only the top 8 bits for LUT addressing (256-entry LUT equivalent)
-wire [7:0] lut_address = phase_with_offset[31:24];
+// With the phase dither the address is (phase_accum_reg + phase_offset<<16 + dither<<16) >> 24, built from
+// registered pieces (see the phase-dither block): top_r = accumulator top byte + offset top byte, dith_q = the
+// carry (0 to 2) out of accumulator bits [23:16] + offset low byte + dither. With PHASE_DITHER = 0 this is
+// exactly phase_with_offset[31:24].
+reg  [7:0] top_r;
+reg  [1:0] dith_q;
+wire [7:0] lut_address = top_r + {6'd0, dith_q};
 
 // Quarter-wave sine LUT (0-90 degrees only)
 // Force distributed RAM (LUTRAM) — the 64x16 LUT is only 1024 bits, far too
@@ -97,29 +107,35 @@ initial begin
     end
     
     // Initialize quarter-wave sine LUT (0-90 degrees)
-    // LUT[k] = round(32767 * sin(pi/2 * k / 64)), monotonically increasing
-    // FIX: Original LUT peaked at index 42 then decreased — broke cos=sin[63-k] quadrature
-    sin_lut[0] = 16'h0000; sin_lut[1] = 16'h0324; sin_lut[2] = 16'h0648; sin_lut[3] = 16'h096A;
-    sin_lut[4] = 16'h0C8C; sin_lut[5] = 16'h0FAB; sin_lut[6] = 16'h12C8; sin_lut[7] = 16'h15E2;
-    sin_lut[8] = 16'h18F9; sin_lut[9] = 16'h1C0B; sin_lut[10] = 16'h1F1A; sin_lut[11] = 16'h2223;
-    sin_lut[12] = 16'h2528; sin_lut[13] = 16'h2826; sin_lut[14] = 16'h2B1F; sin_lut[15] = 16'h2E11;
-    sin_lut[16] = 16'h30FB; sin_lut[17] = 16'h33DF; sin_lut[18] = 16'h36BA; sin_lut[19] = 16'h398C;
-    sin_lut[20] = 16'h3C56; sin_lut[21] = 16'h3F17; sin_lut[22] = 16'h41CE; sin_lut[23] = 16'h447A;
-    sin_lut[24] = 16'h471C; sin_lut[25] = 16'h49B4; sin_lut[26] = 16'h4C3F; sin_lut[27] = 16'h4EBF;
-    sin_lut[28] = 16'h5133; sin_lut[29] = 16'h539B; sin_lut[30] = 16'h55F5; sin_lut[31] = 16'h5842;
-    sin_lut[32] = 16'h5A82; sin_lut[33] = 16'h5CB3; sin_lut[34] = 16'h5ED7; sin_lut[35] = 16'h60EB;
-    sin_lut[36] = 16'h62F1; sin_lut[37] = 16'h64E8; sin_lut[38] = 16'h66CF; sin_lut[39] = 16'h68A6;
-    sin_lut[40] = 16'h6A6D; sin_lut[41] = 16'h6C23; sin_lut[42] = 16'h6DC9; sin_lut[43] = 16'h6F5E;
-    sin_lut[44] = 16'h70E2; sin_lut[45] = 16'h7254; sin_lut[46] = 16'h73B5; sin_lut[47] = 16'h7504;
-    sin_lut[48] = 16'h7641; sin_lut[49] = 16'h776B; sin_lut[50] = 16'h7884; sin_lut[51] = 16'h7989;
-    sin_lut[52] = 16'h7A7C; sin_lut[53] = 16'h7B5C; sin_lut[54] = 16'h7C29; sin_lut[55] = 16'h7CE3;
-    sin_lut[56] = 16'h7D89; sin_lut[57] = 16'h7E1D; sin_lut[58] = 16'h7E9C; sin_lut[59] = 16'h7F09;
-    sin_lut[60] = 16'h7F61; sin_lut[61] = 16'h7FA6; sin_lut[62] = 16'h7FD8; sin_lut[63] = 16'h7FF5;
+    // Half-step table: LUT[k] = round(32767 * sin(2*pi * (k + 0.5) / 256)).
+    // The quadrant fold reads cos as LUT[63 - k] and folds odd quadrants with ~k = 63 - k. That is exact only
+    // for a table sampled half a step off zero: a table sampled at k (LUT[0] = 0) puts cos one step (1/256
+    // cycle) away from sin, an I/Q phase error that limits image rejection to about -52 dB. The half-step
+    // table only adds a constant pi/256 to the LO phase.
+    sin_lut[0] = 16'h0192; sin_lut[1] = 16'h04B6; sin_lut[2] = 16'h07D9; sin_lut[3] = 16'h0AFB;
+    sin_lut[4] = 16'h0E1C; sin_lut[5] = 16'h113A; sin_lut[6] = 16'h1455; sin_lut[7] = 16'h176E;
+    sin_lut[8] = 16'h1A82; sin_lut[9] = 16'h1D93; sin_lut[10] = 16'h209F; sin_lut[11] = 16'h23A6;
+    sin_lut[12] = 16'h26A8; sin_lut[13] = 16'h29A3; sin_lut[14] = 16'h2C99; sin_lut[15] = 16'h2F87;
+    sin_lut[16] = 16'h326E; sin_lut[17] = 16'h354D; sin_lut[18] = 16'h3824; sin_lut[19] = 16'h3AF2;
+    sin_lut[20] = 16'h3DB8; sin_lut[21] = 16'h4073; sin_lut[22] = 16'h4325; sin_lut[23] = 16'h45CD;
+    sin_lut[24] = 16'h4869; sin_lut[25] = 16'h4AFB; sin_lut[26] = 16'h4D81; sin_lut[27] = 16'h4FFB;
+    sin_lut[28] = 16'h5268; sin_lut[29] = 16'h54C9; sin_lut[30] = 16'h571D; sin_lut[31] = 16'h5964;
+    sin_lut[32] = 16'h5B9C; sin_lut[33] = 16'h5DC7; sin_lut[34] = 16'h5FE3; sin_lut[35] = 16'h61F0;
+    sin_lut[36] = 16'h63EE; sin_lut[37] = 16'h65DD; sin_lut[38] = 16'h67BC; sin_lut[39] = 16'h698B;
+    sin_lut[40] = 16'h6B4A; sin_lut[41] = 16'h6CF8; sin_lut[42] = 16'h6E96; sin_lut[43] = 16'h7022;
+    sin_lut[44] = 16'h719D; sin_lut[45] = 16'h7307; sin_lut[46] = 16'h745F; sin_lut[47] = 16'h75A5;
+    sin_lut[48] = 16'h76D8; sin_lut[49] = 16'h77FA; sin_lut[50] = 16'h7909; sin_lut[51] = 16'h7A05;
+    sin_lut[52] = 16'h7AEE; sin_lut[53] = 16'h7BC5; sin_lut[54] = 16'h7C88; sin_lut[55] = 16'h7D39;
+    sin_lut[56] = 16'h7DD5; sin_lut[57] = 16'h7E5F; sin_lut[58] = 16'h7ED5; sin_lut[59] = 16'h7F37;
+    sin_lut[60] = 16'h7F86; sin_lut[61] = 16'h7FC1; sin_lut[62] = 16'h7FE9; sin_lut[63] = 16'h7FFD;
 end
 
 // Combinational: quadrant determination and LUT index (feeds Stage 3a registers)
 wire [1:0] quadrant_w = lut_address[7:6];
-wire [5:0] lut_index = (quadrant_w[0] ^ quadrant_w[1]) ? ~lut_address[5:0] : lut_address[5:0];
+// Odd quadrants (90-180 and 270-360 degrees) run the quarter wave backwards: index ~k. The former test,
+// quadrant_w[0] ^ quadrant_w[1], reversed quadrants 2 and 3 instead of 1 and 3, which swapped the sin and cos
+// magnitudes between 180 and 360 degrees (image about -18 dB).
+wire [5:0] lut_index = quadrant_w[0] ? ~lut_address[5:0] : lut_address[5:0];
 
 // Combinational LUT read using REGISTERED lut_index_pipe (feeds Stage 3b registers)
 // These wires are driven by lut_index_pipe (registered in Stage 3a), so the
@@ -277,6 +293,41 @@ always @(posedge clk_400m) begin
 end
 
 `endif
+
+// ============================================================================
+// Phase dither (PHASE_DITHER = 1)
+// The LUT address truncates the 24 accumulator bits below it. For an LO that is a simple fraction of the
+// clock (120 MHz at 400 MHz is 0.3 cycles per sample) the accumulator visits only a few phases, so the
+// truncation error is periodic and has a component at the conjugate LO, which mirrors the input around the
+// LO (image -46 to -61 dB, depending on where the accumulator sits). Adding a fresh random byte to bits
+// [23:16] before truncation turns that error into white phase noise. Stage 1 registers offset low byte +
+// dither, Stage 2 the carry (0 to 2) of accumulator bits [23:16] plus that sum and, beside it, the top bytes'
+// sum; Stage 3a adds the two, so no stage holds more than one short carry chain. The source is a Fibonacci
+// LFSR, x^23 + x^18 + 1, advanced eight steps per phase_valid cycle so that every byte is new.
+// ============================================================================
+reg  [22:0] dith_lfsr;
+reg  [8:0]  dith_r;      // Stage 1: offset low byte + dither byte
+wire [7:0]  dith_byte = PHASE_DITHER ? dith_lfsr[7:0] : 8'd0;
+
+always @(posedge clk_400m) begin
+    if (reset_h) begin
+        dith_lfsr <= 23'h7FFFFF;
+        dith_r    <= 9'd0;
+        top_r     <= 8'd0;
+        dith_q    <= 2'd0;
+    end else if (phase_valid) begin
+        dith_lfsr <= {dith_lfsr[14:0],
+                      dith_lfsr[22] ^ dith_lfsr[17], dith_lfsr[21] ^ dith_lfsr[16],
+                      dith_lfsr[20] ^ dith_lfsr[15], dith_lfsr[19] ^ dith_lfsr[14],
+                      dith_lfsr[18] ^ dith_lfsr[13], dith_lfsr[17] ^ dith_lfsr[12],
+                      dith_lfsr[16] ^ dith_lfsr[11], dith_lfsr[15] ^ dith_lfsr[10]};
+        // Stage 1: one 9-bit add of registered/quasi-static operands
+        dith_r    <= {1'b0, phase_offset[7:0]} + {1'b0, dith_byte};
+        // Stage 2 (in parallel with phase_with_offset): two short adds from registers
+        top_r     <= phase_accum_reg[31:24] + phase_offset[15:8];
+        dith_q    <= ({2'b00, phase_accum_reg[23:16]} + {1'b0, dith_r}) >> 8;
+    end
+end
 
 // ============================================================================
 // Stage 3a: Register LUT address and quadrant from phase_with_offset

@@ -87,7 +87,7 @@ reg baseband_valid_reg;
 // ============================================================================
 // Phase Dithering Signals
 // ============================================================================
-wire [7:0] phase_dither_bits;
+
 reg [31:0] phase_inc_dithered;
 
 // ============================================================================
@@ -184,14 +184,10 @@ end
 // ============================================================================
 // Enhanced Phase Dithering Instance
 // ============================================================================
-lfsr_dither_enhanced #(
-    .DITHER_WIDTH(8)
-) phase_dither_gen (
-    .clk(clk_400m),
-    .reset_n(reset_n_400m),
-    .enable(nco_ready),
-    .dither_out(phase_dither_bits)
-);
+// The 8-bit LFSR used to be added to the FTW's low byte. That moves the LO by up to ~24 Hz and never reaches
+// the NCO's 8 address bits, so it did not break up the phase-truncation spurs; nco_400m_enhanced now dithers
+// its phase below the address bits instead (PHASE_DITHER).
+
 
 // ============================================================================
 // Phase Increment Calculation with Dithering
@@ -204,7 +200,7 @@ always @(posedge clk_400m) begin
     if (reset_400m)
         phase_inc_dithered <= PHASE_INC_120MHZ;
     else
-        phase_inc_dithered <= PHASE_INC_120MHZ + {24'b0, phase_dither_bits};
+        phase_inc_dithered <= PHASE_INC_120MHZ;
 end
 
 // ============================================================================
